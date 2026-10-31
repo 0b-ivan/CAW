@@ -18,6 +18,7 @@ add_test(NAME net.config_metrics_log COMMAND test_config)
 
 add_executable(test_session_codes session/test_codes.cpp)
 target_compile_definitions(test_session_codes PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+target_include_directories(test_session_codes PRIVATE fixtures)
 target_link_libraries(test_session_codes PRIVATE caw_play caw_warnings doctest::doctest)
 add_test(NAME session.codes COMMAND test_session_codes)
 
@@ -33,10 +34,18 @@ add_test(NAME net.protocol COMMAND test_protocol)
 
 add_executable(test_session session/test_session.cpp)
 target_compile_definitions(test_session PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+target_include_directories(test_session PRIVATE fixtures)
 target_link_libraries(test_session PRIVATE caw_play caw_warnings doctest::doctest)
 add_test(NAME session.play COMMAND test_session)
 
+add_executable(test_packs packs/test_packs.cpp)
+target_compile_definitions(test_packs PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+target_include_directories(test_packs PRIVATE fixtures)
+target_link_libraries(test_packs PRIVATE caw_play caw_warnings doctest::doctest)
+add_test(NAME packs.library COMMAND test_packs)
+
 add_executable(test_persist store/test_persist.cpp)
 target_compile_definitions(test_persist PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+target_include_directories(test_persist PRIVATE fixtures)
 target_link_libraries(test_persist PRIVATE caw_play caw_warnings doctest::doctest)
 add_test(NAME store.persist COMMAND test_persist)

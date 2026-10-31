@@ -10,6 +10,7 @@ struct Config {
   std::string databaseUrl;
   std::string redisUrl;
   std::string logLevel = "info";
+  std::string packsDir = "/app/packs";  // one folder per source, each with a packs.json
 };
 Config readConfig();
 }  // namespace caw

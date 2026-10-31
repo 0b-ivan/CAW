@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "TestPacks.h"
 #include "session/Codes.h"
 #include "session/SessionRegistry.h"
 
@@ -37,7 +38,7 @@ TEST_CASE("Host tokens are random 128-bit lowercase hex credentials") {
 }
 
 TEST_CASE("Only the creator receives the host credential") {
-  caw::SessionRegistry registry(24);
+  caw::SessionRegistry registry(24, testPacks());
   const auto now = caw::SessionRegistry::Clock::now();
   const auto first = registry.create("de", now);
   const auto second = registry.create("en", now);
@@ -55,7 +56,7 @@ TEST_CASE("Only the creator receives the host credential") {
 }
 
 TEST_CASE("Expiry revokes both lookup and host privileges") {
-  caw::SessionRegistry registry(24);
+  caw::SessionRegistry registry(24, testPacks());
   const auto start = caw::SessionRegistry::Clock::now();
   const auto room = registry.create("de", start);
   const auto before = start + std::chrono::hours(24) - std::chrono::milliseconds(1);
@@ -70,8 +71,8 @@ TEST_CASE("Expiry revokes both lookup and host privileges") {
 }
 
 TEST_CASE("Unsupported languages and invalid TTL are rejected") {
-  CHECK_THROWS_AS(caw::SessionRegistry(0), std::invalid_argument);
-  caw::SessionRegistry registry(24);
+  CHECK_THROWS_AS(caw::SessionRegistry(0, testPacks()), std::invalid_argument);
+  caw::SessionRegistry registry(24, testPacks());
   CHECK_THROWS_AS(registry.create("fr"), std::invalid_argument);
   CHECK(registry.activeCount() == 0);
 }

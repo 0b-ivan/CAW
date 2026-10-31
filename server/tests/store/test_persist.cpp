@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "TestPacks.h"
 #include "net/Messages.h"
 #include "session/SessionRegistry.h"
 #include "store/PersistQueue.h"
@@ -47,13 +48,13 @@ TEST_CASE("stop saves the newest snapshot of every room") {
 }
 
 TEST_CASE("a room survives a registry restart through its snapshot") {
-  SessionRegistry first(24);
+  SessionRegistry first(24, testPacks());
   const auto room = first.create("en");
   const std::string snapshot = first.snapshot(room.code);
   REQUIRE_FALSE(snapshot.empty());
   CHECK(first.snapshot("ZZZZZZ").empty());
 
-  SessionRegistry second(24);
+  SessionRegistry second(24, testPacks());
   REQUIRE(second.restore(room.code, snapshot));
   CHECK(second.language(room.code) == "en");
   CHECK(second.authenticatedHost(room.code, room.hostToken));
@@ -65,11 +66,12 @@ TEST_CASE("a room survives a registry restart through its snapshot") {
 }
 
 TEST_CASE("room records keep language, host token and state together") {
-  const caw::RoomRecord record{"de", "0123456789abcdef0123456789abcdef", R"({"a":1})"};
+  const caw::RoomRecord record{"de", "0123456789abcdef0123456789abcdef", {"test"}, R"({"a":1})"};
   const auto loaded = caw::Messages::loadRoom(caw::Messages::saveRoom(record));
   REQUIRE(loaded);
   CHECK(loaded->language == "de");
   CHECK(loaded->hostToken == record.hostToken);
+  CHECK(loaded->packs == record.packs);
   CHECK(nlohmann::json::parse(loaded->state) == nlohmann::json::parse(record.state));
   CHECK_FALSE(caw::Messages::loadRoom(R"({"schema":2})"));
   CHECK_FALSE(caw::Messages::loadRoom("[]"));

@@ -28,7 +28,8 @@ class Server final {
   static constexpr int kTickMs = 250;
 
   // `stop` is set from the SIGTERM handler; the clock notices it and shuts down.
-  Server(SessionRegistry& sessions, PersistQueue& persist, const std::atomic<bool>& stop);
+  Server(SessionRegistry& sessions, const PackLibrary& packs, PersistQueue& persist,
+         const std::atomic<bool>& stop);
   Server(const Server&) = delete;
   Server& operator=(const Server&) = delete;
 
@@ -53,6 +54,7 @@ class Server final {
   static void onTimer(struct us_timer_t* timer);
 
   SessionRegistry& sessions_;
+  const PackLibrary& packs_;
   PersistQueue& persist_;
   const std::atomic<bool>& stop_;
   uWS::App* app_ = nullptr;

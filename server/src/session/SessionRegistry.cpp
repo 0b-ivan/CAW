@@ -18,7 +18,8 @@ std::uint32_t millisNow() {
       duration_cast<milliseconds>(std::chrono::steady_clock::now() - start).count());
 }
 
-SessionRegistry::SessionRegistry(unsigned ttlHours) : ttl_(ttlHours) {
+SessionRegistry::SessionRegistry(unsigned ttlHours, PackLibrary& packs)
+    : ttl_(ttlHours), packs_(packs) {
   if (ttlHours == 0) throw std::invalid_argument("Session TTL must be positive");
 }
 
@@ -29,8 +30,9 @@ CreatedSession SessionRegistry::create(std::string language, Time now) {
   for (unsigned attempt = 0; attempt < 32; ++attempt) {
     CreatedSession result{Codes::sessionCode(), Codes::hostToken()};
     if (rooms_.count(result.code) != 0) continue;
-    auto session =
-        std::make_unique<Session>(result.hostToken, cards_.deck(), Codes::seed(), millisNow());
+    // A new room starts with every pack in its language; the host can change that in the lobby.
+    auto session = std::make_unique<Session>(
+        result.hostToken, packs_, packs_.defaultSelection(language), Codes::seed(), millisNow());
     rooms_.emplace(result.code, Room{language, result.hostToken, now + ttl_, std::move(session)});
     return result;
   }
@@ -89,7 +91,8 @@ std::string SessionRegistry::snapshot(const std::string& code) {
   const auto found = rooms_.find(code);
   if (found == rooms_.end()) return {};
   const Room& room = found->second;
-  return Messages::saveRoom({room.language, room.hostToken, room.session->saveState(millisNow())});
+  return Messages::saveRoom(
+      {room.language, room.hostToken, room.session->packs(), room.session->saveState(millisNow())});
 }
 
 bool SessionRegistry::restore(const std::string& code, std::string_view snapshot, Time now) {
@@ -97,8 +100,10 @@ bool SessionRegistry::restore(const std::string& code, std::string_view snapshot
   if (!Codes::validSessionCode(code) || !record || !Codes::validHostToken(record->hostToken) ||
       (record->language != "de" && record->language != "en") || rooms_.count(code) != 0)
     return false;
-  auto session =
-      std::make_unique<Session>(record->hostToken, cards_.deck(), Codes::seed(), millisNow());
+  // A pack that is gone or changed its id after an update: the room cannot come back.
+  if (packs_.deck(record->packs) == nullptr) return false;
+  auto session = std::make_unique<Session>(record->hostToken, packs_, record->packs, Codes::seed(),
+                                           millisNow());
   if (!session->loadState(record->state, millisNow())) return false;
   // Restored is not a change: it is already saved exactly like this.
   session->takeChanged();

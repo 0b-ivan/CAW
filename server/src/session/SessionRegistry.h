@@ -11,8 +11,8 @@
 #include <utility>
 #include <vector>
 
+#include "packs/PackLibrary.h"
 #include "session/Session.h"
-#include "session/SyntheticDeck.h"
 
 namespace caw {
 
@@ -26,7 +26,8 @@ class SessionRegistry final {
   using Clock = std::chrono::steady_clock;
   using Time = Clock::time_point;
 
-  explicit SessionRegistry(unsigned ttlHours);
+  // The pack library must outlive the registry.
+  SessionRegistry(unsigned ttlHours, PackLibrary& packs);
 
   // The host token is returned only to the creator and never by room lookup.
   CreatedSession create(std::string language, Time now = Clock::now());
@@ -57,8 +58,7 @@ class SessionRegistry final {
   };
 
   std::chrono::hours ttl_;
-  // Placeholder cards until pack import (M5); shared read-only by every session.
-  SyntheticDeck cards_;
+  PackLibrary& packs_;
   std::unordered_map<std::string, Room> rooms_;
 };
 

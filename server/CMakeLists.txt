@@ -32,12 +32,12 @@ target_link_libraries(caw_session PRIVATE caw_warnings)
 add_library(caw_messages src/net/Messages.cpp)
 target_include_directories(caw_messages PUBLIC src)
 target_link_libraries(caw_messages PUBLIC caw_game nlohmann_json::nlohmann_json PRIVATE caw_warnings)
-add_library(caw_play src/net/Protocol.cpp src/session/Session.cpp src/session/SyntheticDeck.cpp
-  src/session/SessionRegistry.cpp src/store/PersistQueue.cpp)
+add_library(caw_play src/net/Protocol.cpp src/session/Session.cpp src/session/SessionRegistry.cpp
+  src/store/PersistQueue.cpp src/packs/CsvPack.cpp src/packs/PackLibrary.cpp src/packs/SyntheticPack.cpp)
 target_include_directories(caw_play PUBLIC src)
 find_package(Threads REQUIRED)
-target_link_libraries(caw_play PUBLIC caw_game caw_session caw_messages nlohmann_json::nlohmann_json
-  Threads::Threads PRIVATE caw_warnings)
+target_link_libraries(caw_play PUBLIC caw_game caw_session caw_messages caw_support
+  nlohmann_json::nlohmann_json Threads::Threads PRIVATE caw_warnings)
 if(CAW_BUILD_SERVER)
   add_executable(caw-server src/main.cpp src/net/Server.cpp src/store/Health.cpp
     src/store/RedisStore.cpp)
