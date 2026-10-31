@@ -49,6 +49,17 @@ class VendoredCsvTests(unittest.TestCase):
         self.assertEqual(totals["b"], 585)
         self.assertEqual(totals["w"], 1179)
 
+    def test_server_manifest_covers_every_file_with_credits(self):
+        manifest = json.loads((PACKS / "packs.json").read_text(encoding="utf-8"))["packs"]
+        self.assertEqual({entry["file"] for entry in manifest},
+                         {file.name for file in PACKS.glob("*.csv")})
+        for entry in manifest:
+            self.assertRegex(entry["id"], r"^[a-z0-9-]{1,40}$")
+            self.assertEqual(entry["license"], "CC BY-NC-SA 2.0")
+            self.assertEqual(entry["rightsHolder"], "Cards vs Humanity")
+            self.assertTrue(entry["sourceUrl"].startswith("https://www.cards-vs-humanity.de/"))
+            self.assertTrue(entry["title"])
+
     def test_license_notice_and_sources_are_present(self):
         notice = (PACKS / "ATTRIBUTION.md").read_text(encoding="utf-8")
         self.assertIn("CC BY-NC-SA 2.0", notice)

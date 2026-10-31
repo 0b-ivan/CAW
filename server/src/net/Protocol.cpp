@@ -16,7 +16,8 @@ enum Field : unsigned {
   kRevision = 4,
   kSlots = 8,
   kIndex = 16,
-  kSettings = 32
+  kSettings = 32,
+  kPacks = 64
 };
 
 struct CommandSpec {
@@ -47,6 +48,7 @@ constexpr CommandSpec kCommands[] = {
     {"addTime", Command::Type::AddTime, 0},
     {"continueWithout", Command::Type::ContinueWithout, 0},
     {"settings", Command::Type::Settings, kSettings},
+    {"packs", Command::Type::Packs, kPacks},
 };
 
 const CommandSpec* findCommand(const std::string& name) {
@@ -115,6 +117,16 @@ bool readField(const json& message, unsigned field, Command& command) {
       return true;
     case kSettings:
       return readSettings(message.at("settings"), command.settings);
+    case kPacks: {
+      // Ids only; whether they exist and make a deck is the library's call.
+      const json& packs = message.at("packs");
+      if (!packs.is_array() || packs.empty() || packs.size() > 8) return false;
+      for (const json& id : packs) {
+        if (!id.is_string() || id.get<std::string>().size() > 40) return false;
+        command.packs.push_back(id.get<std::string>());
+      }
+      return true;
+    }
     default:
       return false;
   }
@@ -194,6 +206,20 @@ json settingsJson(const StateFrame& frame) {
           {"autoSecs", settings.autoSecs},           {"rando", settings.rando}};
 }
 
+// Title, license and rights holder of every pack in play: shown wherever cards are shown.
+json packsJson(const StateFrame& frame) {
+  json packs = json::array();
+  for (const CardPack* pack : frame.packs) {
+    if (pack == nullptr) continue;
+    packs.push_back({{"id", pack->id},
+                     {"title", pack->title},
+                     {"license", pack->license},
+                     {"rightsHolder", pack->rightsHolder},
+                     {"sourceUrl", pack->sourceUrl}});
+  }
+  return packs;
+}
+
 json ownJson(const StateFrame& frame) {
   json own = {{"seat", frame.seat}, {"isHost", frame.isHost}, {"revision", frame.revision}};
   if (frame.seat >= kPlayers) return own;
@@ -221,7 +247,7 @@ std::optional<Command> Protocol::parse(std::string_view text) {
     Command command;
     command.type = spec->type;
     std::size_t expectedKeys = 1;
-    for (unsigned field : {kName, kToken, kRevision, kSlots, kIndex, kSettings}) {
+    for (unsigned field : {kName, kToken, kRevision, kSlots, kIndex, kSettings, kPacks}) {
       if ((spec->fields & field) == 0) continue;
       ++expectedKeys;
       if (!readField(message, field, command)) return std::nullopt;
@@ -254,7 +280,8 @@ json publicState(const StateFrame& frame) {
                 {"pausedBy", seatName(view, table.pausedBy())},
                 {"blockedOn", seatName(view, table.blockedOn())},
                 {"votes", table.votes()},
-                {"settings", settingsJson(frame)}};
+                {"settings", settingsJson(frame)},
+                {"packs", packsJson(frame)}};
   state["prompt"] =
       view.prompt < frame.deck->promptsCount ? frame.deck->prompts[view.prompt].text : "";
   state["selected"] = view.selected == kNone ? json(nullptr) : json(view.selected);

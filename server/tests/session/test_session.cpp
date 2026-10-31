@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "TestPacks.h"
 #include "session/Session.h"
-#include "session/SyntheticDeck.h"
 
 using caw::Command;
 using caw::ConnectionId;
@@ -20,8 +20,7 @@ const std::string kHostToken = "0123456789abcdef0123456789abcdef";
 
 // Collects every frame per connection, the way the WebSocket transport would deliver them.
 struct Table {
-  caw::SyntheticDeck cards;
-  Session session{kHostToken, cards.deck(), 42, 1000};
+  Session session{kHostToken, testPacks(), kTestPacks, 42, 1000};
   std::map<ConnectionId, std::vector<json>> inbox;
   std::map<ConnectionId, bool> closed;
   std::map<ConnectionId, std::string> tickets;
@@ -344,6 +343,39 @@ TEST_CASE("the host sets rounds in the lobby and clocks at any time") {
   table.session.tick(table.now + 31000);
   table.deliver();
   CHECK(table.lastState(1).at("phase") != "playing");
+}
+
+TEST_CASE("the host switches packs in the lobby only") {
+  caw::PackLibrary& packs = testPacks();
+  if (packs.find("tiny") == nullptr) {
+    caw::CardPack tiny{"tiny", "Klein", "de", "CC0", "Test", "https://example.org", {}, {}};
+    tiny.prompts.push_back({"Kleine Frage ___.", 1, 0});
+    for (int i = 0; i < 100; ++i) tiny.answers.push_back("Klein " + std::to_string(i));
+    packs.add(tiny);
+  }
+  Table table;
+  table.claimHost(9);
+  CHECK(table.lastState(9).at("packs").at(0).at("id") == "test");
+  Command command;
+  command.type = Command::Type::Packs;
+  command.packs = {"tiny"};
+  table.send(9, command);
+  json state = table.lastState(9);
+  REQUIRE(state.at("packs").size() == 1);
+  CHECK(state.at("packs").at(0).at("id") == "tiny");
+  CHECK(state.at("packs").at(0).at("license") == "CC0");
+  CHECK(table.session.packs() == std::vector<std::string>{"tiny"});
+
+  command.packs = {"missing"};
+  table.send(9, command);
+  CHECK(table.last(9).at("code") == "rejected");
+
+  table.startThree();
+  CHECK(table.lastState(1).at("prompt") == "Kleine Frage ___.");
+  command.packs = {"test"};
+  table.send(9, command);
+  CHECK(table.last(9).at("code") == "rejected");  // the match runs: cards stay
+  CHECK(table.session.packs() == std::vector<std::string>{"tiny"});
 }
 
 TEST_CASE("settings from a player are refused") {

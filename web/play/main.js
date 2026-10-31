@@ -30,6 +30,7 @@ const app = {
   judgeKey: '',
   menu: { open: false, page: 'main' },
   armed: null, // the row waiting for its second tap
+  catalog: null, // every pack the server offers, loaded when the host opens PACKS
   flashedRound: 0,
   clock: { left: 0, at: 0, frozen: true },
 };
@@ -168,6 +169,21 @@ const actions = {
   host(type) {
     closeMenu();
     sendHost({ type });
+  },
+  choosePacks(ids) {
+    sendHost({ type: 'packs', packs: ids });
+  },
+  loadCatalog() {
+    if (app.catalogLoading) return;
+    app.catalogLoading = true;
+    fetch('/api/packs', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((body) => {
+        app.catalog = body.packs;
+        update();
+      })
+      .catch(() => showNotice(t('offline')))
+      .finally(() => (app.catalogLoading = false));
   },
   kick(seat) {
     sendHost({ type: 'kick', index: seat });

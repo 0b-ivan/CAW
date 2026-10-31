@@ -93,10 +93,48 @@ std::string Messages::errorResponse(std::string_view errorCode) {
   return json{{"error", std::string(errorCode)}}.dump();
 }
 
+std::string Messages::packCatalog(const std::vector<std::unique_ptr<CardPack>>& packs) {
+  json list = json::array();
+  for (const auto& pack : packs) {
+    list.push_back({{"id", pack->id},
+                    {"title", pack->title},
+                    {"language", pack->language},
+                    {"license", pack->license},
+                    {"rightsHolder", pack->rightsHolder},
+                    {"sourceUrl", pack->sourceUrl},
+                    {"prompts", pack->prompts.size()},
+                    {"answers", pack->answers.size()}});
+  }
+  return json{{"packs", list}}.dump();
+}
+
+std::optional<std::vector<PackEntry>> Messages::readPackManifest(std::string_view text) {
+  try {
+    const json manifest = json::parse(text);
+    std::vector<PackEntry> entries;
+    for (const json& item : manifest.at("packs")) {
+      const auto text = [&item](const char* key) { return item.at(key).get<std::string>(); };
+      PackEntry entry{text("id"),      text("file"),         text("title"),    text("language"),
+                      text("license"), text("rightsHolder"), text("sourceUrl")};
+      for (const std::string* field : {&entry.id, &entry.file, &entry.title, &entry.language,
+                                       &entry.license, &entry.rightsHolder, &entry.sourceUrl})
+        if (field->empty()) return std::nullopt;
+      // A file name, never a path: a manifest only reaches its own directory.
+      if (entry.file.find('/') != std::string::npos || entry.file.find("..") != std::string::npos)
+        return std::nullopt;
+      entries.push_back(entry);
+    }
+    return entries;
+  } catch (const json::exception&) {
+    return std::nullopt;
+  }
+}
+
 std::string Messages::saveRoom(const RoomRecord& room) {
-  return json{{"schema", 1},
+  return json{{"schema", 2},
               {"language", room.language},
               {"hostToken", room.hostToken},
+              {"packs", room.packs},
               {"state", json::parse(room.state)}}
       .dump();
 }
@@ -104,12 +142,14 @@ std::string Messages::saveRoom(const RoomRecord& room) {
 std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
   try {
     const json record = json::parse(text);
-    if (!record.is_object() || record.size() != 4 || record.at("schema") != 1 ||
+    // Schema 1 rooms played numbered test cards; their card numbers mean nothing now.
+    if (!record.is_object() || record.size() != 5 || record.at("schema") != 2 ||
         !record.at("language").is_string() || !record.at("hostToken").is_string() ||
-        !record.at("state").is_object())
+        !record.at("packs").is_array() || !record.at("state").is_object())
       return std::nullopt;
-    return RoomRecord{record.at("language").get<std::string>(),
-                      record.at("hostToken").get<std::string>(), record.at("state").dump()};
+    return RoomRecord{
+        record.at("language").get<std::string>(), record.at("hostToken").get<std::string>(),
+        record.at("packs").get<std::vector<std::string>>(), record.at("state").dump()};
   } catch (const json::exception&) {
     return std::nullopt;
   }

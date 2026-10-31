@@ -24,6 +24,12 @@ export function displayName(name) {
   return name === 'host' ? t('theHost') : name;
 }
 
+// "KARTEN: Cards vs Humanity · CC BY-NC-SA 2.0": who owns the cards in play and under which license.
+export function creditsText(packs) {
+  const credits = [...new Set(packs.map((pack) => `${pack.rightsHolder} · ${pack.license}`))];
+  return credits.length ? t('credits', credits.join(' / ')) : '';
+}
+
 export function chooseView(app) {
   if (app.missing) return 'missing';
   if (app.replaced) return 'replaced';
@@ -81,6 +87,7 @@ function renderLobby(app) {
   if (app.isHost) renderShare(app);
   $('lobby-count').textContent = t('players', players.length);
   $('lobby-players').replaceChildren(...rosterItems(app));
+  $('lobby-credits').textContent = creditsText(frame.packs);
   $('host-join').hidden = !app.isHost || isSeated(app);
   $('start-button').hidden = !app.isHost;
   $('start-button').disabled = players.length < 3;
@@ -271,6 +278,7 @@ function renderFinished(app) {
   $('finished-winner').textContent = `${winners.join(' / ')} ${t(winners.length > 1 ? 'winTie' : 'wins')}`;
   $('finished-bars').replaceChildren(...ranked.map((p) => barItem(p, best)));
   $('finished-votes').textContent = t('votes', frame.votes, frame.players.length);
+  $('finished-credits').textContent = creditsText(frame.packs);
   const voter = isSeated(app) && !app.isHost;
   $('again-button').hidden = !voter;
   $('again-button').disabled = voter && frame.me.voted;

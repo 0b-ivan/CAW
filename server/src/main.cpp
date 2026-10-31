@@ -10,6 +10,8 @@
 #include "log.h"
 #include "net/Metrics.h"
 #include "net/Server.h"
+#include "packs/PackLibrary.h"
+#include "packs/SyntheticPack.h"
 #include "session/SessionRegistry.h"
 #include "store/Health.h"
 #include "store/PersistQueue.h"
@@ -19,6 +21,15 @@ namespace {
 // Set by SIGTERM/SIGINT; the server's clock checks it on the event-loop thread.
 std::atomic<bool> stopRequested{false};
 void onStopSignal(int) { stopRequested = true; }
+
+// Without playable packs a room could not even be created: fall back to numbered cards.
+void loadPacks(const std::string& directory, caw::PackLibrary& packs) {
+  const std::size_t loaded = packs.loadDirectory(directory);
+  caw::log::info("Loaded " + std::to_string(loaded) + " card packs from " + directory);
+  if (packs.deck(packs.defaultSelection("de")) && packs.deck(packs.defaultSelection("en"))) return;
+  caw::log::warn("No playable packs, using numbered test cards");
+  packs.add(caw::syntheticPack());
+}
 
 void restoreRooms(caw::SnapshotStore& store, caw::SessionRegistry& sessions) {
   unsigned restored = 0, skipped = 0;
@@ -38,7 +49,9 @@ int main() {
     const caw::Config config = caw::readConfig();
     caw::log::setLevel(config.logLevel);
     caw::Metrics metrics;
-    caw::SessionRegistry sessions(config.sessionTtlHours);
+    caw::PackLibrary packs;
+    loadPacks(config.packsDir, packs);
+    caw::SessionRegistry sessions(config.sessionTtlHours, packs);
     caw::RedisStore redis(config.redisUrl, std::chrono::hours(config.sessionTtlHours));
     restoreRooms(redis, sessions);
     caw::PersistQueue persist(redis);
@@ -55,7 +68,7 @@ int main() {
           ->writeHeader("Cache-Control", "no-store")
           ->end(ready ? "ok\n" : "unavailable\n");
     });
-    caw::Server server(sessions, persist, stopRequested);
+    caw::Server server(sessions, packs, persist, stopRequested);
     server.registerRoutes(app);
     app.get("/metrics", [&](auto* response, auto*) {
       metrics.sessions = sessions.activeCount();

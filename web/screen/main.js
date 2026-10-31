@@ -4,6 +4,7 @@ import { Connection, lookupSession, secrets } from '../play/connection.js';
 import { applyStaticTexts, setTextLanguage, t } from '../play/text.js';
 import { fillSentence } from '../play/sentence.js';
 import { qrSvg } from '../play/qr.js';
+import { creditsText } from '../play/views.js';
 
 const $ = (id) => document.getElementById(id);
 const CODE = /^[A-HJKMNP-Z2-9]{6}$/;
@@ -66,6 +67,9 @@ function render() {
   for (const name of VIEWS) $(`screen-${name}`).hidden = name !== view;
   $('screen-status').textContent = '';
   renderMeta(view);
+  // Lobby and end name the packs' rights holders and licenses (CC BY-NC-SA asks for it).
+  const credited = view === 'lobby' || view === 'finished';
+  $('screen-credits').textContent = credited ? creditsText(screen.frame.packs) : '';
   const draw = { lobby: renderLobby, answers: renderAnswers, judging: renderJudging, reveal: renderReveal,
     hold: renderHold, finished: renderFinished }[view];
   if (draw) draw(screen.frame);

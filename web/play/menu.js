@@ -20,10 +20,13 @@ export function renderMenu(app, actions) {
   menu.hidden = !app.menu.open;
   $('menu-button').setAttribute('aria-expanded', String(app.menu.open));
   if (!app.menu.open) return;
-  const hostPage = app.menu.page === 'rules' || app.menu.page === 'players';
+  const hostPage = ['rules', 'players', 'packs'].includes(app.menu.page);
   const page = hostPage && !(app.isHost && app.frame) ? 'main' : app.menu.page;
-  const pages = { main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage };
-  const titles = { main: t('sessionCode', app.code), rules: t('rules'), players: t('playersMenu'), screen: t('bigScreen') };
+  const pages = { main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage, packs: packsPage };
+  const titles = {
+    main: t('sessionCode', app.code), rules: t('rules'), players: t('playersMenu'),
+    screen: t('bigScreen'), packs: t('packsMenu'),
+  };
   $('menu-title').textContent = titles[page];
   $('menu-body').replaceChildren(...pages[page](app, actions));
 }
@@ -58,6 +61,7 @@ function hostGroup(app, actions) {
   if (frame.clock === 'answers' || frame.clock === 'juror') rows.push(row(t('addTime'), '', () => actions.host('addTime')));
   if (phase === 'playing' || phase === 'judging') rows.push(confirmRow(app, actions, 'abort', t('abortRound'), () => actions.host('abort')));
   rows.push(row(t('rules'), '›', () => actions.openMenuPage('rules')));
+  rows.push(row(t('packsMenu'), String(frame.packs.length), () => actions.openMenuPage('packs')));
   rows.push(row(t('playersMenu'), String(frame.players.length), () => actions.openMenuPage('players')));
   if (isRunning(frame)) rows.push(confirmRow(app, actions, 'end', t('endGame'), () => actions.host('end')));
   if (phase === 'finished') rows.push(row(t('rematchRow'), '', () => actions.host('rematch')));
@@ -143,6 +147,30 @@ function screenPage(app, actions) {
   open.textContent = t('openScreen');
   buttons.append(copy, open);
   return [backRow(actions), note(t('bigScreenText')), qr, link, buttons];
+}
+
+// --- Packs: a toggle per pack, in the lobby only ---
+
+function packsPage(app, actions) {
+  const rows = [backRow(actions)];
+  if (!app.catalog) {
+    actions.loadCatalog();
+    return [...rows, note(t('packsLoading'))];
+  }
+  const chosen = app.frame.packs.map((pack) => pack.id);
+  const locked = app.frame.phase !== 'lobby';
+  rows.push(note(t(locked ? 'packsLobbyOnly' : 'packsHint')));
+  for (const pack of app.catalog) {
+    const on = chosen.includes(pack.id);
+    const next = on ? chosen.filter((id) => id !== pack.id) : [...chosen, pack.id];
+    const line = row(pack.title, t('packCards', pack.prompts, pack.answers), () => actions.choosePacks(next));
+    line.setAttribute('aria-pressed', String(on));
+    // A choice without answer cards could not deal a hand; the server would refuse it too.
+    const answers = app.catalog.filter((p) => next.includes(p.id)).reduce((sum, p) => sum + p.answers, 0);
+    line.disabled = locked || next.length === 0 || next.length > 8 || answers === 0;
+    rows.push(line);
+  }
+  return rows;
 }
 
 // --- Players ---

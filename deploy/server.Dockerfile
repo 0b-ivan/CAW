@@ -33,6 +33,8 @@ COPY --from=build /app/build/_deps/uwebsockets-src/LICENSE /usr/share/doc/caw/uW
 COPY --from=build /app/build/_deps/uwebsockets-src/uSockets/LICENSE /usr/share/doc/caw/uSockets.LICENSE
 COPY --from=build /app/build/_deps/redis_plus_plus-src/LICENSE /usr/share/doc/caw/redis-plus-plus.LICENSE
 COPY --from=build /app/server/src/game/LICENSE.upstream /usr/share/doc/caw/game.LICENSE
+# Card packs with their manifest, attribution and checksums, loaded at start (PACKS_DIR).
+COPY assets/cardpacks /app/packs
 USER 10001:10001
 EXPOSE 8080
 CMD ["caw-server"]

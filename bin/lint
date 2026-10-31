@@ -8,5 +8,5 @@ clang-tidy -p "${1:-build}" server/src/main.cpp server/src/config.cpp server/src
   server/src/net/Messages.cpp server/src/net/Metrics.cpp server/src/net/Protocol.cpp \
   server/src/net/Server.cpp server/src/store/Health.cpp server/src/session/Codes.cpp \
   server/src/session/Session.cpp server/src/session/SessionRegistry.cpp \
-  server/src/session/SyntheticDeck.cpp server/src/store/PersistQueue.cpp \
-  server/src/store/RedisStore.cpp
+  server/src/store/PersistQueue.cpp server/src/store/RedisStore.cpp \
+  server/src/packs/CsvPack.cpp server/src/packs/PackLibrary.cpp server/src/packs/SyntheticPack.cpp

@@ -9,6 +9,7 @@
 
 #include "game/CardPartyCore.h"
 #include "game/CardPartyTable.h"
+#include "packs/CardPack.h"
 
 namespace caw {
 
@@ -35,6 +36,7 @@ struct Command {
     AddTime,
     ContinueWithout,
     Settings,  // host only: settings
+    Packs,     // host only, lobby only: packs
   };
   Type type = Type::Join;
   std::string name;
@@ -43,6 +45,7 @@ struct Command {
   std::vector<std::uint8_t> slots;
   std::uint8_t index = 0;
   cardparty::Settings settings;
+  std::vector<std::string> packs;
 };
 
 // Everything one connection may see. The hand is filled only for that connection's own seat.
@@ -57,7 +60,8 @@ struct StateFrame {
   cardparty::HandView hand;
   std::uint32_t revision = 0;
   cardparty::Settings settings;
-  std::uint8_t requestedRounds = 0;  // the host's choice; `rounds` is the fair count once started
+  std::uint8_t requestedRounds = 0;    // the host's choice; `rounds` is the fair count once started
+  std::vector<const CardPack*> packs;  // the packs in play, for credits on every screen
 };
 
 class Protocol final {

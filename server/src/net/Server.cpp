@@ -64,8 +64,9 @@ void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions,
 }
 }  // namespace
 
-Server::Server(SessionRegistry& sessions, PersistQueue& persist, const std::atomic<bool>& stop)
-    : sessions_(sessions), persist_(persist), stop_(stop) {}
+Server::Server(SessionRegistry& sessions, const PackLibrary& packs, PersistQueue& persist,
+               const std::atomic<bool>& stop)
+    : sessions_(sessions), packs_(packs), persist_(persist), stop_(stop) {}
 
 void Server::registerRoutes(uWS::App& app) {
   registerSessionRoutes(app);
@@ -74,6 +75,9 @@ void Server::registerRoutes(uWS::App& app) {
 }
 
 void Server::registerSessionRoutes(uWS::App& app) {
+  app.get("/api/packs", [this](auto* response, auto*) {
+    jsonReply(response, "200 OK", Messages::packCatalog(packs_.packs()));
+  });
   auto createHandler = [this](auto* response, auto*) { createRoom(response, sessions_, persist_); };
   app.post("/api/sessions", createHandler);
   app.get("/api/sessions/:code", [this](auto* response, auto* request) {

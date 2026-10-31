@@ -164,6 +164,7 @@ Host-Token, bevor es die übernommenen Host-Methoden aufruft.
 
 - `POST /api/sessions` → `{ code, hostToken }`
 - `GET  /api/sessions/{code}` → existiert? Sprache, Phase (für die Startseite)
+- `GET  /api/packs` → alle geladenen Packs mit Titel, Sprache, Lizenz, Rechteinhaber, Quelle, Kartenzahl
 - `GET  /healthz` → 200, wenn Redis und Postgres erreichbar sind
 - `GET  /metrics` → wenige Zähler im Prometheus-Textformat (Sessions,
   Sockets, Aktionen, Latenz-Buckets) – von Hand geschrieben, keine Bibliothek
@@ -189,6 +190,7 @@ Befehle (Client → Server), alle mit `type`:
 | `start`, `next`, `close`, `abort`, `end`, `rematch`, `hostPause`, `hostUnpause`, `addTime`, `continueWithout` | – | Host |
 | `kick` | `index` (Sitz) | Host |
 | `settings` | `settings`: `rounds`, `answerSecs`, `extensionSecs`, `jurorSecs`, `autoSecs`, `rando` | Host; Runden nur in der Lobby, Werte wie auf dem X4 |
+| `packs` | `packs`: 1–8 Pack-IDs | Host, nur in der Lobby; jeder `state` nennt die aktiven Packs mit Lizenz |
 
 Antworten (Server → Client): `welcome` (`token`, `seat`; das Ticket rotiert bei
 jedem `resume`), `state` (öffentlicher Stand plus `me` mit eigener Hand),

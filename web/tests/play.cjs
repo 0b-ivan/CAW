@@ -216,6 +216,24 @@ async function run(browser) {
   await checkFit(host, 'menu-rules', '#menu-close');
   await host.locator('#menu-close').click();
 
+  // Packs: switching one off and on again changes the deck; the credits name the owners.
+  await host.locator('#lobby-credits', { hasText: /KARTEN: .+ · .+/ }).waitFor();
+  await openMenuPage(host, 'KARTEN-PACKS');
+  const firstPack = host.locator('#menu-body .menu-row[aria-pressed="true"]').first();
+  await firstPack.waitFor();
+  const chosen = await host.locator('#menu-body .menu-row[aria-pressed="true"]').count();
+  if (chosen > 1) {
+    const title = (await firstPack.locator('span').first().textContent()).trim();
+    const pressed = (count) => host.waitForFunction((n) =>
+      document.querySelectorAll('#menu-body .menu-row[aria-pressed="true"]').length === n, count);
+    await firstPack.click();
+    await pressed(chosen - 1);
+    await host.locator('#menu-body .menu-row', { hasText: title }).click();
+    await pressed(chosen);
+  }
+  await checkFit(host, 'menu-packs', '#menu-close');
+  await host.locator('#menu-close').click();
+
   await host.locator('#start-button').click();
   for (let round = 1; round <= 3; round++) await playRound(host, players, round, screen);
 

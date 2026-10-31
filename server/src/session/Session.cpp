@@ -28,8 +28,14 @@ bool isPlayerMove(Command::Type type) {
 }
 }  // namespace
 
-Session::Session(std::string hostToken, const Deck& deck, std::uint32_t seed, std::uint32_t now)
-    : hostToken_(std::move(hostToken)), deck_(deck) {
+Session::Session(std::string hostToken, PackLibrary& library, std::vector<std::string> packs,
+                 std::uint32_t seed, std::uint32_t now)
+    : hostToken_(std::move(hostToken)),
+      library_(library),
+      packIds_(PackLibrary::normalized(packs)) {
+  const Deck* deck = library_.deck(packIds_);
+  if (deck == nullptr) throw std::invalid_argument("Packs do not form a deck");
+  deck_ = *deck;
   if (!game_.configure(deck_, kDefaultRules, seed))
     throw std::invalid_argument("Deck cannot run a match");
   for (ConnectionId& connection : seatConnection_) connection = kNoConnection;
@@ -152,6 +158,8 @@ bool Session::hostCommand(const Command& command, std::uint32_t now) {
       return table_.continueWithout(now);
     case Command::Type::Settings:
       return applySettings(command.settings, now);
+    case Command::Type::Packs:
+      return selectPacks(command.packs);
     default:
       return false;
   }
@@ -162,6 +170,17 @@ bool Session::hostCommand(const Command& command, std::uint32_t now) {
 bool Session::applySettings(const Settings& settings, std::uint32_t now) {
   if (settings.rounds != game_.requestedRounds() && !game_.setRounds(settings.rounds)) return false;
   table_.apply(settings, now);
+  return true;
+}
+
+// Packs change only in the lobby, so no hand or played card points at a vanished card.
+bool Session::selectPacks(const std::vector<std::string>& ids) {
+  if (game_.phase() != Phase::Lobby) return false;
+  const Deck* deck = library_.deck(ids);
+  if (deck == nullptr) return false;
+  deck_ = *deck;
+  if (!game_.reloadDeck()) return false;
+  packIds_ = PackLibrary::normalized(ids);
   return true;
 }
 
@@ -261,6 +280,7 @@ StateFrame Session::publicFrame(std::uint32_t now) const {
   frame.now = now;
   frame.settings = table_.settings();
   frame.requestedRounds = game_.requestedRounds();
+  for (const std::string& id : packIds_) frame.packs.push_back(library_.find(id));
   return frame;
 }
 

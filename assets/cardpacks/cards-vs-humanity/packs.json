@@ -1,0 +1,59 @@
+{
+  "_comment": "CAW pack manifest for the unchanged source files in this folder; see ATTRIBUTION.md.",
+  "packs": [
+    {
+      "id": "cvh-base-1",
+      "file": "base-1.csv",
+      "title": "Basisspiel 1 – Minions mit Genitalherpes",
+      "language": "de",
+      "license": "CC BY-NC-SA 2.0",
+      "rightsHolder": "Cards vs Humanity",
+      "sourceUrl": "https://www.cards-vs-humanity.de/csv/Basisspiel%2B1%2B-%2BMinions%2Bmit%2BGenitalherpes/1/"
+    },
+    {
+      "id": "cvh-base-2",
+      "file": "base-2.csv",
+      "title": "Basisspiel 2 – Heidi Klums Hungersnot",
+      "language": "de",
+      "license": "CC BY-NC-SA 2.0",
+      "rightsHolder": "Cards vs Humanity",
+      "sourceUrl": "https://www.cards-vs-humanity.de/csv/Basisspiel%2B2%2B-%2BHeidi%2BKlums%2BHungersnot/2/"
+    },
+    {
+      "id": "cvh-expansion-1",
+      "file": "expansion-1.csv",
+      "title": "Erweiterung 1 – Wir werden bösartig",
+      "language": "de",
+      "license": "CC BY-NC-SA 2.0",
+      "rightsHolder": "Cards vs Humanity",
+      "sourceUrl": "https://www.cards-vs-humanity.de/csv/Erweiterung%2B1%2B-%2BWir%2Bwerden%2Bb%C3%B6sartig/3/"
+    },
+    {
+      "id": "cvh-expansion-2",
+      "file": "expansion-2.csv",
+      "title": "Erweiterung 2 – Black Cards Matter",
+      "language": "de",
+      "license": "CC BY-NC-SA 2.0",
+      "rightsHolder": "Cards vs Humanity",
+      "sourceUrl": "https://www.cards-vs-humanity.de/csv/Erweiterung%2B2%2B-%2BBlack%2BCards%2BMatter/4/"
+    },
+    {
+      "id": "cvh-fan-1",
+      "file": "fan-1.csv",
+      "title": "Fan-Erweiterung 1 – That's what they said",
+      "language": "de",
+      "license": "CC BY-NC-SA 2.0",
+      "rightsHolder": "Cards vs Humanity",
+      "sourceUrl": "https://www.cards-vs-humanity.de/csv/Fan-Erweiterung%2B1%2B-%2BThat%27s%2Bwhat%2Bthey%2Bsaid/5/"
+    },
+    {
+      "id": "cvh-fan-2",
+      "file": "fan-2.csv",
+      "title": "Fan-Erweiterung 2 – Deine Mudda!",
+      "language": "de",
+      "license": "CC BY-NC-SA 2.0",
+      "rightsHolder": "Cards vs Humanity",
+      "sourceUrl": "https://www.cards-vs-humanity.de/csv/Fan-Erweiterung%2B2%2B-%2BDeine%2BMudda%21/6/"
+    }
+  ]
+}

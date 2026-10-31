@@ -1,12 +1,15 @@
-// Internal state serialization only; public game frames will be added in M2.
+// JSON for snapshots, REST answers and pack manifests; live game frames are in Protocol.cpp.
 #pragma once
+#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "game/CardPartySessions.h"
 #include "game/CardPartyTable.h"
+#include "packs/CardPack.h"
 
 namespace caw {
 
@@ -14,7 +17,8 @@ namespace caw {
 struct RoomRecord {
   std::string language;
   std::string hostToken;
-  std::string state;  // Session::saveState()
+  std::vector<std::string> packs;  // the deck is rebuilt from these before the state loads
+  std::string state;               // Session::saveState()
 };
 
 class Messages {
@@ -24,6 +28,11 @@ class Messages {
   static std::string sessionCreated(std::string_view code, std::string_view hostToken);
   static std::string publicRoom(std::string_view code, std::string_view language);
   static std::string errorResponse(std::string_view errorCode);
+  // GET /api/packs: what the host can choose from, with counts and credits.
+  static std::string packCatalog(const std::vector<std::unique_ptr<CardPack>>& packs);
+  // {"packs":[{id,file,title,language,license,rightsHolder,sourceUrl}]}; nothing if any
+  // entry lacks a field. License and rights holder are required, never guessed.
+  static std::optional<std::vector<PackEntry>> readPackManifest(std::string_view text);
   // Contains the host token and private hands: only for Redis.
   static std::string saveRoom(const RoomRecord& room);
   // Nothing if the text is not a complete, current room record.

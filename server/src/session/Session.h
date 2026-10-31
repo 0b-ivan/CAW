@@ -11,6 +11,7 @@
 #include "game/CardPartySessions.h"
 #include "game/CardPartyTable.h"
 #include "net/Protocol.h"
+#include "packs/PackLibrary.h"
 
 namespace caw {
 
@@ -25,9 +26,10 @@ struct Outgoing {
 
 class Session final {
  public:
-  // The deck must outlive the session. Time is milliseconds from a monotonic clock.
-  Session(std::string hostToken, const cardparty::Deck& deck, std::uint32_t seed,
-          std::uint32_t now);
+  // The library must outlive the session; `packs` must give a playable deck.
+  // Time is milliseconds from a monotonic clock.
+  Session(std::string hostToken, PackLibrary& library, std::vector<std::string> packs,
+          std::uint32_t seed, std::uint32_t now);
   Session(const Session&) = delete;
   Session& operator=(const Session&) = delete;
 
@@ -52,6 +54,8 @@ class Session final {
   bool takeChanged();
 
   bool isHostToken(std::string_view token) const;
+  // The chosen packs, sorted: together with saveState() they restore the match.
+  const std::vector<std::string>& packs() const { return packIds_; }
   std::size_t seatedCount() const { return game_.seatedCount(); }
 
  private:
@@ -62,6 +66,7 @@ class Session final {
   bool hostCommand(const Command& command, std::uint32_t now);
   bool kick(std::uint8_t seat);
   bool applySettings(const cardparty::Settings& settings, std::uint32_t now);
+  bool selectPacks(const std::vector<std::string>& ids);
   std::string joinError(ConnectionId connection) const;
 
   // Sends the current state to every seat and every host connection.
@@ -72,7 +77,11 @@ class Session final {
   void send(ConnectionId connection, std::string text, bool close = false);
 
   std::string hostToken_;
-  const cardparty::Deck& deck_;
+  PackLibrary& library_;
+  std::vector<std::string> packIds_;
+  // A copy of the library's deck for the chosen packs; the game points at this one,
+  // so a pack switch only has to replace it.
+  cardparty::Deck deck_;
   cardparty::Game game_;
   cardparty::Sessions seats_{game_};
   cardparty::Table table_{game_};
