@@ -1,0 +1,16 @@
+{$CADDY_ADDRESS::80} {
+  encode gzip
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy same-origin
+    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'"
+  }
+  @backend path /api /api/* /ws /ws/* /healthz /metrics
+  handle @backend {
+    reverse_proxy server:8080
+  }
+  handle {
+    root * /srv/web
+    file_server
+  }
+}
