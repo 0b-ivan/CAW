@@ -114,8 +114,12 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## M8 – Betrieb und Release
 
-- [ ] Caddy mit TLS für eure Domain, Security-Header, HSTS
-- [ ] Tägliches `pg_dump`, Restore einmal geübt
-- [ ] Monitoring: `/metrics` abgreifen, Alarm bei Fehlerquote/Latenz
-- [ ] Impressum/Datenschutz, Lizenzseite für Packs
-- [ ] Tag `v1.0.0`, Release-Notes, Images in GHCR
+- [x] Caddy: Security-Header (CSP, Permissions-Policy, HSTS, kein `Server`), `/metrics` nur aus privaten Netzen, `no-cache` mit ETag für die Webdateien; TLS automatisch, sobald `CADDY_ADDRESS` eine Domain ist
+- [ ] TLS mit der echten Domain geprüft (braucht Domain und Zielserver)
+- [x] Täglicher `pg_dump` (Dienst `backup`, 14 Tage), `bin/restore`; Sichern und Zurückspielen in eine frische Datenbank läuft in jeder CI
+- [x] Monitoring: `deploy/monitoring/` mit Prometheus-Konfiguration und Alarmregeln (Ausfall, Bereitschaft, Latenz, blockierte Schleife, Speicher, Rate-Limit), Profil `monitoring`; `promtool` prüft sie in der CI
+- [x] Seiten Lizenzen (mit den geladenen Packs), Datenschutz, Impressum; Fußzeile verlinkt sie
+- [ ] Impressum mit echten Betreiberangaben (`web/operator.json`, nicht im Repo)
+- [ ] Lizenz für den CAW-Anwendungscode festlegen
+- [x] Release-Workflow: Tag `v*` → Server-Image nach GHCR, GitHub-Release mit `docs/releases/<tag>.md`
+- [ ] Tag `v1.0.0` setzen (nach den drei offenen Punkten oben)

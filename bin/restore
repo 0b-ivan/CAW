@@ -1,0 +1,15 @@
+#!/bin/sh
+# Restores a backup made by deploy/backup.sh into the running stack's database.
+#   bin/restore caw-2026-10-31T120000Z.dump            (into "caw", replacing its tables)
+#   bin/restore caw-2026-10-31T120000Z.dump caw_check  (into a fresh database to look first)
+set -eu
+compose() { docker compose -f "${CAW_COMPOSE_FILE:-deploy/compose.yml}" "$@"; }
+file=${1:?name of a dump in the backups volume}
+database=${2:-caw}
+if [ "$database" != caw ]; then
+  compose exec -T postgres dropdb --username caw --if-exists "$database"
+  compose exec -T postgres createdb --username caw "$database"
+fi
+compose exec -T backup pg_restore --host postgres --username caw --dbname "$database" \
+  --clean --if-exists --no-owner "/backups/$file"
+echo "restored $file into $database"

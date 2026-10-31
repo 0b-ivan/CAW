@@ -26,7 +26,8 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   der Platz nicht, scrollt nur eine Liste in sich (Hand, Antworten, Spieler,
   Menü), nie die Seite, und die Hauptaktion bleibt sichtbar. Lieber einen
   Schritt weglassen oder zusammenlegen als scrollen lassen. Playwright prüft
-  das für jede Ansicht.
+  das für jede Ansicht. Ausnahme: die Textseiten Lizenzen, Datenschutz und
+  Impressum, die aus der Fußzeile der Startseite verlinkt sind.
 - **Ruhe:** Neu gezeichnet wird nur, wenn sich wirklich etwas ändert.
   Keine Endlosschleifen oder Lade-Animationen. Ausnahme: einmaliger
   CAW-Bootscreen beim ersten Seitenaufruf der Browser-Sitzung; kurze

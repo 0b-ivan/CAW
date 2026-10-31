@@ -84,6 +84,25 @@ Neustart holen sich die Handys ihren Sitz mit ihrem Ticket zurück
 Host-Token an. Bei SIGTERM (`docker stop`) schließt der Server alle Sockets und
 schreibt ausstehende Stände, bevor er endet.
 
+## Betrieb
+
+- **Domain und TLS:** In `deploy/.env` `CADDY_ADDRESS=caw.example.org`,
+  `PUBLIC_URL=https://caw.example.org`, `HTTP_PORT=80`, `HTTPS_PORT=443`.
+  Caddy holt das Zertifikat selbst.
+- **Impressum:** `cp web/operator.example.json web/operator.json` und Name,
+  Anschrift, E-Mail eintragen (die Datei ist nicht im Repo). Die Seiten
+  Lizenzen und Datenschutz kommen ohne Zutun.
+- **Backups:** Der Dienst `backup` sichert täglich nach `backups` (14 Tage).
+  Zurückspielen: `bin/restore caw-<zeit>.dump` oder zur Kontrolle erst
+  `bin/restore caw-<zeit>.dump caw_check`. Dateien auflisten:
+  `docker compose -f deploy/compose.yml exec backup ls /backups`.
+- **Monitoring:** `docker compose -f deploy/compose.yml --profile monitoring up -d`
+  startet Prometheus mit den Alarmregeln aus `deploy/monitoring/` auf
+  `127.0.0.1:9090`. `/metrics` ist von außen gesperrt.
+- **Release-Image:** Ein Tag `v*` baut `ghcr.io/0b-ivan/caw-server`. Mit
+  `CAW_VERSION=v1.0.0 docker compose -f deploy/compose.yml pull server`
+  statt `--build`.
+
 ## Bauen und prüfen
 
 Unter Debian 13: `build-essential`, `cmake`, `ninja-build`, `git`,

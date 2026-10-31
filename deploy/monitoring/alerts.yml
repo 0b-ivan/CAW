@@ -1,0 +1,36 @@
+# Alerts on the budgets of docs/KONZEPT.md section 5a and on the dependencies.
+groups:
+  - name: caw
+    rules:
+      - alert: CawDown
+        expr: up{job="caw"} == 0
+        for: 2m
+        annotations:
+          summary: The CAW server does not answer /metrics.
+      - alert: CawNotReady
+        expr: increase(caw_health_failures_total[5m]) > 2
+        for: 5m
+        annotations:
+          summary: Redis or Postgres fail the readiness probe.
+      - alert: CawSlowActions
+        # More than 1 % of moves took over 10 ms on the server.
+        expr: >
+          (rate(caw_action_seconds_count[5m]) - rate(caw_action_seconds_bucket{le="0.01"}[5m]))
+          / rate(caw_action_seconds_count[5m]) > 0.01
+        for: 10m
+        annotations:
+          summary: Moves are slower than the 10 ms budget.
+      - alert: CawLoopBlocked
+        expr: caw_tick_seconds_max > 0.05
+        annotations:
+          summary: The event loop was blocked for more than 50 ms at least once since start.
+      - alert: CawMemoryHigh
+        expr: caw_resident_bytes > 1.5e9
+        for: 10m
+        annotations:
+          summary: The server uses more than 1.5 GB.
+      - alert: CawRateLimited
+        expr: rate(caw_rate_limited_total[5m]) > 1
+        for: 10m
+        annotations:
+          summary: Many requests hit the rate limit; someone may be guessing codes.

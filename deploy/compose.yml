@@ -22,6 +22,8 @@ services:
       retries: 5
 
   server:
+    # Built here with --build, or pulled from a release (CAW_VERSION=v1.0.0).
+    image: ghcr.io/0b-ivan/caw-server:${CAW_VERSION:-latest}
     build:
       context: ..
       dockerfile: deploy/server.Dockerfile
@@ -73,7 +75,33 @@ services:
       timeout: 3s
       retries: 10
 
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    entrypoint: [/bin/sh, /backup.sh]
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - ./backup.sh:/backup.sh:ro
+      - backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Optional: --profile monitoring. Reachable only inside the host on port 9090.
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: [monitoring]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoring:/etc/prometheus:ro
+      - prometheus:/prometheus
+
 volumes:
+  prometheus:
+  backups:
   caddy_data:
   caddy_config:
   redisdata:

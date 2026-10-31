@@ -1,0 +1,30 @@
+name: Release
+# A tag v* builds the server image, pushes it to GHCR and creates the GitHub release
+# with the notes in docs/releases/<tag>.md. The web files ship with the repository.
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+  packages: write
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notes for this tag exist
+        run: test -f "docs/releases/${GITHUB_REF_NAME}.md"
+      - name: Build and push the server image
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/caw-server"
+          echo "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker build --target runtime -t "$image:$GITHUB_REF_NAME" -t "$image:latest" \
+            -f deploy/server.Dockerfile .
+          docker push "$image:$GITHUB_REF_NAME"
+          docker push "$image:latest"
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --title "CAW $GITHUB_REF_NAME" --notes-file "docs/releases/${GITHUB_REF_NAME}.md"

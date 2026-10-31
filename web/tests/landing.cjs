@@ -99,6 +99,24 @@ async function checkLanding(browser, width, height) {
   }
 }
 
+// The footer's info pages render from their text tables and the server's pack list.
+async function checkInfoPages(browser) {
+  const page = await browser.newPage({ locale: 'de-DE' });
+  try {
+    await page.goto(`${target}/lizenzen.html`);
+    await page.locator('.info-list li').first().waitFor();
+    assert.match(await page.locator('.info-list').textContent(), /CC BY-NC-SA 2\.0/);
+    await page.goto(`${target}/datenschutz.html`);
+    await page.locator('#content p').nth(4).waitFor();
+    assert.match(await page.locator('#content').textContent(), /keine Cookies/);
+    await page.goto(`${target}/impressum.html`);
+    await page.locator('#content p').first().waitFor();
+    console.log('PASS info pages: licenses with packs, privacy, imprint');
+  } finally {
+    await page.close();
+  }
+}
+
 async function checkReducedMotion(browser) {
   const page = await browser.newPage({ locale: 'en-US' });
   try {
@@ -125,6 +143,7 @@ async function checkReducedMotion(browser) {
       await checkLanding(browser, width, height);
     }
     await checkReducedMotion(browser);
+    await checkInfoPages(browser);
   } finally {
     await browser.close();
   }
