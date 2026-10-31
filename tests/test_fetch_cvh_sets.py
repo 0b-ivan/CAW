@@ -29,7 +29,9 @@ class FakeResponse(io.BytesIO):
 
 class FetchSetsTests(unittest.TestCase):
     def setUp(self):
-        self.pack = downloader.read_catalog()[0]
+        self.pack = dict(downloader.read_catalog()[0])
+        self.pack['black_count'] = 1
+        self.pack['white_count'] = 1
 
     def test_catalog_has_six_metadata_entries_without_cards(self):
         packs = downloader.read_catalog()
@@ -57,6 +59,15 @@ class FetchSetsTests(unittest.TestCase):
             self.assertEqual(destination.read_bytes(), data)
             self.assertIn("SHA-256", summary)
             self.assertEqual(destination.suffix, ".csv")
+
+    def test_csv_count_validation_rejects_changed_source(self):
+        contents = b"typ,text\n" + b"b,Test question ___\n"
+        with self.assertRaisesRegex(ValueError, "Card counts changed"):
+            downloader.validate_csv(contents, 1, 1)
+
+    def test_csv_header_validation_rejects_other_format(self):
+        with self.assertRaisesRegex(ValueError, "Unexpected CSV header"):
+            downloader.validate_csv(b"color,phrase\nb,Test question ___\n", 1, 0)
 
     def test_reject_html_without_writing_a_file(self):
         def opener(request, timeout):
