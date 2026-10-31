@@ -1,0 +1,31 @@
+# Production override: Cloudflare Tunnel is the only public ingress.
+# Use together with compose.yml; never expose Caddy's host ports.
+services:
+  caddy:
+    ports: !reset []
+    environment:
+      CADDY_ADDRESS: ":80"
+    volumes:
+      - ./Caddyfile.hetzner:/etc/caddy/Caddyfile:ro
+  server:
+    environment:
+      PUBLIC_URL: https://caw.obivan.org
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.3
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflared-token
+    depends_on:
+      caddy:
+        condition: service_healthy
+    secrets:
+      - source: cloudflared_token
+        target: cloudflared-token
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+secrets:
+  cloudflared_token:
+    file: ./secrets/cloudflared-token
