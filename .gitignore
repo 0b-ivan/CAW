@@ -15,3 +15,4 @@ __pycache__/
 
 # Operator details for the imprint; copy web/operator.example.json and fill it in.
 web/operator.json
+

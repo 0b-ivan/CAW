@@ -32,6 +32,38 @@ noch nicht geprüft. Nur Caddy veröffentlicht Ports. Redis und Postgres sind
 intern erreichbar. Das Datenbankpasswort muss in einer URL verwendbar sein
 (z.B. Hex-Zeichen); `.env` wird nicht eingecheckt.
 
+## Hetzner Cloud / Cloudflare Tunnel (Produktion)
+
+Die Produktion wird über den **bereits bestehenden Cloudflare Tunnel des
+Hetzner-Servers** veröffentlicht. Es wird kein weiterer `cloudflared`-Container
+und keine neue VM eingerichtet. `deploy/compose.hetzner.yml` bindet Caddy
+nur an `127.0.0.1:18081` (konfigurierbar über `CAW_ORIGIN_PORT`); die
+bestehende Tunnel-Route erhält zusätzlich `caw.obivan.org`.
+
+**Vollständige Anleitung:** [Hetzner + Cloudflare Tunnel](docs/operations/HETZNER-CLOUDFLARE.md).
+Auf dem bereits laufenden Hetzner-Host nach Ergänzen der neuen Route
+im bestehenden Tunnel und der privaten Dateien:
+
+```sh
+cp deploy/hetzner/env.example deploy/.env
+# Passwort (openssl rand -hex 32) einsetzen, später Betreiberangaben ergänzen
+python3 bin/hetzner-preflight.py --prepare
+docker compose -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml up --build -d --wait
+python3 bin/hetzner-preflight.py --public
+node bin/hetzner-wss-check.mjs
+```
+
+**Nicht** `docker compose -f deploy/compose.yml up` als öffentliche
+Hetzner-Produktion ausführen: Das Basis-Compose stellt Entwicklungsports
+bereit. Die bestehende `cloudflared`-Route zeigt auf
+`http://127.0.0.1:18081`. Extern ist `/metrics` immer 404; intern
+bleibt `server:8080/metrics` für Prometheus erreichbar. Kein neuer
+öffentlicher Origin-Port und kein A-/AAAA-Eintrag auf die Hetzner-IP.
+
+Bis zu einem öffentlichen Release fehlen die Betreiberangaben, echte
+Cloudflare-HTTPS-/WSS-Abnahme und **verschlüsselte externe Backups**
+für Postgres und Redis. Die lokalen 14-Tage-Dumps bleiben bestehen.
+
 ## Spielen
 
 1. Am Laptop oder Handy http://localhost:8080 öffnen, `[ NEUE SESSION ]`.

@@ -116,7 +116,17 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 ## M8 – Betrieb und Release
 
 - [x] Caddy: Security-Header (CSP, Permissions-Policy, HSTS, kein `Server`), `/metrics` nur aus privaten Netzen, `no-cache` mit ETag für die Webdateien; TLS automatisch, sobald `CADDY_ADDRESS` eine Domain ist
-- [ ] TLS auf `caw.obivan.org` geprüft (braucht den Zielserver und den DNS-Eintrag)
+- [ ] Öffentlichen Cloudflare-Edge-TLS- und WSS-Test für `caw.obivan.org`
+  nach Hetzner-Provisionierung bestehen (kein Origin-TLS durch Caddy)
+- [x] Hetzner-Konzept auf bestehenden Server/Tunnel angepasst, Compose-
+  Override mit Loopback-only-Caddy-Port und extern gesperrtem `/metrics`
+- [x] Preflight- und synthetische Tunnel-Konfigurationstests in CI ergänzt
+- [ ] Existierenden Hetzner-Host prüfen: Docker, Compose, freier Port
+  `127.0.0.1:18081`, bestehender `cloudflared`-Dienst und CAW-Start
+- [ ] Im bestehenden Cloudflare-Tunnel nur den Hostnamen
+  `caw.obivan.org` → `http://127.0.0.1:18081` ergänzen und prüfen
+- [ ] Verschlüsselte Offsite-Backups für Postgres und Redis inklusive
+  Restore-Test konfigurieren; lokale 14-Tage-Dumps allein genügen nicht
 - [x] Täglicher `pg_dump` (Dienst `backup`, 14 Tage), `bin/restore`; Sichern und Zurückspielen in eine frische Datenbank läuft in jeder CI
 - [x] Monitoring: `deploy/monitoring/` mit Prometheus-Konfiguration und Alarmregeln (Ausfall, Bereitschaft, Latenz, blockierte Schleife, Speicher, Rate-Limit), Profil `monitoring`; `promtool` prüft sie in der CI
 - [x] Seiten Lizenzen (mit den geladenen Packs), Datenschutz, Impressum; Fußzeile verlinkt sie
