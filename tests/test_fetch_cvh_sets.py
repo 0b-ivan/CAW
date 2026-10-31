@@ -48,7 +48,7 @@ class FetchSetsTests(unittest.TestCase):
             downloader.validate_source_url("https://example.org/csv/other/")
 
     def test_download_preserves_synthetic_csv_bytes(self):
-        data = b"type;text\nblack;Test question ___\nwhite;Test response\n"
+        data = b"typ,text\nb,Test question ___\nw,Test response\n"
         def opener(request, timeout):
             self.assertEqual(timeout, 30)
             return FakeResponse(data, request.full_url)
