@@ -271,3 +271,37 @@ Umgebungsvariablen wie bisher: `PUBLIC_URL`, `DATABASE_URL`, `REDIS_URL`,
 - M2: uWebSockets-Server, Messages, Sessions, Persistenz-Thread.
 - M3/M4: statisches Frontend auf Basis der Firmware-Seite.
 - Lasttest: kleines C++- oder Python-Bot-Programm, das echte Partien spielt.
+
+## 13. Hetzner Cloud: produktives Einzelserver-Deployment
+
+CAW v1 läuft zunächst als **ein** Hetzner-Cloud-Server mit Ubuntu 24.04 LTS
+und Docker Engine + Compose-Plugin. Das vorhandene `deploy/compose.yml`
+bleibt die einzige Dienstdefinition: Caddy (80/443), C++-Server, Redis,
+Postgres, Backup und optional Prometheus. Kein Kubernetes, externer Datenbank-
+Dienst oder weiterer Anwendungsserver. `deploy/hetzner/` enthält lediglich
+Betriebsanleitung, eine Cloud-init-Vorlage und eine Produktions-.env-Vorlage.
+`bin/hetzner-preflight.py` prüft die Konfiguration und später das echte TLS.
+
+- Hetzner Cloud Firewall: TCP 80/443 weltweit; TCP 22 **nur** vom
+  administrativen IPv4-/IPv6-CIDR. Keine öffentlichen Ports für 8080, 5432,
+  6379 oder 9090. SSH ausschließlich mit Schlüssel, Passwortlogin aus.
+- DNS `caw.obivan.org` zeigt direkt auf die zugewiesene öffentliche
+  Server-IP (A und optional AAAA, nur wenn IPv6 wirklich funktioniert).
+  Caddy terminiert TLS selbst, der Server bekommt `PUBLIC_URL=https://caw.obivan.org`.
+  Zertifikatsausstellung und WebSocket über WSS werden am Zielort geprüft;
+  CI-HTTP auf localhost reicht nicht als TLS-Abnahme.
+- Docker-Volumes liegen zunächst auf der **Server-Systemplatte** und bleiben
+  persistent über Containerupdates. Keine Host-Pfade mit privaten Karten-
+  tickets oder Passwörtern in Git. Für einen späteren Hetzner-Volume-Umzug
+  ist ein eigenes Backup-/Migrationskonzept erforderlich.
+- Postgres-Dumps liegen weiterhin 14 Tage im Compose-Volume, müssen zusätzlich
+  **verschlüsselt extern** kopiert und anhand eines testweisen Restores geprüft
+  werden. Hetzner-Server-Backups sind ergänzend, nicht alleinige
+  Datenbanksicherung. Redis-AOF/Sessionstand ist bei einem Totalausfall der
+  Systemplatte nur durch separate Sicherung wiederherstellbar.
+- Vor produktivem Start: Operator-Datei außerhalb von Git ergänzen,
+  nichtkommerzielle Kartenlizenz und Rechte prüfen, Secrets lokal erzeugen,
+  DNS/IP und Firewall prüfen. **Kein automatischer v1.0.0-Tag**.
+  Updates nur mit vorangegangenem Dump und kontrolliertem Compose-Rollout;
+  `bin/smoke` ist wegen des absichtlichen Redis/Postgres-Neustarts
+  ausschließlich für eine isolierte Testumgebung.
