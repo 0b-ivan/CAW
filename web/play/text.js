@@ -1,0 +1,179 @@
+// Every visible text and accessibility label of the game page, German and English.
+const texts = {
+  de: {
+    title: 'C/A/W · Session {0}',
+    connecting: 'VERBINDE', connected: 'VERBUNDEN', offline: 'OFFLINE',
+    pause: '[ PAUSE ]', menu: '[ ≡ ]', menuLabel: 'Menü',
+    session: 'SESSION', sessionCode: 'SESSION {0}', lobby: 'LOBBY',
+    round: 'RUNDE {0}/{1}', juror: 'JUROR {0}', rando: 'RANDO', theHost: 'DER HOST',
+
+    connectingTitle: 'VERBINDE MIT DER SESSION',
+    missingTitle: 'SESSION NICHT GEFUNDEN',
+    missingText: 'Der Code ist falsch oder die Session ist abgelaufen.',
+    home: '[ ZUR STARTSEITE ]',
+
+    yourName: 'DEIN NAME', namePlaceholder: 'NAME', join: '[ BEITRETEN ]',
+    joinHint: '3–8 SPIELER', playAlong: '[ MITSPIELEN ]', hostName: 'MITSPIELEN ALS',
+    nameTooLong: 'NAME ZU LANG (MAX. 23 ZEICHEN)',
+    seatExpired: 'DEIN PLATZ IST ABGELAUFEN. NEU BEITRETEN.',
+
+    players: 'SPIELER · {0} VON MIND. 3', waitForHost: 'WARTE AUF HOST',
+    start: '[ START ]', needPlayers: 'NOCH {0} SPIELER', ready: 'BEREIT',
+    copyLink: '[ LINK KOPIEREN ]', share: '[ TEILEN ]', copied: 'LINK KOPIERT',
+    copyFailed: 'KOPIEREN NICHT MÖGLICH', qrLabel: 'QR-Code für den Session-Link',
+    offlineMark: ' · OFFLINE', youMark: ' · DU', hostMark: ' · HOST',
+
+    pick: 'PICK {0}', handLabel: 'Deine Karten',
+    promptLabel: 'Frage, scrollbar',
+    selected: '{0}/{1} GEWÄHLT', swap: '[ ABWERFEN ]', swapped: '[ GETAUSCHT ]',
+    submit: '[ ABGEBEN ]', slot: '<{0}/{1}>', slotLabel: 'Position {0} von {1}: {2}',
+
+    submittedTitle: 'ABGEGEBEN · {0}/{1}', youAreJuror: 'DU BIST JUROR',
+    answersTitle: 'ANTWORTEN · {0}/{1}', waitAnswers: 'WARTE AUF DIE ANTWORTEN',
+    reveal: '[ AUFDECKEN ]',
+
+    jurorDecides: 'JUROR {0} ENTSCHEIDET', chooseWinner: 'WÄHLE DEN BESTEN SATZ',
+    nothingChosen: 'NICHTS GEWÄHLT', chosen: '[{0}] GEWÄHLT', confirm: '[ BESTÄTIGEN ]',
+    playsLabel: 'Anonyme Antworten',
+
+    revealTitle: 'AUFLÖSUNG · RUNDE {0}/{1}', winner: 'GEWINNER: {0}',
+    youWon: 'DU HAST DIE RUNDE GEWONNEN', roundAborted: 'RUNDE ABGEBROCHEN',
+    nextRound: '[ NÄCHSTE RUNDE ]', toResult: '[ ZUM ENDSTAND ]',
+    nextIn: 'NÄCHSTE RUNDE IN {0}', hostContinues: 'DER HOST MACHT WEITER',
+    scoresLabel: 'Punktestand', points: '{0}',
+
+    gameOver: 'SPIELENDE', wins: 'GEWINNT', winTie: 'GEWINNEN',
+    votes: '{0} VON {1} WOLLEN NOCHMAL', again: '[ NOCHMAL ]', againDone: '[ DABEI ]',
+    rematch: '[ REMATCH ]', standingsLabel: 'Endstand',
+
+    paused: 'PAUSE', pausedBy: 'GESETZT VON {0}', resume: '[ WEITER ]',
+    pausedOther: 'NUR {0} ODER DER HOST KÖNNEN WEITERMACHEN.',
+    pausedMine: 'NUR DU ODER DER HOST KÖNNEN WEITERMACHEN.',
+    waiting: 'WARTEN', waitingFor: 'WARTET AUF {0}',
+    blockedText: '{0} IST OFFLINE. DER HOST ENTSCHEIDET.', continueWithout: '[ OHNE {0} WEITER ]',
+
+    removedTitle: 'DU WURDEST ENTFERNT', removedText: 'In der nächsten Lobby kannst du wieder beitreten.',
+    nextLobby: '[ NÄCHSTE LOBBY ]',
+    replacedTitle: 'IN EINEM ANDEREN TAB GEÖFFNET',
+    replacedText: 'Dein Platz läuft jetzt in einem anderen Fenster.', playHere: '[ HIER WEITERSPIELEN ]',
+
+    groupGame: 'SPIEL', groupHost: 'HOST', groupSession: 'SESSION',
+    close: '[ SCHLIESSEN ]', backRow: 'ZURÜCK', startRow: 'START', rematchRow: 'REMATCH',
+    language: 'SPRACHE', rules: 'SPIELREGELN', playersMenu: 'SPIELER', endGame: 'SPIEL BEENDEN',
+    abortRound: 'RUNDE ABBRECHEN', addTime: '+ZEIT', revealNow: 'JETZT AUFDECKEN',
+    hostPause: 'PAUSE', hostResume: 'WEITER', tapAgain: 'NOCHMAL TIPPEN',
+    remove: 'ENTFERNEN', copyLinkRow: 'LINK KOPIEREN', shareRow: 'TEILEN', homeRow: 'STARTSEITE',
+    rounds: 'RUNDEN', answerClock: 'ANTWORT-UHR', extension: 'VERLÄNGERUNG',
+    jurorClock: 'JUROR-UHR', autoNext: 'AUTO-WEITER', randoRule: 'RANDO',
+    off: 'AUS', on: 'AN', seconds: '{0} S', fewer: 'Weniger', more: 'Mehr',
+    roundsLocked: 'RUNDEN NUR IN DER LOBBY',
+    noPlayers: 'NOCH KEINE SPIELER',
+
+    errors: {
+      rejected: 'NICHT MÖGLICH', not_host: 'NUR DER HOST', already_joined: 'BEREITS BEIGETRETEN',
+      game_running: 'SPIEL LÄUFT BEREITS · NÄCHSTE LOBBY ABWARTEN', session_full: 'SESSION VOLL',
+    },
+  },
+  en: {
+    title: 'C/A/W · Session {0}',
+    connecting: 'CONNECTING', connected: 'CONNECTED', offline: 'OFFLINE',
+    pause: '[ PAUSE ]', menu: '[ ≡ ]', menuLabel: 'Menu',
+    session: 'SESSION', sessionCode: 'SESSION {0}', lobby: 'LOBBY',
+    round: 'ROUND {0}/{1}', juror: 'JUDGE {0}', rando: 'RANDO', theHost: 'THE HOST',
+
+    connectingTitle: 'CONNECTING TO THE SESSION',
+    missingTitle: 'SESSION NOT FOUND',
+    missingText: 'The code is wrong or the session has expired.',
+    home: '[ TO THE START PAGE ]',
+
+    yourName: 'YOUR NAME', namePlaceholder: 'NAME', join: '[ JOIN ]',
+    joinHint: '3–8 PLAYERS', playAlong: '[ PLAY ALONG ]', hostName: 'PLAY ALONG AS',
+    nameTooLong: 'NAME TOO LONG (MAX 23 CHARACTERS)',
+    seatExpired: 'YOUR SEAT HAS EXPIRED. JOIN AGAIN.',
+
+    players: 'PLAYERS · {0} OF MIN 3', waitForHost: 'WAITING FOR THE HOST',
+    start: '[ START ]', needPlayers: '{0} MORE PLAYERS', ready: 'READY',
+    copyLink: '[ COPY LINK ]', share: '[ SHARE ]', copied: 'LINK COPIED',
+    copyFailed: 'COPYING NOT POSSIBLE', qrLabel: 'QR code for the session link',
+    offlineMark: ' · OFFLINE', youMark: ' · YOU', hostMark: ' · HOST',
+
+    pick: 'PICK {0}', handLabel: 'Your cards',
+    promptLabel: 'Prompt, scrollable',
+    selected: '{0}/{1} SELECTED', swap: '[ DISCARD ]', swapped: '[ SWAPPED ]',
+    submit: '[ SUBMIT ]', slot: '<{0}/{1}>', slotLabel: 'Position {0} of {1}: {2}',
+
+    submittedTitle: 'SUBMITTED · {0}/{1}', youAreJuror: 'YOU ARE THE JUDGE',
+    answersTitle: 'ANSWERS · {0}/{1}', waitAnswers: 'WAITING FOR THE ANSWERS',
+    reveal: '[ REVEAL ]',
+
+    jurorDecides: 'JUDGE {0} IS DECIDING', chooseWinner: 'PICK THE BEST SENTENCE',
+    nothingChosen: 'NOTHING SELECTED', chosen: '[{0}] SELECTED', confirm: '[ CONFIRM ]',
+    playsLabel: 'Anonymous answers',
+
+    revealTitle: 'REVEAL · ROUND {0}/{1}', winner: 'WINNER: {0}',
+    youWon: 'YOU WON THE ROUND', roundAborted: 'ROUND ABORTED',
+    nextRound: '[ NEXT ROUND ]', toResult: '[ FINAL SCORES ]',
+    nextIn: 'NEXT ROUND IN {0}', hostContinues: 'THE HOST CONTINUES',
+    scoresLabel: 'Scores', points: '{0}',
+
+    gameOver: 'GAME OVER', wins: 'WINS', winTie: 'WIN',
+    votes: '{0} OF {1} WANT TO PLAY AGAIN', again: '[ AGAIN ]', againDone: '[ IN ]',
+    rematch: '[ REMATCH ]', standingsLabel: 'Final standings',
+
+    paused: 'PAUSED', pausedBy: 'BY {0}', resume: '[ RESUME ]',
+    pausedOther: 'ONLY {0} OR THE HOST CAN RESUME.',
+    pausedMine: 'ONLY YOU OR THE HOST CAN RESUME.',
+    waiting: 'WAITING', waitingFor: 'WAITING FOR {0}',
+    blockedText: '{0} IS OFFLINE. THE HOST DECIDES.', continueWithout: '[ GO ON WITHOUT {0} ]',
+
+    removedTitle: 'YOU WERE REMOVED', removedText: 'You can join again in the next lobby.',
+    nextLobby: '[ NEXT LOBBY ]',
+    replacedTitle: 'OPENED IN ANOTHER TAB',
+    replacedText: 'Your seat now runs in another window.', playHere: '[ PLAY HERE ]',
+
+    groupGame: 'GAME', groupHost: 'HOST', groupSession: 'SESSION',
+    close: '[ CLOSE ]', backRow: 'BACK', startRow: 'START', rematchRow: 'REMATCH',
+    language: 'LANGUAGE', rules: 'RULES', playersMenu: 'PLAYERS', endGame: 'END GAME',
+    abortRound: 'ABORT ROUND', addTime: '+TIME', revealNow: 'REVEAL NOW',
+    hostPause: 'PAUSE', hostResume: 'RESUME', tapAgain: 'TAP AGAIN',
+    remove: 'REMOVE', copyLinkRow: 'COPY LINK', shareRow: 'SHARE', homeRow: 'START PAGE',
+    rounds: 'ROUNDS', answerClock: 'ANSWER CLOCK', extension: 'EXTENSION',
+    jurorClock: 'JUDGE CLOCK', autoNext: 'AUTO NEXT', randoRule: 'RANDO',
+    off: 'OFF', on: 'ON', seconds: '{0} S', fewer: 'Less', more: 'More',
+    roundsLocked: 'ROUNDS ONLY IN THE LOBBY',
+    noPlayers: 'NO PLAYERS YET',
+
+    errors: {
+      rejected: 'NOT POSSIBLE', not_host: 'HOST ONLY', already_joined: 'ALREADY JOINED',
+      game_running: 'GAME ALREADY RUNNING · WAIT FOR THE NEXT LOBBY', session_full: 'SESSION FULL',
+    },
+  },
+};
+
+let language = 'de';
+
+export function currentLanguage() {
+  return language;
+}
+
+export function setTextLanguage(code) {
+  language = code === 'en' ? 'en' : 'de';
+  document.documentElement.lang = language;
+}
+
+// t('round', 3, 8) -> 'RUNDE 3/8'
+export function t(key, ...args) {
+  const template = texts[language][key] ?? texts.de[key] ?? key;
+  return template.replace(/\{(\d+)\}/g, (_, index) => String(args[Number(index)] ?? ''));
+}
+
+export function errorText(code) {
+  return texts[language].errors[code] ?? texts[language].errors.rejected;
+}
+
+// Fills every element marked with data-text, data-label or data-placeholder.
+export function applyStaticTexts(root = document) {
+  for (const element of root.querySelectorAll('[data-text]')) element.textContent = t(element.dataset.text);
+  for (const element of root.querySelectorAll('[data-label]')) element.setAttribute('aria-label', t(element.dataset.label));
+  for (const element of root.querySelectorAll('[data-placeholder]')) element.placeholder = t(element.dataset.placeholder);
+}
