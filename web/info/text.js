@@ -16,7 +16,7 @@ export const texts = {
       'Spielregeln: portiert aus der CrossPlay-X4-Firmware (MIT-Lizenz).',
       'uWebSockets und redis-plus-plus: Apache-2.0. nlohmann/json und doctest: MIT. ' +
         'libpqxx und hiredis: BSD. Die Lizenztexte liegen im Server-Image unter /usr/share/doc/caw.',
-      'Die Lizenz des CAW-Anwendungscodes ist noch nicht festgelegt.',
+      'CAW selbst steht unter der MIT-Lizenz (Datei LICENSE im Quellcode); sie gilt nicht für die Karten.',
     ],
     privacyParagraphs: [
       'Diese Seite braucht kein Konto und setzt keine Cookies. Es gibt kein Tracking und keine Werbung.',
@@ -50,7 +50,7 @@ export const texts = {
       'Game rules: ported from the CrossPlay X4 firmware (MIT license).',
       'uWebSockets and redis-plus-plus: Apache-2.0. nlohmann/json and doctest: MIT. ' +
         'libpqxx and hiredis: BSD. The license texts are in the server image under /usr/share/doc/caw.',
-      'The license of the CAW application code has not been chosen yet.',
+      'CAW itself is under the MIT license (LICENSE in the source); it does not cover the cards.',
     ],
     privacyParagraphs: [
       'This site needs no account and sets no cookies. There is no tracking and no advertising.',

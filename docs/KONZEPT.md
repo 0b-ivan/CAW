@@ -321,7 +321,7 @@ Prometheus (nur auf `127.0.0.1:9090`).
 
 ## 11. Offene Entscheidungen
 
-1. Domain und Server (eigener VPS, Homelab, Hetzner?).
+1. Server (eigener VPS, Homelab, Hetzner?). Die Domain steht: `caw.obivan.org`.
 2. Postgres (Vorschlag: bestes `jsonb`, Drizzle-Unterstützung) oder MySQL
    (falls ihr es ohnehin betreibt). Das Schema oben passt in beide; die
    Entscheidung muss vor Meilenstein M2 fallen. Eine eigene Dokument-DB für

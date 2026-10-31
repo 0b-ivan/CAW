@@ -86,9 +86,11 @@ schreibt ausstehende Stände, bevor er endet.
 
 ## Betrieb
 
-- **Domain und TLS:** In `deploy/.env` `CADDY_ADDRESS=caw.example.org`,
-  `PUBLIC_URL=https://caw.example.org`, `HTTP_PORT=80`, `HTTPS_PORT=443`.
-  Caddy holt das Zertifikat selbst.
+- **Domain und TLS:** `caw.obivan.org`. In `deploy/.env`
+  `CADDY_ADDRESS=caw.obivan.org`, `PUBLIC_URL=https://caw.obivan.org`,
+  `HTTP_PORT=80`, `HTTPS_PORT=443` (Vorlage in `.env.example`). Der DNS-Eintrag
+  muss auf den Server zeigen, Ports 80 und 443 offen; Caddy holt das
+  Zertifikat selbst.
 - **Impressum:** `cp web/operator.example.json web/operator.json` und Name,
   Anschrift, E-Mail eintragen (die Datei ist nicht im Repo). Die Seiten
   Lizenzen und Datenschutz kommen ohne Zutun.
@@ -171,6 +173,13 @@ der Host ändert das in der Lobby unter `≡` → KARTEN-PACKS. Rechteinhaber un
 Lizenz stehen in Lobby und Endstand. Bei öffentlichem Betrieb sind die
 Kartenrechte trotzdem zu prüfen (nichtkommerziell, Namensnennung).
 
+## Lizenz
+
+Der CAW-Code steht unter der [MIT-Lizenz](LICENSE). Die Kartentexte unter
+`assets/cardpacks/` behalten ihre eigene Lizenz (CC BY-NC-SA 2.0, nur
+nichtkommerziell), die Spielregeln aus der X4-Firmware stehen unter MIT
+(`server/src/game/LICENSE.upstream`).
+
 ## Herkunft und Konzept
 
 Regeln aus `0b-ivan/inx-4x-pro`:
@@ -178,8 +187,8 @@ Regeln aus `0b-ivan/inx-4x-pro`:
 unveränderte Regel-Header. Herkunft, Ausnahmen und die ursprünglichen grünen
 Testläufe stehen in [UPSTREAM.md](server/src/game/UPSTREAM.md) und
 [docs/validation/](docs/validation/). Die MIT-Lizenz des übernommenen Codes
-liegt neben den Headern. Es werden keine Kartenpacks mitgeliefert; alle
-Fixtures sind synthetisch.
+liegt neben den Headern. Mitgeliefert werden nur die sechs lizenzierten
+Cards-vs-Humanity-Sets (siehe oben); alle Test-Fixtures sind synthetisch.
 
 - [Konzept](docs/KONZEPT.md)
 - [Vorrangiges C++-Backend-Konzept](docs/KONZEPT-CPP-BACKEND.md)
