@@ -10,7 +10,7 @@
     Strict-Transport-Security "max-age=31536000"
     -Server
   }
-  # A cloudflared connector has a private Docker IP; private_ranges is NOT safe.
+  # The existing host tunnel forwards from loopback; never allow metrics by source IP.
   # Prometheus scrapes server:8080 directly on the Compose network.
   @metrics path /metrics
   respond @metrics 404
@@ -18,7 +18,7 @@
   handle @backend {
     reverse_proxy server:8080 {
       # Cloudflare provides the authentic visitor IP at the edge.
-      # This origin is reachable ONLY through the private Tunnel network.
+      # Caddy is bound to host loopback only via the Compose port override.
       header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}
       header_up X-Forwarded-Proto https
     }
