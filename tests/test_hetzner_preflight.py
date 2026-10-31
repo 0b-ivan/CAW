@@ -1,8 +1,7 @@
-"""Offline checks of the Hetzner Cloudflare Tunnel deployment safeguards."""
+"""Offline checks of CAW's loopback origin for an existing Hetzner Tunnel."""
 
 import importlib.util
 import json
-import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,16 +16,14 @@ spec.loader.exec_module(preflight)
 class HetznerPreflightTests(unittest.TestCase):
     def make_root(self, root):
         deploy = root / "deploy"
-        (deploy / "secrets").mkdir(parents=True)
+        deploy.mkdir()
         (root / "web").mkdir()
         (deploy / ".env").write_text(
             "POSTGRES_PASSWORD=" + "a" * 64
-            + "\nPUBLIC_URL=https://caw.obivan.org\nCADDY_ADDRESS=:80\n",
+            + "\nPUBLIC_URL=https://caw.obivan.org\n"
+            + "CADDY_ADDRESS=:80\nCAW_ORIGIN_PORT=18081\n",
             encoding="utf-8",
         )
-        token = deploy / "secrets" / "cloudflared-token"
-        token.write_text("t" * 80, encoding="utf-8")
-        token.chmod(0o600)
         (root / "web" / "operator.json").write_text(
             json.dumps({"name": "Synthetic Operator", "address": "Test Lane 1",
                         "email": "operator@example.invalid"}), encoding="utf-8"
@@ -37,24 +34,37 @@ class HetznerPreflightTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-    def test_valid_synthetic_configuration(self):
+    def valid_model(self):
+        return {
+            "services": {
+                "caddy": {"ports": [{"host_ip": "127.0.0.1", "published": "18081",
+                                     "target": 80, "protocol": "tcp"}]},
+                "server": {},
+                "postgres": {},
+                "redis": {},
+                "prometheus": {"ports": [{"host_ip": "127.0.0.1",
+                                          "published": "9090", "target": 9090}]},
+            },
+        }
+
+    def test_existing_tunnel_needs_no_token_or_second_connector(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.make_root(root)
             self.assertEqual(preflight.check_files(root), [])
             self.assertEqual(preflight.check_caddy(root), [])
+            self.assertEqual(preflight.check_compose(self.valid_model()), [])
 
-    def test_missing_operator_and_token_are_blockers(self):
+    def test_operator_details_are_required_for_go_live(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.make_root(root)
             (root / "web" / "operator.json").unlink()
-            (root / "deploy" / "secrets" / "cloudflared-token").unlink()
-            errors = preflight.check_files(root)
-            self.assertTrue(any("operator.json" in error for error in errors))
-            self.assertTrue(any("cloudflared-token" in error for error in errors))
+            self.assertTrue(any("operator.json" in error
+                                for error in preflight.check_files(root)))
+            self.assertEqual(preflight.check_files(root, require_operator=False), [])
 
-    def test_bad_secrets_and_token_permissions_rejected(self):
+    def test_bad_password_origin_and_tunnel_token_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.make_root(root)
@@ -63,46 +73,42 @@ class HetznerPreflightTests(unittest.TestCase):
                 "CADDY_ADDRESS=caw.obivan.org\nTUNNEL_TOKEN=unsafe\n",
                 encoding="utf-8",
             )
-            (root / "deploy" / "secrets" / "cloudflared-token").chmod(0o644)
-            errors = preflight.check_files(root)
-            self.assertGreaterEqual(len(errors), 4)
+            self.assertGreaterEqual(len(preflight.check_files(root)), 4)
 
-    def test_compose_exposes_no_origin_ports(self):
-        model = {
-            "services": {
-                "caddy": {"ports": []},
-                "server": {},
-                "cloudflared": {"ports": []},
-                "postgres": {},
-                "redis": {},
-                "prometheus": {"ports": [{"host_ip": "127.0.0.1",
-                                          "published": "9090", "target": 9090}]},
-            },
-            "secrets": {"cloudflared_token": {"file": "local-secret"}},
-        }
+    def test_caddy_must_bind_exactly_one_loopback_port(self):
+        model = self.valid_model()
         self.assertEqual(preflight.check_compose(model), [])
-        model["services"]["caddy"]["ports"] = [{"published": "80", "target": 80}]
+        model["services"]["caddy"]["ports"][0]["host_ip"] = "0.0.0.0"
         self.assertTrue(preflight.check_compose(model))
+        model["services"]["caddy"]["ports"][0]["host_ip"] = "127.0.0.1"
+        model["services"]["caddy"]["ports"][0]["published"] = "8080"
+        self.assertTrue(preflight.check_compose(model, expected_port="18081"))
+
+    def test_duplicate_cloudflared_service_is_rejected(self):
+        model = self.valid_model()
+        model["services"]["cloudflared"] = {"image": "cloudflare/cloudflared"}
+        self.assertTrue(any("zweiten cloudflared" in error
+                            for error in preflight.check_compose(model)))
 
     def test_public_prometheus_port_is_rejected(self):
-        model = {
-            "services": {
-                "caddy": {}, "server": {}, "cloudflared": {},
-                "prometheus": {"ports": [{"host_ip": "0.0.0.0",
-                                          "published": "9090", "target": 9090}]},
-            },
-            "secrets": {"cloudflared_token": {}},
-        }
+        model = self.valid_model()
+        model["services"]["prometheus"]["ports"][0]["host_ip"] = "0.0.0.0"
         self.assertTrue(any("Prometheus" in error
                             for error in preflight.check_compose(model)))
 
-    def test_tunnel_origin_requires_unconditional_metrics_denial(self):
+    def test_metrics_denial_must_not_depend_on_client_ip(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.make_root(root)
             caddy = root / "deploy" / "Caddyfile.hetzner"
             caddy.write_text("remote_ip private_ranges\n", encoding="utf-8")
             self.assertTrue(preflight.check_caddy(root))
+            caddy.write_text("# remote_ip private_ranges is unsafe\n"
+                             "respond @metrics 404\n"
+                             "header_up X-Forwarded-For "
+                             "{http.request.header.Cf-Connecting-Ip}\n",
+                             encoding="utf-8")
+            self.assertEqual(preflight.check_caddy(root), [])
 
 
 if __name__ == "__main__":
