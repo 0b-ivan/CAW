@@ -97,6 +97,7 @@ function renderLobby(app) {
   $('start-button').hidden = !app.isHost;
   $('start-button').disabled = players.length < 3;
   if (!app.isHost) $('lobby-status').textContent = t('waitForHost');
+  else if (frame.locked) $('lobby-status').textContent = t('lobbyLocked');
   else $('lobby-status').textContent = players.length < 3 ? t('needPlayers', 3 - players.length) : t('ready');
 }
 

@@ -62,8 +62,10 @@ function hostGroup(app, actions) {
   if (phase === 'playing' && frame.submitted > 0) rows.push(row(t('revealNow'), '', () => actions.host('close')));
   if (frame.clock === 'answers' || frame.clock === 'juror') rows.push(row(t('addTime'), '', () => actions.host('addTime')));
   if (phase === 'playing' || phase === 'judging') rows.push(confirmRow(app, actions, 'abort', t('abortRound'), () => actions.host('abort')));
+  rows.push(row(t(frame.locked ? 'unlockLobby' : 'lockLobby'), frame.locked ? t('lobbyLocked') : '',
+    () => actions.host(frame.locked ? 'unlock' : 'lock')));
   rows.push(row(t('rules'), '›', () => actions.openMenuPage('rules')));
-  rows.push(row(t('packsMenu'), String(frame.packs.length), () => actions.openMenuPage('packs')));
+  if (phase === 'lobby') rows.push(row(t('packsMenu'), String(frame.packs.length), () => actions.openMenuPage('packs')));
   rows.push(row(t('playersMenu'), String(frame.players.length), () => actions.openMenuPage('players')));
   if (isRunning(frame)) rows.push(confirmRow(app, actions, 'end', t('endGame'), () => actions.host('end')));
   if (phase === 'finished') rows.push(row(t('rematchRow'), '', () => actions.host('rematch')));
