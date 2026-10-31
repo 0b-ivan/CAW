@@ -55,9 +55,10 @@ node bin/hetzner-wss-check.mjs
 
 **Nicht** `docker compose -f deploy/compose.yml up` als öffentliche
 Hetzner-Produktion ausführen: Das Basis-Compose stellt Entwicklungsports
-bereit. Unter Tunnel ist `/metrics` nach außen immer 404; intern wird
-`server:8080/metrics` weiter von Prometheus abgefragt. Der Tunnel erfordert
-keine öffentlichen 80/443 oder A-/AAAA-Records zur Hetzner-Origin-IP.
+bereit. Die bestehende `cloudflared`-Route zeigt auf
+`http://127.0.0.1:18081`. Extern ist `/metrics` immer 404; intern
+bleibt `server:8080/metrics` für Prometheus erreichbar. Kein neuer
+öffentlicher Origin-Port und kein A-/AAAA-Eintrag auf die Hetzner-IP.
 
 Bis zu einem öffentlichen Release fehlen die Betreiberangaben, echte
 Cloudflare-HTTPS-/WSS-Abnahme und **verschlüsselte externe Backups**
