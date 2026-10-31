@@ -46,8 +46,8 @@ und der privaten Dateien:
 
 ```sh
 cp deploy/hetzner/env.example deploy/.env
-# Passwort (openssl rand -hex 32), Betreiberangaben und Tunnel-Secret einsetzen
-python3 bin/hetzner-preflight.py
+# Passwort (openssl rand -hex 32) einsetzen, später Betreiberangaben ergänzen
+python3 bin/hetzner-preflight.py --prepare
 docker compose -f deploy/compose.yml -f deploy/compose.hetzner.yml up --build -d --wait
 python3 bin/hetzner-preflight.py --public
 node bin/hetzner-wss-check.mjs
