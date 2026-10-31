@@ -36,6 +36,11 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## M2 – Echtzeit-Server und Sessions
 
+- [x] M2-Grundlage: kryptografische 6-Zeichen-Codes, 128-Bit-Host-Tokens,
+  event-loop-eigene Registry und striktes POST/GET-JSON mit CTest/Compose-Smoke
+  (derzeit **nur RAM**, nach Neustart nicht wiederhergestellt)
+- [ ] Room-Registry mit echten Game/Table/Sessions verbinden, Redis- und
+  Neustartpersistenz ergänzen; erst danach Session-Erstellung als fertig markieren
 - [ ] `net/Server`: Routen, WebSocket-Verbindungen, Senden mit Backpressure (`getBufferedAmount`, nur neuester Stand)
 - [ ] `net/Messages`: JSON ⇄ Befehle/Zustände, Typ- und Längenprüfung, unbekanntes wird abgelehnt
 - [ ] `session/SessionRegistry` + `Codes`: `POST /api/sessions` → Code (6 Zeichen, 31er-Alphabet) + Host-Token
