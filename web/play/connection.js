@@ -31,16 +31,18 @@ export const secrets = {
 };
 
 // One socket at a time. The caller decides about reconnecting in onClose.
+// `route` is '' for players and the host, '/screen' for a big screen.
 export class Connection {
-  constructor(code, { onOpen, onFrame, onClose }) {
+  constructor(code, { onOpen, onFrame, onClose }, route = '') {
     this.code = code;
+    this.route = route;
     this.handlers = { onOpen, onFrame, onClose };
     this.socket = null;
   }
 
   open() {
     const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-    const socket = new WebSocket(`${scheme}://${location.host}/ws/${this.code}`);
+    const socket = new WebSocket(`${scheme}://${location.host}/ws/${this.code}${this.route}`);
     this.socket = socket;
     socket.addEventListener('open', () => this.handlers.onOpen());
     socket.addEventListener('message', (event) => {

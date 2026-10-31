@@ -1,7 +1,8 @@
 // The ≡ menu: plain rows grouped under GAME, HOST and SESSION, plus the rules
 // and players pages for the host. Dangerous rows need a second tap.
 import { t, currentLanguage } from './text.js';
-import { isRunning, isSeated } from './views.js';
+import { isRunning, isSeated, sessionUrl } from './views.js';
+import { qrSvg } from './qr.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,9 +20,11 @@ export function renderMenu(app, actions) {
   menu.hidden = !app.menu.open;
   $('menu-button').setAttribute('aria-expanded', String(app.menu.open));
   if (!app.menu.open) return;
-  const page = app.isHost && app.frame ? app.menu.page : 'main';
-  const pages = { main: mainPage, rules: rulesPage, players: playersPage };
-  $('menu-title').textContent = page === 'main' ? t('sessionCode', app.code) : t(page === 'rules' ? 'rules' : 'playersMenu');
+  const hostPage = app.menu.page === 'rules' || app.menu.page === 'players';
+  const page = hostPage && !(app.isHost && app.frame) ? 'main' : app.menu.page;
+  const pages = { main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage };
+  const titles = { main: t('sessionCode', app.code), rules: t('rules'), players: t('playersMenu'), screen: t('bigScreen') };
+  $('menu-title').textContent = titles[page];
   $('menu-body').replaceChildren(...pages[page](app, actions));
 }
 
@@ -64,6 +67,7 @@ function hostGroup(app, actions) {
 function sessionGroup(app, actions) {
   const rows = [heading('groupSession'), row(t('copyLinkRow'), '', () => actions.copyLink())];
   if (typeof navigator.share === 'function') rows.push(row(t('shareRow'), '', () => actions.share()));
+  rows.push(row(t('bigScreen'), '›', () => actions.openMenuPage('screen')));
   const home = document.createElement('a');
   home.className = 'menu-row';
   home.href = '/';
@@ -113,6 +117,32 @@ function stepButton(symbol, labelKey, disabled, onClick) {
   button.disabled = disabled;
   button.addEventListener('click', onClick);
   return button;
+}
+
+// --- Big screen link: a QR for the TV's browser, or copy and open it on a laptop ---
+
+function screenPage(app, actions) {
+  const url = `${sessionUrl(app.code)}/screen`;
+  const qr = document.createElement('div');
+  qr.className = 'qr menu-qr';
+  qr.append(qrSvg(url, t('screenQrLabel')));
+  const link = document.createElement('p');
+  link.className = 'share-url';
+  link.textContent = url.replace(/^https?:\/\//, '');
+  const buttons = document.createElement('div');
+  buttons.className = 'share-buttons';
+  const copy = document.createElement('button');
+  copy.type = 'button';
+  copy.textContent = t('copyScreenLink');
+  copy.addEventListener('click', () => actions.copyText(url));
+  const open = document.createElement('a');
+  open.className = 'button';
+  open.href = url;
+  open.target = '_blank';
+  open.rel = 'noopener';
+  open.textContent = t('openScreen');
+  buttons.append(copy, open);
+  return [backRow(actions), note(t('bigScreenText')), qr, link, buttons];
 }
 
 // --- Players ---

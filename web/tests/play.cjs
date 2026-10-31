@@ -7,6 +7,7 @@ const fs = require('node:fs');
 
 const target = process.env.CAW_SMOKE_URL || 'http://localhost:8080';
 const SIZES = [[320, 568], [390, 844], [1280, 800]];
+const SCREEN_SIZES = [[1920, 1080], [1024, 768]];
 const pages = [];
 
 async function openPhone(browser, locale = 'de-DE') {
@@ -43,6 +44,26 @@ async function checkFit(page, label, mainAction) {
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
+}
+
+// The big screen at 16:9 and 4:3: nothing scrolls and no fitted text is cut.
+async function checkScreen(page, view, label) {
+  await page.locator(`#screen-${view}`).waitFor({ state: 'visible', timeout: 10000 });
+  for (const [width, height] of SCREEN_SIZES) {
+    await page.setViewportSize({ width, height });
+    await page.waitForTimeout(50);
+    const size = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+      cut: [...document.querySelectorAll('.screen-view:not([hidden]) .fit')]
+        .filter((box) => box.scrollHeight > box.clientHeight + 1).length,
+    }));
+    assert.ok(size.width <= width && size.height <= height, `screen ${label} ${width}x${height}: scrolls`);
+    assert.equal(size.cut, 0, `screen ${label} ${width}x${height}: text does not fit`);
+    if (process.env.CAW_SCREENSHOT_DIR) {
+      await page.screenshot({ path: `${process.env.CAW_SCREENSHOT_DIR}/screen-${label}-${width}.png` });
+    }
+  }
 }
 
 const visible = (page, view) => page.locator(`#view-${view}`).isVisible();
@@ -91,7 +112,7 @@ async function submitFirstCards(page) {
   await page.locator('#view-waiting:visible, #view-judge:visible').first().waitFor();
 }
 
-async function playRound(host, players, round) {
+async function playRound(host, players, round, screen) {
   for (const page of players) await page.locator('#view-answer:visible, #view-waiting:visible').first().waitFor();
   await host.locator('#meta-left', { hasText: `RUNDE ${round}/3` }).waitFor();
   const { answering, juror } = await roles(players);
@@ -99,6 +120,7 @@ async function playRound(host, players, round) {
   assert.ok(juror, 'one phone is the Juror');
 
   if (round === 1) {
+    await checkScreen(screen, 'answers', 'answers');
     const page = answering[0];
     await checkFit(page, 'answer', '#submit-button');
     const hand = await page.locator('#hand').evaluate((list) => list.scrollHeight <= list.clientHeight + 1);
@@ -134,7 +156,10 @@ async function playRound(host, players, round) {
   await waitView(juror, 'judge');
   await answering[0].locator('#judge-eyebrow', { hasText: 'ENTSCHEIDET' }).waitFor();
   assert.equal(await answering[0].locator('#judge-list button').count(), 0, 'only the Juror can choose');
-  if (round === 1) await checkFit(juror, 'judge', '#judge-button');
+  if (round === 1) {
+    await checkFit(juror, 'judge', '#judge-button');
+    await checkScreen(screen, 'judging', 'judging');
+  }
   await juror.locator('#judge-list .choice').first().click();
   // The pick fills the blanks of the prompt shown once on top.
   assert.ok(await juror.locator('#judge-prompt mark').count() >= 1, 'the pick appears in the prompt');
@@ -143,6 +168,7 @@ async function playRound(host, players, round) {
   for (const page of [host, ...players]) await waitView(page, 'reveal');
   assert.match(await host.locator('#reveal-winner').textContent(), /^GEWINNER: /);
   if (round === 1) {
+    await checkScreen(screen, 'reveal', 'reveal');
     await checkFit(host, 'reveal-host', '#next-button');
     await checkFit(juror, 'reveal', null);
   }
@@ -161,10 +187,26 @@ async function run(browser) {
   assert.equal(await host.locator('#start-button').isDisabled(), true, 'START needs three players');
   await checkFit(host, 'lobby-host', '#start-button');
 
+  // The big screen listens on its own socket; every frame it gets is recorded.
+  const screen = await openPhone(browser);
+  const screenFrames = [];
+  screen.on('websocket', (socket) => socket.on('framereceived', (frame) => screenFrames.push(frame.payload)));
+  await screen.goto(`${target}/s/${code}/screen`);
+  await screen.locator('#screen-code', { hasText: code }).waitFor();
+  await screen.locator('#screen-qr svg').waitFor();
+
   const players = [];
   for (const name of ['Ada', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
   await checkFit(players[0], 'lobby', '#lobby-status');
+  await screen.locator('#screen-players li', { hasText: 'Cyra' }).waitFor();
+  await checkScreen(screen, 'lobby', 'lobby');
+
+  // The host finds the big screen link as a QR in the menu.
+  await host.locator('#screen-link').click();
+  await host.locator('.menu-qr svg').waitFor();
+  await checkFit(host, 'menu-screen', '#menu-close');
+  await host.locator('#menu-close').click();
 
   // Three rounds instead of ten: ‹ steps 10 → 8 → 5 → 3.
   await openMenuPage(host, 'SPIELREGELN');
@@ -175,9 +217,15 @@ async function run(browser) {
   await host.locator('#menu-close').click();
 
   await host.locator('#start-button').click();
-  for (let round = 1; round <= 3; round++) await playRound(host, players, round);
+  for (let round = 1; round <= 3; round++) await playRound(host, players, round, screen);
 
   for (const page of [host, ...players]) await waitView(page, 'finished');
+  await checkScreen(screen, 'finished', 'finished');
+  for (const payload of screenFrames) {
+    const frame = JSON.parse(payload);
+    assert.equal(frame.type, 'screen', 'the big screen only gets screen frames');
+    assert.ok(!('me' in frame) && !payload.includes('"hand"'), 'the big screen never sees a hand');
+  }
   await checkFit(players[0], 'finished', '#again-button');
   await checkFit(host, 'finished-host', '#rematch-button');
   await players[0].getByRole('button', { name: '[ NOCHMAL ]' }).click();
@@ -210,7 +258,8 @@ async function run(browser) {
   await checkFit(lost, 'missing', 'a.button');
 
   for (const page of pages) assert.deepEqual(page.errors, [], 'no script errors');
-  console.log('PASS host + 3 phones: 3 rounds, reload, pause, judging, reveal, finish, rematch, kick, DE/EN,');
+  console.log('PASS host + 3 phones + big screen: 3 rounds, reload, pause, judging, reveal, finish, rematch,');
+  console.log('     kick, DE/EN; big screen public only and fitted at 1920x1080 / 1024x768;');
   console.log('     no page scroll at 320x568 / 390x844 / 1280x800, main action always on screen');
 }
 
