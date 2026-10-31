@@ -410,14 +410,14 @@ h1 { font-size: clamp(22px, 6vw, 30px); font-weight: 500; line-height: 1.25; ove
 .share-buttons button { flex: 1 1 auto; }
 
 .roster, .scores, .bars, .choices { list-style: none; margin: 0; padding: 0; }
-.roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); column-gap: 12px; }
+.roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); column-gap: 12px; grid-auto-rows: max-content; }
 .roster li:only-child { grid-column: 1 / -1; }
 .roster li, .scores li, .bars li {
   border-bottom: var(--line);
   padding: 7px 0;
   overflow-wrap: anywhere;
 }
-.scores { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); column-gap: 16px; }
+.scores { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); column-gap: 16px; grid-auto-rows: max-content; }
 .scores li, .bars li { display: flex; justify-content: space-between; gap: 12px; }
 .bar-chars { white-space: nowrap; }
 .inline-form { display: flex; gap: 8px; }
@@ -427,6 +427,8 @@ h1 { font-size: clamp(22px, 6vw, 30px); font-weight: 500; line-height: 1.25; ove
 .hand {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  /* Rows keep their content height; without this a short screen squeezes them and cuts text. */
+  grid-auto-rows: max-content;
   align-content: start;
   border-top: var(--line);
   border-left: var(--line);
@@ -439,7 +441,8 @@ h1 { font-size: clamp(22px, 6vw, 30px); font-weight: 500; line-height: 1.25; ove
   text-align: left;
   font-size: 15px;
   line-height: 1.3;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 .slot-mark { font-weight: 700; white-space: nowrap; }
 
@@ -506,7 +509,7 @@ div.choice { min-height: 48px; }
 @media (max-width: 400px) {
   .shell, .menu { padding: 8px 12px max(8px, env(safe-area-inset-bottom)); }
   .mast-status { font-size: 10px; }
-  .card { font-size: 14px; }
+  .card { font-size: 14px; padding-inline: 6px; }
   .session-code { font-size: 22px; }
   .bar { font-size: 12px; gap: 6px; }
   .bar button, .bar .button { font-size: 13px; padding-inline: 6px; }

@@ -212,9 +212,43 @@ async function run(browser) {
   console.log('     no page scroll at 320x568 / 390x844 / 1280x800, main action always on screen');
 }
 
+// Real packs have answers up to ~90 and prompts up to ~135 characters. The match above
+// deals short test cards, so this draws a hand of long synthetic cards into the answer
+// view and checks that no card cuts its text and the page still does not scroll.
+async function checkLongCards(browser) {
+  const page = await openPhone(browser);
+  await page.goto(`${target}/s/ZZZZZZ`);
+  await waitView(page, 'missing');
+  await page.evaluate(() => {
+    for (const view of document.querySelectorAll('.view')) view.hidden = view.id !== 'view-answer';
+    const long = 'Testantwort mit einem sehr langen Kartentext, der auf dem Handy über mehrere Zeilen läuft';
+    document.querySelector('#answer-prompt').textContent =
+      'Testfrage mit einem langen Satz, der so lang ist wie die längsten Fragen der echten Packs: ___ und ___.';
+    const hand = document.querySelector('#hand');
+    for (let i = 0; i < 12; i++) {
+      const card = document.createElement('button');
+      card.className = 'card';
+      card.textContent = i % 2 ? long : `Kurz ${i}`;
+      hand.append(card);
+    }
+  });
+  for (const [width, height] of SIZES) {
+    await page.setViewportSize({ width, height });
+    const clipped = await page.locator('#hand .card').evaluateAll((cards) =>
+      cards.filter((card) => card.scrollHeight > card.clientHeight + 1).length);
+    assert.equal(clipped, 0, `${width}x${height}: ${clipped} cards cut their text`);
+    const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+    assert.ok(pageHeight <= height, `${width}x${height}: long cards make the page scroll`);
+    const submit = await page.locator('#submit-button').boundingBox();
+    assert.ok(submit.y + submit.height <= height + 0.5, `${width}x${height}: submit pushed off screen`);
+  }
+  console.log('PASS long cards: no text cut, no page scroll, submit on screen at all sizes');
+}
+
 (async () => {
   const browser = await chromium.launch({ headless: true, executablePath: process.env.CAW_CHROME_PATH });
   try {
+    await checkLongCards(browser);
     await run(browser);
   } finally {
     await browser.close();
