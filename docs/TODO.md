@@ -118,8 +118,8 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Caddy: Security-Header (CSP, Permissions-Policy, HSTS, kein `Server`), `/metrics` nur aus privaten Netzen, `no-cache` mit ETag für die Webdateien; TLS automatisch, sobald `CADDY_ADDRESS` eine Domain ist
 - [ ] Öffentlichen Cloudflare-Edge-TLS- und WSS-Test für `caw.obivan.org`
   nach Hetzner-Provisionierung bestehen (kein Origin-TLS durch Caddy)
-- [x] Hetzner-Cloud-/Cloudflare-Tunnel-Konzept, Compose-Override ohne
-  veröffentlichte Ports, Secret-Datei und internes Metrik-Blocking vorbereitet
+- [x] Hetzner-Konzept auf bestehenden Server/Tunnel angepasst, Compose-
+  Override mit Loopback-only-Caddy-Port und extern gesperrtem `/metrics`
 - [x] Preflight- und synthetische Tunnel-Konfigurationstests in CI ergänzt
 - [ ] Hetzner-VM, SSH-Zugang und Firewall (nur SSH von Admin-IP) einrichten
 - [ ] Cloudflare Published Application `caw.obivan.org` → `http://caddy:80`
