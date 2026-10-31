@@ -10,12 +10,13 @@
 #include "game/CardPartyCore.h"
 #include "game/CardPartyTable.h"
 #include "packs/CardPack.h"
+#include "session/RoomExtras.h"
 
 namespace caw {
 
 struct Command {
   enum class Type {
-    Join,     // name
+    Join,     // name, optional player (the device's public id)
     Resume,   // token = seat ticket
     Host,     // token = host token; marks the connection as host
     Submit,   // token, revision, slots
@@ -46,6 +47,7 @@ struct Command {
   std::uint8_t index = 0;
   cardparty::Settings settings;
   std::vector<std::string> packs;
+  std::string player;
 };
 
 // Everything one connection may see. The hand is filled only for that connection's own seat.
@@ -62,6 +64,8 @@ struct StateFrame {
   cardparty::Settings settings;
   std::uint8_t requestedRounds = 0;    // the host's choice; `rounds` is the fair count once started
   std::vector<const CardPack*> packs;  // the packs in play, for credits on every screen
+  const char* words[cardparty::kPlayers] = {};    // per seat: the word after the name, or null
+  const std::vector<MatchLine>* lines = nullptr;  // sent with the final standings only
 };
 
 class Protocol final {

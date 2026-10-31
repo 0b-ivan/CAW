@@ -15,6 +15,7 @@
 #include "session/SessionRegistry.h"
 #include "store/Health.h"
 #include "store/PersistQueue.h"
+#include "store/PostgresStore.h"
 #include "store/RedisStore.h"
 
 namespace {
@@ -54,7 +55,11 @@ int main() {
     caw::SessionRegistry sessions(config.sessionTtlHours, packs);
     caw::RedisStore redis(config.redisUrl, std::chrono::hours(config.sessionTtlHours));
     restoreRooms(redis, sessions);
-    caw::PersistQueue persist(redis);
+    caw::FameCache fame;
+    caw::PostgresStore postgres(config.databaseUrl, fame);
+    if (!postgres.prepare())
+      caw::log::warn("Starting without statistics; they are kept once Postgres is back");
+    caw::PersistQueue persist(redis, postgres);
     std::signal(SIGTERM, onStopSignal);
     std::signal(SIGINT, onStopSignal);
 
@@ -68,7 +73,7 @@ int main() {
           ->writeHeader("Cache-Control", "no-store")
           ->end(ready ? "ok\n" : "unavailable\n");
     });
-    caw::Server server(sessions, packs, persist, stopRequested);
+    caw::Server server(sessions, packs, fame, persist, stopRequested);
     server.registerRoutes(app);
     app.get("/metrics", [&](auto* response, auto*) {
       metrics.sessions = sessions.activeCount();

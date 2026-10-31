@@ -64,9 +64,9 @@ void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions,
 }
 }  // namespace
 
-Server::Server(SessionRegistry& sessions, const PackLibrary& packs, PersistQueue& persist,
-               const std::atomic<bool>& stop)
-    : sessions_(sessions), packs_(packs), persist_(persist), stop_(stop) {}
+Server::Server(SessionRegistry& sessions, const PackLibrary& packs, const FameCache& fame,
+               PersistQueue& persist, const std::atomic<bool>& stop)
+    : sessions_(sessions), packs_(packs), fame_(fame), persist_(persist), stop_(stop) {}
 
 void Server::registerRoutes(uWS::App& app) {
   registerSessionRoutes(app);
@@ -75,6 +75,10 @@ void Server::registerRoutes(uWS::App& app) {
 }
 
 void Server::registerSessionRoutes(uWS::App& app) {
+  app.get("/api/fame", [this](auto* response, auto*) {
+    const std::string fame = fame_.get();
+    jsonReply(response, "200 OK", fame.empty() ? Messages::fame({}, {}) : fame);
+  });
   app.get("/api/packs", [this](auto* response, auto*) {
     jsonReply(response, "200 OK", Messages::packCatalog(packs_.packs()));
   });
@@ -174,6 +178,7 @@ void Server::deliver(const std::string& code, Session& session) {
     if (frame.close) socket->end(1000, "closed");
   }
   if (session.takeChanged()) persist(code);
+  persist_.pushHistory(session.takeHistory());
 }
 
 void Server::persist(const std::string& code) {

@@ -10,6 +10,8 @@
 #include "game/CardPartySessions.h"
 #include "game/CardPartyTable.h"
 #include "packs/CardPack.h"
+#include "session/RoomExtras.h"
+#include "store/Fame.h"
 
 namespace caw {
 
@@ -19,6 +21,8 @@ struct RoomRecord {
   std::string hostToken;
   std::vector<std::string> packs;  // the deck is rebuilt from these before the state loads
   std::string state;               // Session::saveState()
+  std::vector<Identity> identities;
+  std::vector<MatchLine> lines;
 };
 
 class Messages {
@@ -28,6 +32,9 @@ class Messages {
   static std::string sessionCreated(std::string_view code, std::string_view hostToken);
   static std::string publicRoom(std::string_view code, std::string_view language);
   static std::string errorResponse(std::string_view errorCode);
+  // GET /api/fame: names with their word, counts and recent winning sentences; no ids.
+  static std::string fame(const std::vector<FamePlayer>& players,
+                          const std::vector<FameLine>& lines);
   // GET /api/packs: what the host can choose from, with counts and credits.
   static std::string packCatalog(const std::vector<std::unique_ptr<CardPack>>& packs);
   // {"packs":[{id,file,title,language,license,rightsHolder,sourceUrl}]}; nothing if any
