@@ -13,7 +13,7 @@ from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "caw.obivan.org"
-COMPOSE = ["docker", "compose", "-f", "deploy/compose.yml", "-f",
+COMPOSE = ["docker", "compose", "-p", "caw", "-f", "deploy/compose.yml", "-f",
            "deploy/compose.hetzner.yml"]
 
 
