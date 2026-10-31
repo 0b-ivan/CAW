@@ -82,6 +82,7 @@ function zoomMiddleCard() {
   zoomCard.style.height = `${from.height}px`;
   zoomCard.style.fontSize = `${from.width * 0.67}px`;
   boot.appendChild(zoomCard);
+  void zoomCard.offsetWidth;
 
   // A separate flat rectangle preserves the exact A-card silhouette during zoom.
   requestAnimationFrame(() => {
