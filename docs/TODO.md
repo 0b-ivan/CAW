@@ -59,13 +59,15 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## M3 – Spieler- und Host-UI
 
-- [ ] Statisches HTML/CSS/JS auf Basis von `CardPartyPage.html`, Gestaltung nach `docs/UI-KONZEPT.md` (Tokens, Aufbau, Ansichten 4.1–4.10)
-- [ ] Start: NEUE SESSION, CODE EINGEBEN
-- [ ] Spieler: Beitreten, Hand, Pick-Reihenfolge, Abwerfen, Juror-Wahl, Auflösung, Pause, Endstand, „nochmal“
-- [ ] Host-Bereich: Start, Regeln, Kategorien, Packs, Spieler (entfernen), Pause/+Zeit, Ende, Rematch, Lobby sperren
-- [ ] Teilen: URL kopieren, QR, System-Share-Dialog
-- [ ] Reconnect mit Ticket aus `localStorage`; klare Zustände bei abgelaufener Session
-- [ ] Playwright: 320/390/1280 px, Deutsch/Englisch, kein horizontales Scrollen
+- [x] Statisches HTML/CSS/JS auf Basis von `CardPartyPage.html`, Gestaltung nach `docs/UI-KONZEPT.md` (Tokens, Aufbau, Ansichten 4.1–4.10)
+- [x] Start: NEUE SESSION, CODE EINGEBEN (Code wird beim Server geprüft)
+- [x] Spielseite `/s/{code}` (Caddy schreibt auf `play.html` um)
+- [x] Spieler: Beitreten, Hand, Pick-Reihenfolge, Abwerfen, Juror-Wahl, Auflösung, Pause, Endstand, „nochmal“
+- [x] Host-Bereich: Start, Regeln, Spieler (entfernen), Pause/+Zeit, Aufdecken, Abbrechen, Ende, Rematch, Mitspielen
+- [x] Teilen: URL kopieren, QR (eigener Encoder, gegen die Firmware-Bibliothek geprüft), System-Share-Dialog
+- [x] Reconnect mit Ticket aus `localStorage`; klare Zustände bei abgelaufener Session, entfernt, anderer Tab
+- [x] Playwright: 320/390/1280 px, Deutsch/Englisch, kein Scrollen der Seite in jeder Ansicht, Hauptaktion sichtbar
+- Verschoben: Kategorien und Packs nach M5, Lobby sperren nach M7, Siegersätze der Partie im Endstand nach M6
 
 ## M4 – Big Screen
 
@@ -101,6 +103,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] Lasttest mit dem Bot-Programm: 1 000 Sessions × 8 Spieler, Budgets aus KONZEPT 5a
 - [ ] Profiling des heißen Pfads; Frame-Größen messen
 - [ ] Einfache Rate-Limits in Caddy (Join, Code-Abfrage)
+- [ ] Lobby sperren (Host), damit Fremde mit dem Code nicht mehr beitreten
 - [ ] Graceful Shutdown: Sockets schließen, Redis-Flush, Clients reconnecten
 
 ## M8 – Betrieb und Release

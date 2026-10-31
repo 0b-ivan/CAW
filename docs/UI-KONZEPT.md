@@ -21,6 +21,12 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
 - **Befehle in eckigen Klammern:** `[ ABGEBEN ]`, `[ PAUSE ]`, `[ START ]`.
 - **Touch zuerst:** Tippziele mindestens 48 px hoch, wichtige Aktionen
   unten in der Fußleiste, Daumenreichweite.
+- **Kein Seitenscrollen.** Jede Ansicht passt in 320×568, 390×844 und
+  1280×800 px: Kopfzeile, Inhalt und Fußleiste auf einem Bildschirm. Reicht
+  der Platz nicht, scrollt nur eine Liste in sich (Hand, Antworten, Spieler,
+  Menü), nie die Seite, und die Hauptaktion bleibt sichtbar. Lieber einen
+  Schritt weglassen oder zusammenlegen als scrollen lassen. Playwright prüft
+  das für jede Ansicht.
 - **Ruhe:** Neu gezeichnet wird nur, wenn sich wirklich etwas ändert.
   Keine Endlosschleifen oder Lade-Animationen. Ausnahme: einmaliger
   CAW-Bootscreen beim ersten Seitenaufruf der Browser-Sitzung; kurze
@@ -99,17 +105,23 @@ bildfüllend → Startseite. Die Animation läuft nicht automatisch in Schleife.
 Sie kann über das Logo auf der Startseite erneut ausgelöst und jederzeit
 übersprungen werden. `sessionStorage` merkt den einmaligen Besuch; ohne JS
 bleibt die Startseite verwendbar. Bei `prefers-reduced-motion` wird der
-Bootscreen ohne Bewegung übersprungen. Die Startseite bietet weiterhin nur
-M0-Aktionen; Session erstellen und beitreten funktionieren erst ab M2.
+Bootscreen ohne Bewegung übersprungen. `[ NEUE SESSION ]` legt die Session
+an, merkt sich den Host-Token im Browser und öffnet `/s/{code}`.
+`[ BEITRETEN ]` fragt den Code beim Server nach und öffnet dieselbe Seite;
+falsche oder abgelaufene Codes werden auf der Startseite in Worten gemeldet.
 
 ### 4.2 Session anlegen (Host)
 
-Regeln mit Standardwerten, alles später im Spiel änderbar:
-Runden, Antwort-Uhr, Verlängerung, Juror-Uhr, Auto-Weiter, Rando, Host spielt
-mit (ja/nein), Packs und Kategorien. Dann `[ SESSION ERÖFFNEN ]`.
-Im Host-Menü gelten spätere Regeländerungen unmittelbar für die **laufende**
-Session, ohne eine neue Session anzulegen. Antwort- und Juror-Uhr haben
-`−10 S` / `+10 S` mit Untergrenze; die laufende Restzeit wird angepasst.
+Kein eigener Regel-Bildschirm vor dem Anlegen (ein Schritt weniger, nichts zu
+scrollen): `[ NEUE SESSION ]` eröffnet die Session sofort mit den
+Standardregeln des X4 (10 Runden, Rando an, Uhren aus) und zeigt die
+Host-Lobby. Die Regeln stellt der Host im Menü unter SPIELREGELN ein, jederzeit;
+sie gelten sofort für die **laufende** Session, die Rundenzahl nur in der
+Lobby. Jede Regel hat `[‹]` / `[›]` und springt durch dieselben Werte wie der
+X4: Runden 3/5/8/10/12/15/20/30, Antwort-Uhr AUS/30/45/60/90/120 S,
+Verlängerung AUS/10/15/20/30 S, Juror-Uhr AUS/30/60/90 S, Auto-Weiter
+AUS/5/8/12 S, Rando AN/AUS. Mitspielen: in der Lobby Namen eingeben und
+`[ MITSPIELEN ]`. Packs und Kategorien folgen mit M5.
 
 ### 4.3 Beitreten
 
@@ -124,18 +136,23 @@ ZU LANG / BEREITS VERGEBEN (Fehler in Worten)
 
 ### 4.4 Lobby
 
-Spieler: Spielerliste (`IVAN·TOAST`), „3 VON MIND. 3“, Hinweis „WARTE AUF
-HOST“. Host zusätzlich: großer QR + URL + `[ LINK KOPIEREN ]` `[ TEILEN ]`,
-`[ BIG SCREEN ]` (zeigt den Big-Screen-Link als QR), `[ LOBBY SPERREN ]`,
-`[ START ]` (gestrichelt bis 3 Spieler).
+Spieler: Spielerliste zweispaltig (`IVAN·TOAST`), „3 VON MIND. 3“, Hinweis
+„WARTE AUF HOST“. Host zusätzlich: QR links, rechts Code, URL,
+`[ LINK KOPIEREN ]` und `[ TEILEN ]` (nur wenn das Gerät einen
+Teilen-Dialog hat), darunter `[ MITSPIELEN ]`, in der Fußleiste `[ START ]`
+(gestrichelt bis 3 Spieler). `[ BIG SCREEN ]` kommt mit M4,
+`[ LOBBY SPERREN ]` mit M7.
 
 ### 4.5 Antworten
 
 Frage oben in eigenem Scroll-Bereich (max. 30 % Höhe), darunter die Hand
-als Liste. Antippen wählt in Reihenfolge; die Position steht vor der Karte
-(`<1/3>`). Fußleiste: `[ ABWERFEN ]` (1× pro Runde), `2/3 GEWÄHLT`,
-`[ ABGEBEN ]`. Vorschau des eingesetzten Satzes über der Fußleiste.
-Nach Abgabe: „ABGEGEBEN · 4/6 WARTEN“.
+als Raster aus Karten mit Trennlinien (zwei Spalten am Handy, vier am
+Laptop), damit zehn Karten ohne Scrollen sichtbar sind. Antippen wählt in
+Reihenfolge; die Position steht vor der Karte (`<1/3>`). Die Frage ist
+zugleich die Vorschau: gewählte Karten stehen invertiert in ihren Lücken,
+keine eigene Vorschauzeile. Fußleiste: `[ ABWERFEN ]` (1× pro Runde, genau
+eine Karte gewählt), `2/3 GEWÄHLT`, `[ ABGEBEN ]`.
+Nach Abgabe: „ABGEGEBEN · 4/6“ mit Fortschritt aus Zeichen (`████░░`).
 
 ### 4.6 Juror wählt
 
@@ -161,17 +178,26 @@ mit Sekunden. „DU WURDEST ENTFERNT“ mit `[ NÄCHSTE LOBBY ]`.
 ### 4.9 Ende
 
 **Keine Krone.** Große Sieger-Typografie und Endstand als Balken aus Zeichen
-(`████████  7`), Siegersätze der Partie, `[ NOCHMAL ]` (Stimme), Zähler
-„3 VON 5 WOLLEN NOCHMAL“. Host: `[ REMATCH ]` `[ ENDE ]`.
+(`████████  7`), `[ NOCHMAL ]` (Stimme), Zähler „3 VON 5 WOLLEN NOCHMAL“.
+Host: `[ REMATCH ]`; zurück zur Startseite über das Menü. Die Siegersätze der
+Partie kommen mit M6, wenn der Server sie speichert.
 
 ### 4.10 Host-Bereich (Menü `≡` → HOST)
 
 Schlichte Zeilen, keine einzeln umrahmten Schaltflächen; gruppiert unter
-SPIEL / HOST / SESSION, mit Zustand rechts: PAUSE · ±ZEIT · SPIELREGELN ·
-KATEGORIEN · PACKS · SPIELER (entfernen, zweimal tippen) · LOBBY SPERREN ·
-SPIEL BEENDEN (zweimal tippen) · HOST ÜBERGEBEN · BIG SCREEN LINK.
-`BIG SCREEN LINK` zeigt einen kopierbaren `/s/{code}/screen`-Link statt
-zusätzlichem QR-Dialog. Gefährliche Aktionen brauchen zweite Bestätigung.
+SPIEL / HOST / SESSION, mit Zustand rechts. Gezeigt wird nur, was im
+aktuellen Zustand geht:
+
+- SPIEL: PAUSE/WEITER (Spieler), SPRACHE DE/EN (pro Gerät)
+- HOST: START · PAUSE/WEITER · JETZT AUFDECKEN · +ZEIT · RUNDE ABBRECHEN
+  (zweimal tippen) · SPIELREGELN · SPIELER (entfernen, zweimal tippen) ·
+  SPIEL BEENDEN (zweimal tippen) · REMATCH
+- SESSION: LINK KOPIEREN · TEILEN · STARTSEITE
+
+Gefährliche Aktionen brauchen eine zweite Berührung innerhalb von 3 s
+(„NOCHMAL TIPPEN“). Später: KATEGORIEN und PACKS (M5), BIG SCREEN LINK als
+kopierbarer `/s/{code}/screen`-Link (M4), LOBBY SPERREN (M7),
+HOST ÜBERGEBEN (offen).
 
 ## 5. Big Screen `/s/{code}/screen`
 
