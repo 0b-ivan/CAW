@@ -61,6 +61,60 @@ std::uint64_t deckIdentity(const Deck& deck) {
 }
 }  // namespace
 
+std::optional<std::string> Messages::createLanguage(std::string_view body) {
+  if (body.empty() || body.size() > 1024) return std::nullopt;
+  try {
+    const json request = json::parse(body);
+    if (!request.is_object() || request.size() > 1) return std::nullopt;
+    if (request.empty()) return "de";
+    if (!request.contains("language")) return std::nullopt;
+    if (!request.at("language").is_string()) return std::nullopt;
+    const std::string language = request.at("language").get<std::string>();
+    if (language != "de" && language != "en") return std::nullopt;
+    return language;
+  } catch (const json::exception&) {
+    return std::nullopt;
+  }
+}
+
+std::string Messages::sessionCreated(std::string_view code, std::string_view hostToken) {
+  return json{{"code", std::string(code)}, {"hostToken", std::string(hostToken)}}.dump();
+}
+
+std::string Messages::publicRoom(std::string_view code, std::string_view language) {
+  json response;
+  response["code"] = std::string(code);
+  response["language"] = std::string(language);
+  response["phase"] = "lobby";
+  return response.dump();
+}
+
+std::string Messages::errorResponse(std::string_view errorCode) {
+  return json{{"error", std::string(errorCode)}}.dump();
+}
+
+std::string Messages::saveRoom(const RoomRecord& room) {
+  return json{{"schema", 1},
+              {"language", room.language},
+              {"hostToken", room.hostToken},
+              {"state", json::parse(room.state)}}
+      .dump();
+}
+
+std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
+  try {
+    const json record = json::parse(text);
+    if (!record.is_object() || record.size() != 4 || record.at("schema") != 1 ||
+        !record.at("language").is_string() || !record.at("hostToken").is_string() ||
+        !record.at("state").is_object())
+      return std::nullopt;
+    return RoomRecord{record.at("language").get<std::string>(),
+                      record.at("hostToken").get<std::string>(), record.at("state").dump()};
+  } catch (const json::exception&) {
+    return std::nullopt;
+  }
+}
+
 json Messages::saveGame(const Game& game) {
   json players = json::array();
   for (const auto& player : game.players_) {

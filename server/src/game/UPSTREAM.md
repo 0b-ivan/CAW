@@ -29,3 +29,10 @@ Debug-Build bei `test_shuffle` vor einem theoretisch zu kleinen Namenspuffer
 für einen beliebigen `int`; nur dieser Testpuffer wächst von 8 auf 16 Bytes.
 Die Regeln bleiben unverändert. SHA-256-Werte der unveränderten Header und
 die tatsächlichen Ausgaben liegen unter `docs/validation/`.
+
+## Server-Anpassungen nach der Übernahme
+
+- `Sessions::disconnectAll()`: markiert nach einem Server-Neustart alle Sitze
+  als getrennt. Die alten Verbindungs-IDs im Redis-Snapshot gehören zu
+  Sockets, die es nicht mehr gibt; die Handys holen ihren Sitz per Ticket
+  zurück (`resume`). Getestet in `tests/session/test_session.cpp`.

@@ -30,6 +30,12 @@ jobs:
         run: docker compose -f deploy/compose.yml up --build --detach --wait --wait-timeout 180
       - name: Probe Caddy and dependency outage recovery
         run: ./bin/smoke
+      # Node 22 brings a built-in WebSocket client; the bots need no npm packages.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Eight bots play a match with a reload storm and a server restart
+        run: node tests/bots/play.mjs http://localhost:8080 "docker compose -f deploy/compose.yml restart server"
       - name: Browser landing page
         run: |
           npm install --no-save --prefix /tmp/caw-browser playwright@1.56.1

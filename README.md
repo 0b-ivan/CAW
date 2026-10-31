@@ -31,6 +31,43 @@ noch nicht geprüft. Nur Caddy veröffentlicht Ports. Redis und Postgres sind
 intern erreichbar. Das Datenbankpasswort muss in einer URL verwendbar sein
 (z.B. Hex-Zeichen); `.env` wird nicht eingecheckt.
 
+## M2 – Session-Grundlage (in Entwicklung)
+
+Der C++-Server stellt zwei REST-Routen und den Spiel-WebSocket bereit:
+
+```sh
+# Auf einem laufenden Compose-Stack:
+curl -sS -H 'Content-Type: application/json' -d '{"language":"de"}' \
+  http://localhost:8080/api/sessions
+# -> {"code":"XXXXXX","hostToken":"<32 geheime Hex-Zeichen>"}
+
+curl -sS http://localhost:8080/api/sessions/XXXXXX
+# -> {"code":"XXXXXX","language":"de","phase":"lobby"}
+```
+
+Der private Host-Token wird nur beim Anlegen zurückgegeben, nicht im
+öffentlichen GET. Sechsstellige Codes verwenden ein eindeutiges
+31-Zeichen-Alphabet; die 128-Bit-Host-Tokens kommen aus Betriebssystemzufall.
+Leere oder unerwartete JSON-Felder werden abgelehnt. Ein abgelaufener
+Code wird wie ein unbekannter Code behandelt.
+
+Jeder Raum ist ein echter Spieltisch. Gespielt wird über den WebSocket
+`ws://…/ws/XXXXXX` (Befehle und Antworten: `docs/KONZEPT-CPP-BACKEND.md`
+Abschnitt 7). Ein Spieler tritt mit `{"type":"join","name":"Ada"}` bei, der
+Host meldet sich mit `{"type":"host","token":"…"}` an und startet mit
+`{"type":"start"}`. Bis zum Kartenpack-Import (M5) spielt jeder Tisch mit
+nummerierten Testkarten.
+
+Laufende Partien werden nach jeder Änderung in Redis gesichert
+(`session:XXXXXX`, verfällt nach `SESSION_TTL_HOURS` ohne Aktivität). Nach einem
+Neustart holen sich die Handys ihren Sitz mit ihrem Ticket zurück
+(`{"type":"resume","token":"…"}`), der Host meldet sich erneut mit dem
+Host-Token an. Bei SIGTERM (`docker stop`) schließt der Server alle Sockets und
+schreibt ausstehende Stände, bevor er endet.
+
+**Noch nicht produktiv:** Die spielbare Oberfläche folgt in M3; die
+Startseiten-Aktionen bleiben bis dahin deaktiviert.
+
 ## Bauen und prüfen
 
 Unter Debian 13: `build-essential`, `cmake`, `ninja-build`, `git`,

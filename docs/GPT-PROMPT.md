@@ -59,7 +59,9 @@ M1 – Spielregeln übernehmen (nicht neu schreiben):
    Rundlauf-Test.
 
 Harte Regeln:
-- Keine Kartentexte aus fremden Quellen ins Repo. Test-Daten sind synthetisch.
+- Fremde Kartentexte nur nach den Regeln in `CLAUDE.md` und `docs/KONZEPT.md`
+  Abschnitt 8 (dokumentierte Lizenz, `ATTRIBUTION.md`, Prüfsummen, unverändert).
+  Test-Daten sind synthetisch.
 - Keine Secrets im Repo. `.env` in `.gitignore`.
 - Keine weiteren Dienste als im Konzept (kein MongoDB, kein Node-Backend).
 - Kleine Commits mit Conventional-Commit-Nachrichten auf Englisch.
