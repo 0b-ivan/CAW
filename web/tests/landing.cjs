@@ -1,4 +1,4 @@
-// Browser regression tests for the M0 landing and the one-shot CUT DECK intro.
+// Browser regression tests for the landing page and the one-shot CUT DECK intro.
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -46,11 +46,17 @@ async function checkLanding(browser, width, height) {
 
     await page.getByRole('button', { name: 'DE', exact: true }).click();
     await page.getByText('[ NEUE SESSION ]', { exact: true }).waitFor();
-    assert.equal(await page.getByText('[ NEUE SESSION ]', { exact: true }).isDisabled(), true);
+    assert.equal(await page.getByText('[ NEUE SESSION ]', { exact: true }).isDisabled(), false);
     await page.getByLabel('Session-Code (6 Zeichen)').fill('k7m2qx');
     assert.equal(await page.locator('#code').inputValue(), 'K7M2QX');
     await page.locator('#code').fill('LLLLLL');
     assert.equal(await page.locator('#code').evaluate(input => input.checkValidity()), false);
+    await page.getByRole('button', { name: '[ BEITRETEN ]' }).click();
+    await page.locator('#status', { hasText: '6 ZEICHEN' }).waitFor();
+    // A well-formed code that does not exist is asked for and refused by the server.
+    await page.locator('#code').fill('ZZZZZZ');
+    await page.getByRole('button', { name: '[ BEITRETEN ]' }).click();
+    await page.locator('#status', { hasText: 'SESSION NICHT GEFUNDEN' }).waitFor();
     await page.locator('#code').fill('K7M2QX');
 
     await page.getByRole('button', { name: 'EN', exact: true }).click();

@@ -26,18 +26,18 @@
     </header>
     <div class="landing-content">
       <section class="create-section">
-        <button type="button" disabled data-text="newSession"></button>
+        <button id="new-session" type="button" data-text="newSession"></button>
       </section>
       <section class="join-section">
         <label class="eyebrow" for="code" data-text="enterCode"></label>
-        <div class="join-row">
-          <input id="code" name="code" type="text" maxlength="6"
+        <form id="join-form" class="join-row" novalidate>
+          <input id="code" name="code" type="text" maxlength="6" required
             pattern="[A-HJKMNP-Z2-9]{6}" autocomplete="off"
             autocapitalize="characters" spellcheck="false" aria-describedby="status">
-          <button type="button" disabled data-text="join"></button>
-        </div>
+          <button type="submit" data-text="join"></button>
+        </form>
       </section>
-      <p id="status" role="status" data-text="milestone"></p>
+      <p id="status" role="status" data-text="hint"></p>
     </div>
     <footer>
       <nav><button type="button" data-lang="de" aria-pressed="true">DE</button>
