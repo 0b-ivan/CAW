@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "session/Session.h"
@@ -39,8 +40,13 @@ class SessionRegistry final {
 
   // The running match of a room, or nullptr. Every lookup counts as activity.
   Session* find(std::string_view code, Time now = Clock::now());
-  // All running matches, for the clock tick.
-  std::vector<Session*> all();
+  // All running matches with their codes, for the clock tick.
+  std::vector<std::pair<std::string, Session*>> all();
+
+  // The room as Messages::saveRoom text, for Redis. Empty for an unknown code.
+  std::string snapshot(const std::string& code);
+  // Brings a saved room back after a restart. False for a malformed or outdated snapshot.
+  bool restore(const std::string& code, std::string_view snapshot, Time now = Clock::now());
 
  private:
   struct Room {

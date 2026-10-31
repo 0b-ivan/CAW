@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "Codes.h"
+#include "net/Messages.h"
 
 namespace caw {
 
@@ -77,14 +78,32 @@ Session* SessionRegistry::find(std::string_view code, Time now) {
   return found->second.session.get();
 }
 
-std::vector<Session*> SessionRegistry::all() {
-  std::vector<Session*> sessions;
+std::vector<std::pair<std::string, Session*>> SessionRegistry::all() {
+  std::vector<std::pair<std::string, Session*>> sessions;
   sessions.reserve(rooms_.size());
-  for (auto& [code, room] : rooms_) {
-    (void)code;
-    sessions.push_back(room.session.get());
-  }
+  for (auto& [code, room] : rooms_) sessions.emplace_back(code, room.session.get());
   return sessions;
+}
+
+std::string SessionRegistry::snapshot(const std::string& code) {
+  const auto found = rooms_.find(code);
+  if (found == rooms_.end()) return {};
+  const Room& room = found->second;
+  return Messages::saveRoom({room.language, room.hostToken, room.session->saveState(millisNow())});
+}
+
+bool SessionRegistry::restore(const std::string& code, std::string_view snapshot, Time now) {
+  const auto record = Messages::loadRoom(snapshot);
+  if (!Codes::validSessionCode(code) || !record || !Codes::validHostToken(record->hostToken) ||
+      (record->language != "de" && record->language != "en") || rooms_.count(code) != 0)
+    return false;
+  auto session =
+      std::make_unique<Session>(record->hostToken, cards_.deck(), Codes::seed(), millisNow());
+  if (!session->loadState(record->state, millisNow())) return false;
+  // Restored is not a change: it is already saved exactly like this.
+  session->takeChanged();
+  rooms_.emplace(code, Room{record->language, record->hostToken, now + ttl_, std::move(session)});
+  return true;
 }
 
 }  // namespace caw
