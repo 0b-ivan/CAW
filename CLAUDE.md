@@ -4,31 +4,35 @@ Partyspiel für 3–8 Handys im Browser, plus optionaler Big Screen (TV, Beamer,
 Laptop). Port des CrossPlay-X4-Spiels aus `0b-ivan/inx-4x-pro`
 (`src/apps_local/cardparty/`) auf einen eigenen Server in Docker.
 
-Lies vor jeder Arbeit: [docs/KONZEPT.md](docs/KONZEPT.md) (Architektur, Regeln,
-Performance-Budgets), [docs/UI-KONZEPT.md](docs/UI-KONZEPT.md) (Gestaltung,
-Ansichten, Big Screen), [docs/ROADMAP.md](docs/ROADMAP.md),
-[docs/TODO.md](docs/TODO.md). Was dort entschieden ist, gilt; wer davon
-abweichen will, ändert zuerst das Konzept und begründet es.
+Lies vor jeder Arbeit: [docs/KONZEPT.md](docs/KONZEPT.md) (Regeln,
+Performance-Budgets), [docs/KONZEPT-CPP-BACKEND.md](docs/KONZEPT-CPP-BACKEND.md)
+(Backend in C++, **hat Vorrang** vor KONZEPT.md bei Technik-Fragen),
+[docs/UI-KONZEPT.md](docs/UI-KONZEPT.md) (Gestaltung, Ansichten, Big Screen),
+[docs/ROADMAP.md](docs/ROADMAP.md), [docs/TODO.md](docs/TODO.md). Was dort
+entschieden ist, gilt; wer davon abweichen will, ändert zuerst das Konzept und
+begründet es.
+
+**Oberstes Ziel: lesbarer, wartbarer, pragmatischer Code.** Keine cleveren
+Tricks, keine unnötigen Abstraktionen. Lieber zehn klare Zeilen als drei
+schlaue. Sicherheit so viel wie nötig, nicht so viel wie möglich.
 
 ## Stack
 
-- Node.js 22, TypeScript (strict), pnpm-Workspaces
-- `packages/engine`: Spielregeln, **keine IO, keine Abhängigkeiten**, deterministisch mit Seed
-- `packages/protocol`: Nachrichtentypen + zod-Schemas, von Server und Web geteilt
-- `apps/server`: Fastify, `ws`, Redis (laufende Sessions), Postgres über Drizzle (dauerhafte Daten)
-- `apps/web`: Vite + TypeScript, kein großes UI-Framework; Ansichten Start, Spieler/Host, Big Screen
-- Docker Compose: `caddy`, `app`, `redis`, `postgres`
+- Backend `server/`: C++20, CMake, uWebSockets (HTTP + WebSocket), nlohmann/json,
+  libpqxx (Postgres), redis-plus-plus (Redis), doctest (Tests)
+- Spielregeln `server/src/game/`: übernommen aus der X4-Firmware, nicht neu geschrieben
+- Frontend `web/`: statisches HTML, CSS, JavaScript-Module; kein Framework, kein Build-Schritt
+- Docker Compose `deploy/`: `caddy` (TLS, statische Dateien), `server`, `redis`, `postgres`
 
 ## Befehle
 
 ```sh
-pnpm install
-pnpm check            # lint + typecheck + test, muss vor jedem Commit grün sein
-pnpm test             # Vitest
-pnpm e2e              # Playwright (Handy-Breiten 320/390, Desktop 1280)
-pnpm load             # Lasttest gegen die Budgets aus KONZEPT 5a
-docker compose -f compose.dev.yml up    # lokal mit Hot Reload
-docker compose up -d                     # Produktion
+cmake -S server -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j
+ctest --test-dir build --output-on-failure      # muss vor jedem Commit grün sein
+./bin/format                                     # clang-format auf geänderte Dateien
+docker compose -f deploy/compose.dev.yml up     # lokal
+docker compose -f deploy/compose.yml up -d      # Produktion
 ```
 
 Gibt es einen dieser Befehle noch nicht, ist das Teil der aktuellen Aufgabe,
@@ -39,10 +43,17 @@ nicht ein Grund, ihn zu überspringen.
 - **Spielregeln nicht neu erfinden.** Die Firmware hat sie getestet. Beim
   Portieren die Quelle (Datei im X4-Repo) im Commit nennen und den passenden
   Test mitportieren.
-- **Server ist autoritativ.** Clients schicken Absichten, nie Ergebnisse. Jede
-  Nachricht wird per zod geprüft; unbekannte Felder werden abgelehnt.
-- **Heißer Pfad ohne Datenbank.** Aktion → Engine → Frames verschicken → dann
-  Redis. Postgres nur bei Rundenende, Spielende, Fame, Pack-Import.
+- **Server ist autoritativ.** Clients schicken Absichten, nie Ergebnisse.
+  JSON wird nur in `server/src/net/Messages.cpp` gelesen und geschrieben.
+- **Ein Thread besitzt alle Sessions** (der uWebSockets-Loop). Der
+  Persistenz-Thread bekommt nur Kopien über die Warteschlange. Keine weiteren
+  Threads, keine Locks in der Spiellogik.
+- **Code-Stil** nach KONZEPT-CPP-BACKEND.md Abschnitt 4 und 11: eine Klasse pro
+  Datei, Funktionen kurz, Fehler als `ActionResult` statt Exceptions im
+  Spielpfad, kein Template-Zauber, keine Vererbungshierarchien.
+- **Heißer Pfad ohne Datenbank.** Aktion → Spielregeln → Frames verschicken →
+  Snapshot in die Warteschlange. Postgres nur bei Rundenende, Spielende,
+  Fame, Pack-Import.
 - **Kein Spieler sieht fremde Hände.** Der Big Screen bekommt nur öffentliche
   Daten. Keine Spieler-IDs, Tickets oder Host-Token an fremde Clients oder ins Log.
 - **Keine Kartentexte im Repo.** Packs kommen per Import in die DB. Test-Daten
@@ -60,6 +71,7 @@ nicht ein Grund, ihn zu überspringen.
 
 ## Definition of Done
 
-`pnpm check` grün, neue Logik hat Tests, betroffene Playwright-Fälle grün,
-Docker-Build grün, TODO.md abgehakt, Konzept aktualisiert, wenn sich eine
+Build ohne Warnungen, `ctest` grün, neue Logik hat Tests, betroffene
+Playwright-Fälle grün, Docker-Build grün, Code ist so geschrieben, dass ihn
+jemand ohne Erklärung versteht, TODO.md abgehakt, Konzept aktualisiert, wenn sich eine
 Entscheidung geändert hat.

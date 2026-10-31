@@ -1,12 +1,13 @@
 # CAW – Cards Against Whatever (Web)
 
 Partyspiel für 3–8 Spieler am Handy, mit optionalem Big Screen für TV,
-Beamer oder Laptop. Selbst gehostet mit Docker (Caddy, Node.js, Redis,
+Beamer oder Laptop. Selbst gehostet mit Docker (Caddy, C++-Backend, Redis,
 Postgres).
 
 Status: Konzeptphase, noch kein Code.
 
 - [Konzept](docs/KONZEPT.md)
+- [Konzept-Erweiterung: Backend in C++](docs/KONZEPT-CPP-BACKEND.md)
 - [UI-Konzept](docs/UI-KONZEPT.md)
 - [Roadmap](docs/ROADMAP.md)
 - [ToDo](docs/TODO.md)

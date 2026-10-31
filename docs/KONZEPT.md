@@ -3,6 +3,11 @@
 Stand: 2026-10-31 · Status: Entwurf, noch kein Code · Gestaltung und
 Ansichten im Detail: [UI-KONZEPT.md](UI-KONZEPT.md)
 
+> **Das Backend wird in C++ gebaut.** Wo dieses Dokument Node.js, TypeScript,
+> Fastify, zod, Drizzle oder Vite nennt, gilt stattdessen
+> [KONZEPT-CPP-BACKEND.md](KONZEPT-CPP-BACKEND.md). Regeln, Rollen, Ablauf,
+> Datenmodell und Performance-Budgets bleiben wie hier beschrieben.
+
 ## 1. Ziel
 
 Das Partyspiel aus der X4-Pro-Firmware (CrossPlay, `src/apps_local/cardparty/`
