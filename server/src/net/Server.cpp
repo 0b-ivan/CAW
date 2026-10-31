@@ -57,9 +57,8 @@ void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions) {
 }  // namespace
 
 void Server::registerSessionRoutes(uWS::App& app, SessionRegistry& sessions) {
-  app.post("/api/sessions", [&sessions](auto* response, auto*) {
-    createRoom(response, sessions);
-  });
+  auto createHandler = [&sessions](auto* response, auto*) { createRoom(response, sessions); };
+  app.post("/api/sessions", createHandler);
   app.get("/api/sessions/:code", [&sessions](auto* response, auto* request) {
     const std::string_view code = request->getParameter(0);
     const auto language = sessions.language(code);
