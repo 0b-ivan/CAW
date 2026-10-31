@@ -2,6 +2,8 @@
 """Download source CSV packs locally, without adding third-party cards to Git."""
 
 import argparse
+import csv
+import io
 import hashlib
 import json
 import os
@@ -32,6 +34,25 @@ def validate_source_url(url):
         raise ValueError("Unexpected CVH download path")
 
 
+def validate_csv(contents, expected_black, expected_white):
+    try:
+        decoded = contents.decode("utf-8-sig")
+        reader = csv.reader(io.StringIO(decoded, newline=""), strict=True)
+        if next(reader, None) != ["typ", "text"]:
+            raise ValueError("Unexpected CSV header (expected typ,text)")
+        counts = {"b": 0, "w": 0}
+        for row in reader:
+            if len(row) != 2 or row[0] not in counts or not row[1].strip():
+                raise ValueError("Invalid card type or empty card text")
+            counts[row[0]] += 1
+    except (UnicodeDecodeError, csv.Error) as error:
+        raise ValueError("Invalid UTF-8 CSV file") from error
+    if counts != {"b": expected_black, "w": expected_white}:
+        raise ValueError(
+            f"Card counts changed: found {counts['b']} black and {counts['w']} white"
+        )
+
+
 def download_pack(pack, directory, force=False, opener=urlopen):
     url = pack["csv_url"]
     validate_source_url(url)
@@ -59,6 +80,8 @@ def download_pack(pack, directory, force=False, opener=urlopen):
     prefix = contents.lstrip(b"\xef\xbb\xbf \r\n\t").lower()
     if prefix.startswith((b"<html", b"<!doctype html", b"%pdf")):
         raise ValueError("Source returned HTML or PDF rather than CSV")
+
+    validate_csv(contents, pack['black_count'], pack['white_count'])
 
     # Write only after validation; a failed download never corrupts an existing file.
     temporary = None
