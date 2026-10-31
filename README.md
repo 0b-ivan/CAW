@@ -32,6 +32,37 @@ noch nicht geprüft. Nur Caddy veröffentlicht Ports. Redis und Postgres sind
 intern erreichbar. Das Datenbankpasswort muss in einer URL verwendbar sein
 (z.B. Hex-Zeichen); `.env` wird nicht eingecheckt.
 
+## Hetzner Cloud / Cloudflare Tunnel (Produktion)
+
+Die Produktion wird **ausschließlich über Cloudflare Tunnel** veröffentlicht.
+Ein `cloudflared`-Container führt ausgehende Verbindungen zu Cloudflare;
+Caddy ist nur über das Docker-Netz auf HTTP :80 erreichbar. Die zusätzliche
+`deploy/compose.hetzner.yml` entfernt alle Caddy-Hostports und nutzt ein
+lokales, nicht eingechecktes Tunnel-Token.
+
+**Vollständige Anleitung:** [Hetzner + Cloudflare Tunnel](docs/operations/HETZNER-CLOUDFLARE.md).
+Auf einem frisch vorbereiteten Hetzner-Server nach Anlegen des Tunnels
+und der privaten Dateien:
+
+```sh
+cp deploy/hetzner/env.example deploy/.env
+# Passwort (openssl rand -hex 32), Betreiberangaben und Tunnel-Secret einsetzen
+python3 bin/hetzner-preflight.py
+docker compose -f deploy/compose.yml -f deploy/compose.hetzner.yml up --build -d --wait
+python3 bin/hetzner-preflight.py --public
+node bin/hetzner-wss-check.mjs
+```
+
+**Nicht** `docker compose -f deploy/compose.yml up` als öffentliche
+Hetzner-Produktion ausführen: Das Basis-Compose stellt Entwicklungsports
+bereit. Unter Tunnel ist `/metrics` nach außen immer 404; intern wird
+`server:8080/metrics` weiter von Prometheus abgefragt. Der Tunnel erfordert
+keine öffentlichen 80/443 oder A-/AAAA-Records zur Hetzner-Origin-IP.
+
+Bis zu einem öffentlichen Release fehlen die Betreiberangaben, echte
+Cloudflare-HTTPS-/WSS-Abnahme und **verschlüsselte externe Backups**
+für Postgres und Redis. Die lokalen 14-Tage-Dumps bleiben bestehen.
+
 ## Spielen
 
 1. Am Laptop oder Handy http://localhost:8080 öffnen, `[ NEUE SESSION ]`.
