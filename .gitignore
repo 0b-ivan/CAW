@@ -15,3 +15,6 @@ __pycache__/
 
 # Operator details for the imprint; copy web/operator.example.json and fill it in.
 web/operator.json
+
+# Hetzner Cloudflare Tunnel token (read by cloudflared as a Compose secret).
+deploy/secrets/
