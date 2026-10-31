@@ -1,9 +1,10 @@
 # CAW – Cards Against Whatever (Web)
 
-Partyspiel für 3–8 Handys, mit optionalem Big Screen. M0 bis M5 sind
+Partyspiel für 3–8 Handys, mit optionalem Big Screen. M0 bis M6 sind
 fertig: Startseite, C++-Server mit Sessions über WebSocket und Redis,
-portierte Firmware-Regeln, die Spielseite für Handys und Host, der Big Screen
-und die sechs deutschen Cards-vs-Humanity-Sets als wählbare Packs.
+portierte Firmware-Regeln, die Spielseite für Handys und Host, der Big Screen,
+die sechs deutschen Cards-vs-Humanity-Sets als wählbare Packs und die
+Ruhmeshalle in Postgres.
 
 ## Lokal starten
 

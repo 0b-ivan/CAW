@@ -183,8 +183,14 @@ mit Sekunden. „DU WURDEST ENTFERNT“ mit `[ NÄCHSTE LOBBY ]`.
 
 **Keine Krone.** Große Sieger-Typografie und Endstand als Balken aus Zeichen
 (`████████  7`), `[ NOCHMAL ]` (Stimme), Zähler „3 VON 5 WOLLEN NOCHMAL“.
-Host: `[ REMATCH ]`; zurück zur Startseite über das Menü. Die Siegersätze der
-Partie kommen mit M6, wenn der Server sie speichert.
+Host: `[ REMATCH ]`; zurück zur Startseite über das Menü. Darunter die
+Siegersätze der Partie („ADA: …“), die Liste scrollt in sich.
+
+### 4.11 Ruhmeshalle (Menü → RUHMESHALLE)
+
+Für alle. `NAME·WORT` mit „3 SIEGE · 12 RUNDEN · 5 SPIELE“, acht pro Seite
+mit `[‹]` `[›]`, darunter die fünf neuesten Siegersätze. Ohne Datenbank:
+„NOCH KEINE EINTRÄGE“.
 
 ### 4.10 Host-Bereich (Menü `≡` → HOST)
 
@@ -249,9 +255,9 @@ und eine schmale Punktetabelle.
 
 ### Ende
 
-Zeremonie ohne Krone: Sieger-Typografie, Balken-Endstand, „x VON y WOLLEN
-NOCHMAL“. Später: im Wechsel die Siegersätze der Partie (M6) und eine
-Fußzeile mit Lizenz und Rechteinhaber der Packs (M5).
+Zeremonie ohne Krone: Sieger-Typografie, Balken-Endstand, darunter alle 6 s
+der nächste Siegersatz der Partie, „x VON y WOLLEN NOCHMAL“ und in der
+Fußzeile Rechteinhaber und Lizenz der Packs.
 
 ## 6. Responsiv
 
