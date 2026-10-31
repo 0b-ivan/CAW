@@ -121,9 +121,10 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Hetzner-Konzept auf bestehenden Server/Tunnel angepasst, Compose-
   Override mit Loopback-only-Caddy-Port und extern gesperrtem `/metrics`
 - [x] Preflight- und synthetische Tunnel-Konfigurationstests in CI ergänzt
-- [ ] Hetzner-VM, SSH-Zugang und Firewall (nur SSH von Admin-IP) einrichten
-- [ ] Cloudflare Published Application `caw.obivan.org` → `http://caddy:80`
-  verbinden; Token auf Server speichern und Tunnel als Healthy bestätigen
+- [ ] Existierenden Hetzner-Host prüfen: Docker, Compose, freier Port
+  `127.0.0.1:18081`, bestehender `cloudflared`-Dienst und CAW-Start
+- [ ] Im bestehenden Cloudflare-Tunnel nur den Hostnamen
+  `caw.obivan.org` → `http://127.0.0.1:18081` ergänzen und prüfen
 - [ ] Verschlüsselte Offsite-Backups für Postgres und Redis inklusive
   Restore-Test konfigurieren; lokale 14-Tage-Dumps allein genügen nicht
 - [x] Täglicher `pg_dump` (Dienst `backup`, 14 Tage), `bin/restore`; Sichern und Zurückspielen in eine frische Datenbank läuft in jeder CI
