@@ -57,3 +57,28 @@ TEST_CASE("notices and errors are small typed frames") {
   CHECK(nlohmann::json::parse(Protocol::notice("expired")) ==
         nlohmann::json({{"type", "expired"}}));
 }
+
+TEST_CASE("settings accept exactly the X4's choices") {
+  const std::string good =
+      R"({"type":"settings","settings":{"rounds":5,"answerSecs":60,"extensionSecs":15,)"
+      R"("jurorSecs":30,"autoSecs":8,"rando":false}})";
+  auto settings = Protocol::parse(good);
+  REQUIRE(settings);
+  CHECK(settings->type == Command::Type::Settings);
+  CHECK(settings->settings.rounds == 5);
+  CHECK(settings->settings.answerSecs == 60);
+  CHECK(settings->settings.jurorSecs == 30);
+  CHECK(settings->settings.autoSecs == 8);
+  CHECK_FALSE(settings->settings.rando);
+
+  auto changed = [&](const std::string& from, const std::string& to) {
+    std::string text = good;
+    text.replace(text.find(from), from.size(), to);
+    return text;
+  };
+  CHECK_FALSE(Protocol::parse(changed("\"rounds\":5", "\"rounds\":7")));
+  CHECK_FALSE(Protocol::parse(changed("\"answerSecs\":60", "\"answerSecs\":61")));
+  CHECK_FALSE(Protocol::parse(changed("\"rando\":false", "\"rando\":0")));
+  CHECK_FALSE(Protocol::parse(changed(",\"rando\":false", "")));
+  CHECK_FALSE(Protocol::parse(changed("\"rando\":false", "\"rando\":false,\"x\":1")));
+}

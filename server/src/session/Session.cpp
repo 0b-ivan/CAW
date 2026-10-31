@@ -148,9 +148,19 @@ bool Session::hostCommand(const Command& command, std::uint32_t now) {
       return table_.addTime(now);
     case Command::Type::ContinueWithout:
       return table_.continueWithout(now);
+    case Command::Type::Settings:
+      return applySettings(command.settings, now);
     default:
       return false;
   }
+}
+
+// Clocks and Rando apply at once; like on the X4 the number of rounds only
+// changes in the lobby, so a running match refuses a different count.
+bool Session::applySettings(const Settings& settings, std::uint32_t now) {
+  if (settings.rounds != game_.requestedRounds() && !game_.setRounds(settings.rounds)) return false;
+  table_.apply(settings, now);
+  return true;
 }
 
 bool Session::kick(std::uint8_t seat) {
@@ -240,6 +250,8 @@ void Session::sendState(ConnectionId connection, std::uint8_t seat, std::uint32_
   frame.now = now;
   frame.seat = seat;
   frame.isHost = hosts_.count(connection) != 0;
+  frame.settings = table_.settings();
+  frame.requestedRounds = game_.requestedRounds();
   if (seat < kPlayers &&
       !seats_.privateHand(connection, tickets_[seat].secret, frame.hand, frame.revision))
     frame.seat = kNone;  // never show a hand the connection cannot prove it owns

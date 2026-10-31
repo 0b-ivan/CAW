@@ -59,6 +59,7 @@ class Session final {
   bool playerMove(ConnectionId connection, const Command& command, std::uint32_t now);
   bool hostCommand(const Command& command, std::uint32_t now);
   bool kick(std::uint8_t seat);
+  bool applySettings(const cardparty::Settings& settings, std::uint32_t now);
   std::string joinError(ConnectionId connection) const;
 
   // Sends the current state to every seat and every host connection.

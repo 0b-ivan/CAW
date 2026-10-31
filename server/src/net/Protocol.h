@@ -34,6 +34,7 @@ struct Command {
     HostUnpause,
     AddTime,
     ContinueWithout,
+    Settings,  // host only: settings
   };
   Type type = Type::Join;
   std::string name;
@@ -41,6 +42,7 @@ struct Command {
   std::uint32_t revision = 0;
   std::vector<std::uint8_t> slots;
   std::uint8_t index = 0;
+  cardparty::Settings settings;
 };
 
 // Everything one connection may see. The hand is filled only for that connection's own seat.
@@ -54,6 +56,8 @@ struct StateFrame {
   bool isHost = false;
   cardparty::HandView hand;
   std::uint32_t revision = 0;
+  cardparty::Settings settings;
+  std::uint8_t requestedRounds = 0;  // the host's choice; `rounds` is the fair count once started
 };
 
 class Protocol final {

@@ -274,3 +274,49 @@ TEST_CASE("a snapshot that does not fit is refused and changes nothing") {
   table.deliver();
   CHECK(table.session.seatedCount() == 1);
 }
+
+namespace {
+Command settings(std::uint8_t rounds, std::uint8_t answerSecs) {
+  Command command;
+  command.type = Command::Type::Settings;
+  command.settings.rounds = rounds;
+  command.settings.answerSecs = answerSecs;
+  command.settings.extensionSecs = 0;
+  return command;
+}
+}  // namespace
+
+TEST_CASE("the host sets rounds in the lobby and clocks at any time") {
+  Table table;
+  table.join(1, "Ada");
+  table.join(2, "Bert");
+  table.join(3, "Cyra");
+  table.claimHost(9);
+  table.send(9, settings(5, 0));
+  CHECK(table.lastState(1).at("settings").at("rounds") == 5);
+
+  table.host(9, Command::Type::Start);
+  // A running match keeps its number of rounds, but takes a new answer clock.
+  table.send(9, settings(8, 30));
+  CHECK(table.last(9).at("code") == "rejected");
+  table.send(9, settings(5, 30));
+  CHECK(table.lastState(1).at("settings").at("answerSecs") == 30);
+
+  // The clock starts with the next round and closes it when it runs out.
+  table.host(9, Command::Type::Abort);
+  table.host(9, Command::Type::Next);
+  json state = table.lastState(1);
+  REQUIRE(state.at("phase") == "playing");
+  CHECK(state.at("clock") == "answers");
+  CHECK(state.at("left") == 30000);
+  table.session.tick(table.now + 31000);
+  table.deliver();
+  CHECK(table.lastState(1).at("phase") != "playing");
+}
+
+TEST_CASE("settings from a player are refused") {
+  Table table;
+  table.join(1, "Ada");
+  table.send(1, settings(5, 0));
+  CHECK(table.last(1).at("code") == "not_host");
+}

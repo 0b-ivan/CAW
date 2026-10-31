@@ -1,6 +1,7 @@
 // JSON for the live game lives here; snapshots and REST bodies live in Messages.cpp.
 #include "Protocol.h"
 
+#include <initializer_list>
 #include <nlohmann/json.hpp>
 
 namespace caw {
@@ -9,7 +10,14 @@ using nlohmann::json;
 using namespace cardparty;
 
 // Which fields a command carries besides "type".
-enum Field : unsigned { kName = 1, kToken = 2, kRevision = 4, kSlots = 8, kIndex = 16 };
+enum Field : unsigned {
+  kName = 1,
+  kToken = 2,
+  kRevision = 4,
+  kSlots = 8,
+  kIndex = 16,
+  kSettings = 32
+};
 
 struct CommandSpec {
   const char* name;
@@ -38,6 +46,7 @@ constexpr CommandSpec kCommands[] = {
     {"hostUnpause", Command::Type::HostUnpause, 0},
     {"addTime", Command::Type::AddTime, 0},
     {"continueWithout", Command::Type::ContinueWithout, 0},
+    {"settings", Command::Type::Settings, kSettings},
 };
 
 const CommandSpec* findCommand(const std::string& name) {
@@ -48,6 +57,28 @@ const CommandSpec* findCommand(const std::string& name) {
 
 bool smallNumber(const json& value, std::uint64_t maximum) {
   return value.is_number_unsigned() && value.get<std::uint64_t>() <= maximum;
+}
+
+// One of the listed values; false for anything else, including non-numbers.
+bool option(const json& value, std::initializer_list<std::uint8_t> options, std::uint8_t& out) {
+  if (!smallNumber(value, 255)) return false;
+  for (std::uint8_t candidate : options)
+    if (value.get<std::uint8_t>() == candidate) {
+      out = candidate;
+      return true;
+    }
+  return false;
+}
+
+bool readSettings(const json& value, Settings& settings) {
+  if (!value.is_object() || value.size() != 6 || !value.at("rando").is_boolean()) return false;
+  settings.rando = value.at("rando").get<bool>();
+  // The same choices the X4 offers on its rules screen.
+  return option(value.at("rounds"), {3, 5, 8, 10, 12, 15, 20, 30}, settings.rounds) &&
+         option(value.at("answerSecs"), {0, 30, 45, 60, 90, 120}, settings.answerSecs) &&
+         option(value.at("extensionSecs"), {0, 10, 15, 20, 30}, settings.extensionSecs) &&
+         option(value.at("jurorSecs"), {0, 30, 60, 90}, settings.jurorSecs) &&
+         option(value.at("autoSecs"), {0, 5, 8, 12}, settings.autoSecs);
 }
 
 // Reads one field into the command; false if it is missing or malformed.
@@ -82,6 +113,8 @@ bool readField(const json& message, unsigned field, Command& command) {
       if (!smallNumber(message.at("index"), kPlayers + kPileMax)) return false;
       command.index = message.at("index").get<std::uint8_t>();
       return true;
+    case kSettings:
+      return readSettings(message.at("settings"), command.settings);
     default:
       return false;
   }
@@ -154,6 +187,13 @@ json playsJson(const StateFrame& frame) {
   return plays;
 }
 
+json settingsJson(const StateFrame& frame) {
+  const Settings& settings = frame.settings;
+  return {{"rounds", frame.requestedRounds},         {"answerSecs", settings.answerSecs},
+          {"extensionSecs", settings.extensionSecs}, {"jurorSecs", settings.jurorSecs},
+          {"autoSecs", settings.autoSecs},           {"rando", settings.rando}};
+}
+
 json ownJson(const StateFrame& frame) {
   json own = {{"seat", frame.seat}, {"isHost", frame.isHost}, {"revision", frame.revision}};
   if (frame.seat >= kPlayers) return own;
@@ -181,7 +221,7 @@ std::optional<Command> Protocol::parse(std::string_view text) {
     Command command;
     command.type = spec->type;
     std::size_t expectedKeys = 1;
-    for (unsigned field : {kName, kToken, kRevision, kSlots, kIndex}) {
+    for (unsigned field : {kName, kToken, kRevision, kSlots, kIndex, kSettings}) {
       if ((spec->fields & field) == 0) continue;
       ++expectedKeys;
       if (!readField(message, field, command)) return std::nullopt;
@@ -212,6 +252,7 @@ std::string Protocol::state(const StateFrame& frame) {
                 {"pausedBy", seatName(view, table.pausedBy())},
                 {"blockedOn", seatName(view, table.blockedOn())},
                 {"votes", table.votes()},
+                {"settings", settingsJson(frame)},
                 {"me", ownJson(frame)}};
   state["prompt"] =
       view.prompt < frame.deck->promptsCount ? frame.deck->prompts[view.prompt].text : "";
