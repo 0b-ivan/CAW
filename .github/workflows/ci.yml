@@ -21,21 +21,23 @@ jobs:
         run: python3 -m unittest discover -s tests -p 'test_*cvh*.py'
       - name: Create ephemeral test configuration
         run: echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" > deploy/.env
-      - name: Validate Hetzner Tunnel configuration with synthetic credentials
+      - name: Validate existing-Tunnel Compose and Caddy origin
         run: |
           python3 -m unittest discover -s tests -p 'test_hetzner_preflight.py'
-          mkdir -p deploy/secrets
-          printf '%s' 'SYNTHETIC_ONLY_TEST_TOKEN_NOT_VALID_FOR_CLOUDFLARE_1234567890' > deploy/secrets/cloudflared-token
-          chmod 600 deploy/secrets/cloudflared-token
           docker compose -f deploy/compose.yml -f deploy/compose.hetzner.yml config --format json | python3 -c '
           import json, sys
           model = json.load(sys.stdin)
           services = model["services"]
-          assert not services["caddy"].get("ports"), services["caddy"].get("ports")
+          ports = services["caddy"]["ports"]
+          assert len(ports) == 1, ports
+          assert ports[0]["host_ip"] == "127.0.0.1", ports
+          assert str(ports[0]["published"]) == "18081", ports
+          assert ports[0]["target"] == 80, ports
+          assert "cloudflared" not in services, "existing host Tunnel must be reused"
           assert not services["server"].get("ports")
-          assert not services["cloudflared"].get("ports")
-          assert "cloudflared_token" in model["secrets"]
-          print("PASS Tunnel Compose: no public origin ports")
+          assert not services["redis"].get("ports")
+          assert not services["postgres"].get("ports")
+          print("PASS Hetzner: existing Tunnel, loopback-only CAW origin")
           '
           docker run --rm --entrypoint caddy \
             -v "$PWD/deploy/Caddyfile.hetzner:/etc/caddy/Caddyfile:ro" \
