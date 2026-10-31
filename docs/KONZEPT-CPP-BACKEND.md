@@ -188,6 +188,7 @@ Befehle (Client → Server), alle mit `type`:
 | `pause`, `unpause`, `again` | `token` | Spieler |
 | `start`, `next`, `close`, `abort`, `end`, `rematch`, `hostPause`, `hostUnpause`, `addTime`, `continueWithout` | – | Host |
 | `kick` | `index` (Sitz) | Host |
+| `settings` | `settings`: `rounds`, `answerSecs`, `extensionSecs`, `jurorSecs`, `autoSecs`, `rando` | Host; Runden nur in der Lobby, Werte wie auf dem X4 |
 
 Antworten (Server → Client): `welcome` (`token`, `seat`; das Ticket rotiert bei
 jedem `resume`), `state` (öffentlicher Stand plus `me` mit eigener Hand),
