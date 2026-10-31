@@ -192,8 +192,9 @@ Befehle (Client → Server), alle mit `type`:
 
 Antworten (Server → Client): `welcome` (`token`, `seat`; das Ticket rotiert bei
 jedem `resume`), `state` (öffentlicher Stand plus `me` mit eigener Hand),
-`error` (`code`), sowie `host`, `expired`, `replaced`, `kicked`. Nach
-`replaced` und `kicked` schließt der Server den Socket.
+`error` (`code`), sowie `host`, `expired`, `replaced`, `kicked`. Auf `host`
+folgt sofort ein `state`, damit die Host-Seite den Tisch ohne Warten zeigt.
+Nach `replaced` und `kicked` schließt der Server den Socket.
 
 ## 8. Sicherheit: bewusst pragmatisch
 
