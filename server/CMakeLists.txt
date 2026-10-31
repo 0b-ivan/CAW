@@ -26,7 +26,7 @@ endif()
 add_library(caw_support src/config.cpp src/log.cpp src/net/Metrics.cpp)
 target_include_directories(caw_support PUBLIC src)
 target_link_libraries(caw_support PRIVATE caw_warnings)
-add_library(caw_session src/session/Codes.cpp)
+add_library(caw_session src/session/Codes.cpp src/session/PlayerWords.cpp)
 target_include_directories(caw_session PUBLIC src)
 target_link_libraries(caw_session PRIVATE caw_warnings)
 add_library(caw_messages src/net/Messages.cpp)
@@ -40,7 +40,7 @@ target_link_libraries(caw_play PUBLIC caw_game caw_session caw_messages caw_supp
   nlohmann_json::nlohmann_json Threads::Threads PRIVATE caw_warnings)
 if(CAW_BUILD_SERVER)
   add_executable(caw-server src/main.cpp src/net/Server.cpp src/store/Health.cpp
-    src/store/RedisStore.cpp)
+    src/store/RedisStore.cpp src/store/PostgresStore.cpp)
   target_include_directories(caw-server PRIVATE src)
   target_link_libraries(caw-server PRIVATE caw_support caw_session caw_messages caw_play caw_warnings
     uwebsockets PkgConfig::PQXX ${CAW_REDIS_TARGET})

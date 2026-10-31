@@ -164,6 +164,7 @@ Host-Token, bevor es die übernommenen Host-Methoden aufruft.
 
 - `POST /api/sessions` → `{ code, hostToken }`
 - `GET  /api/sessions/{code}` → existiert? Sprache, Phase (für die Startseite)
+- `GET  /api/fame` → Ruhmeshalle (Namen mit Wort, Zähler, Siegersätze), aus dem Speicher
 - `GET  /api/packs` → alle geladenen Packs mit Titel, Sprache, Lizenz, Rechteinhaber, Quelle, Kartenzahl
 - `GET  /healthz` → 200, wenn Redis und Postgres erreichbar sind
 - `GET  /metrics` → wenige Zähler im Prometheus-Textformat (Sessions,
@@ -180,7 +181,7 @@ Befehle (Client → Server), alle mit `type`:
 
 | type | Felder | Wer |
 |---|---|---|
-| `join` | `name` | jeder (Lobby) |
+| `join` | `name`, optional `player` (Geräte-ID, 16 Hex) | jeder (Lobby); die ID verlässt den Server nie |
 | `resume` | `token` (Sitz-Ticket) | Spieler nach Reload |
 | `host` | `token` (Host-Token) | macht die Verbindung zum Host |
 | `submit` | `token`, `revision`, `slots` | Spieler |

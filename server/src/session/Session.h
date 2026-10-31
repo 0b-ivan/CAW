@@ -12,6 +12,7 @@
 #include "game/CardPartyTable.h"
 #include "net/Protocol.h"
 #include "packs/PackLibrary.h"
+#include "store/HistoryEvent.h"
 
 namespace caw {
 
@@ -56,6 +57,12 @@ class Session final {
   bool isHostToken(std::string_view token) const;
   // The chosen packs, sorted: together with saveState() they restore the match.
   const std::vector<std::string>& packs() const { return packIds_; }
+  // Seat identities and this match's winning sentences, for the room snapshot.
+  std::vector<Identity> identities() const;
+  const std::vector<MatchLine>& matchLines() const { return matchLines_; }
+  void restoreExtras(const std::vector<Identity>& identities, std::vector<MatchLine> lines);
+  // Rounds won and matches played since the last call, for the statistics.
+  std::vector<HistoryEvent> takeHistory();
   std::size_t seatedCount() const { return game_.seatedCount(); }
 
  private:
@@ -67,6 +74,12 @@ class Session final {
   bool kick(std::uint8_t seat);
   bool applySettings(const cardparty::Settings& settings, std::uint32_t now);
   bool selectPacks(const std::vector<std::string>& ids);
+  void assignIdentity(std::uint8_t seat, const std::string& requested);
+  // Turns a newly reached reveal or end of match into history events.
+  void noteProgress();
+  void roundWon(const cardparty::PublicView& view);
+  void matchEnded(const cardparty::PublicView& view);
+  std::string playerName(std::uint8_t seat) const;
   std::string joinError(ConnectionId connection) const;
 
   // Sends the current state to every seat and every host connection.
@@ -91,6 +104,12 @@ class Session final {
   std::set<ConnectionId> hosts_;
   std::set<ConnectionId> screens_;
   std::vector<Outgoing> outgoing_;
+  Identity identities_[cardparty::kPlayers];
+  std::vector<MatchLine> matchLines_;
+  std::vector<HistoryEvent> history_;
+  // The last phase and round seen, so each reveal and each end counts once.
+  cardparty::Phase lastPhase_ = cardparty::Phase::Lobby;
+  std::uint16_t lastRound_ = 0;
   bool changed_ = false;
 };
 

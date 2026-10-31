@@ -4,8 +4,10 @@
 #include <stdexcept>
 #include <utility>
 
+#include "game/CardPartySentence.h"
 #include "net/Messages.h"
 #include "session/Codes.h"
+#include "session/PlayerWords.h"
 
 namespace caw {
 using namespace cardparty;
@@ -74,9 +76,29 @@ void Session::join(ConnectionId connection, const Command& command, std::uint32_
     return send(connection, Protocol::error(joinError(connection)));
   tickets_[ticket.seat] = ticket;
   seatConnection_[ticket.seat] = connection;
+  assignIdentity(ticket.seat, command.player);
   send(connection, Protocol::welcome(Codes::toHex(ticket.secret, kTicketBytes), ticket.seat));
   table_.tick(now);
   publishAll(now);
+}
+
+// From the firmware's CardPartyBrowserServer::assignId: a missing id or one already at
+// the table gets a fresh one, and the word moves on until nobody else here has it.
+void Session::assignIdentity(std::uint8_t seat, const std::string& requested) {
+  bool taken = requested.empty();
+  for (std::uint8_t i = 0; i < kPlayers; ++i)
+    if (i != seat && identities_[i].playerId == requested) taken = true;
+  const std::string id = taken ? Codes::playerId() : requested;
+  std::uint8_t word = wordForPlayer(id);
+  bool inUse = true;
+  while (inUse) {
+    inUse = false;
+    for (std::uint8_t i = 0; i < kPlayers; ++i)
+      if (i != seat && !identities_[i].playerId.empty() && identities_[i].word == word)
+        inUse = true;
+    if (inUse) word = static_cast<std::uint8_t>((word + 1) % kPlayerWords);
+  }
+  identities_[seat] = {id, word};
 }
 
 void Session::resume(ConnectionId connection, const Command& command, std::uint32_t now) {
@@ -191,6 +213,7 @@ bool Session::kick(std::uint8_t seat) {
   table_.seatGone(seat);
   tickets_[seat] = SessionTicket{};
   seatConnection_[seat] = kNoConnection;
+  identities_[seat] = Identity{};
   // Tell the phone why before its socket goes.
   if (connection != kNoConnection) send(connection, Protocol::notice("kicked"), true);
   return true;
@@ -244,6 +267,9 @@ bool Session::loadState(std::string_view text, std::uint32_t now) {
   seats_.disconnectAll();
   for (ConnectionId& connection : seatConnection_) connection = kNoConnection;
   for (SessionTicket& ticket : tickets_) ticket = SessionTicket{};
+  // The restored state was counted before the restart.
+  lastPhase_ = game_.publicView().phase;
+  lastRound_ = game_.publicView().round;
   hosts_.clear();
   screens_.clear();
   outgoing_.clear();
@@ -261,9 +287,71 @@ bool Session::isHostToken(std::string_view token) const {
   return Codes::sameToken(hostToken_, token);
 }
 
+std::vector<Identity> Session::identities() const {
+  return std::vector<Identity>(std::begin(identities_), std::end(identities_));
+}
+
+void Session::restoreExtras(const std::vector<Identity>& identities, std::vector<MatchLine> lines) {
+  for (std::size_t seat = 0; seat < kPlayers && seat < identities.size(); ++seat)
+    identities_[seat] = identities[seat];
+  matchLines_ = std::move(lines);
+}
+
+std::vector<HistoryEvent> Session::takeHistory() {
+  std::vector<HistoryEvent> events;
+  events.swap(history_);
+  return events;
+}
+
+void Session::noteProgress() {
+  const PublicView view = game_.publicView();
+  if (view.phase == Phase::Playing && lastPhase_ == Phase::Lobby) matchLines_.clear();
+  if (view.phase == Phase::Reveal && (lastPhase_ != Phase::Reveal || view.round != lastRound_))
+    roundWon(view);
+  if (view.phase == Phase::Finished && lastPhase_ != Phase::Finished) matchEnded(view);
+  lastPhase_ = view.phase;
+  lastRound_ = view.round;
+}
+
+std::string Session::playerName(std::uint8_t seat) const {
+  return game_.publicView().players[seat].name;
+}
+
+// The winning sentence goes into this match's list; a seated winner also into the statistics.
+void Session::roundWon(const PublicView& view) {
+  if (view.selected >= view.plays || view.prompt >= deck_.promptsCount) return;  // aborted
+  const PublicPlay& play = view.pile[view.selected];
+  const char* answers[kPickMax] = {"", "", ""};
+  for (std::uint8_t i = 0; i < view.pick && i < kPickMax; ++i)
+    if (play.cards[i] < deck_.answersCount) answers[i] = deck_.answers[play.cards[i]].text;
+  char sentence[1024] = {};
+  cardparty::sentence::compose(deck_.prompts[view.prompt].text, answers, view.pick, sentence,
+                               sizeof(sentence));
+  const bool seated = view.winner < kPlayers;
+  matchLines_.push_back({seated ? playerName(view.winner) : "Rando", sentence});
+  if (!seated || identities_[view.winner].playerId.empty()) return;
+  const Identity& winner = identities_[view.winner];
+  history_.push_back({HistoryEvent::Kind::RoundWon, winner.playerId, playerName(view.winner),
+                      winner.word, false, sentence});
+}
+
+void Session::matchEnded(const PublicView& view) {
+  std::uint16_t best = 0;
+  for (const PublicPlayer& player : view.players)
+    if (player.seated && player.points > best) best = player.points;
+  for (std::uint8_t seat = 0; seat < kPlayers; ++seat) {
+    const Identity& identity = identities_[seat];
+    if (!view.players[seat].seated || identity.playerId.empty()) continue;
+    const bool won = best > 0 && view.players[seat].points == best;
+    history_.push_back({HistoryEvent::Kind::MatchPlayed, identity.playerId, playerName(seat),
+                        identity.word, won, ""});
+  }
+}
+
 void Session::publishAll(std::uint32_t now) {
   // Every accepted change is published, so this is also the place to mark it for saving.
   changed_ = true;
+  noteProgress();
   for (std::uint8_t seat = 0; seat < kPlayers; ++seat)
     if (seatConnection_[seat] != kNoConnection) sendState(seatConnection_[seat], seat, now);
   for (ConnectionId host : hosts_)
@@ -281,6 +369,9 @@ StateFrame Session::publicFrame(std::uint32_t now) const {
   frame.settings = table_.settings();
   frame.requestedRounds = game_.requestedRounds();
   for (const std::string& id : packIds_) frame.packs.push_back(library_.find(id));
+  for (std::uint8_t seat = 0; seat < kPlayers; ++seat)
+    if (!identities_[seat].playerId.empty()) frame.words[seat] = playerWord(identities_[seat].word);
+  frame.lines = &matchLines_;
   return frame;
 }
 

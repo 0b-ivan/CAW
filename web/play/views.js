@@ -25,6 +25,11 @@ export function displayName(name) {
 }
 
 // "KARTEN: Cards vs Humanity · CC BY-NC-SA 2.0": who owns the cards in play and under which license.
+// "Ada·Toast": the word tells two Adas apart.
+export function nameWithWord(player) {
+  return player.word ? `${player.name}·${player.word}` : player.name;
+}
+
 export function creditsText(packs) {
   const credits = [...new Set(packs.map((pack) => `${pack.rightsHolder} · ${pack.license}`))];
   return credits.length ? t('credits', credits.join(' / ')) : '';
@@ -98,7 +103,7 @@ function renderLobby(app) {
 function rosterItems(app) {
   if (!app.frame.players.length) return [listItem(t('noPlayers'))];
   return app.frame.players.map((player) => {
-    let label = player.name;
+    let label = nameWithWord(player);
     if (player.seat === app.frame.me.seat) label += t('youMark');
     if (!player.connected) label += t('offlineMark');
     return listItem(label);
@@ -279,6 +284,8 @@ function renderFinished(app) {
   $('finished-bars').replaceChildren(...ranked.map((p) => barItem(p, best)));
   $('finished-votes').textContent = t('votes', frame.votes, frame.players.length);
   $('finished-credits').textContent = creditsText(frame.packs);
+  $('finished-lines-title').hidden = frame.lines.length === 0;
+  $('finished-lines').replaceChildren(...frame.lines.map((line) => listItem(`${line.name}: ${line.sentence}`)));
   const voter = isSeated(app) && !app.isHost;
   $('again-button').hidden = !voter;
   $('again-button').disabled = voter && frame.me.voted;

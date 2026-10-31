@@ -4,6 +4,8 @@
 #include <initializer_list>
 #include <nlohmann/json.hpp>
 
+#include "session/Codes.h"
+
 namespace caw {
 namespace {
 using nlohmann::json;
@@ -17,17 +19,40 @@ enum Field : unsigned {
   kSlots = 8,
   kIndex = 16,
   kSettings = 32,
-  kPacks = 64
+  kPacks = 64,
+  kPlayer = 128
 };
 
 struct CommandSpec {
   const char* name;
   Command::Type type;
-  unsigned fields;
+  unsigned fields;        // required
+  unsigned optional = 0;  // may be left out
 };
 
+const char* fieldName(unsigned field) {
+  switch (field) {
+    case kName:
+      return "name";
+    case kToken:
+      return "token";
+    case kRevision:
+      return "revision";
+    case kSlots:
+      return "slots";
+    case kIndex:
+      return "index";
+    case kSettings:
+      return "settings";
+    case kPacks:
+      return "packs";
+    default:
+      return "player";
+  }
+}
+
 constexpr CommandSpec kCommands[] = {
-    {"join", Command::Type::Join, kName},
+    {"join", Command::Type::Join, kName, kPlayer},
     {"resume", Command::Type::Resume, kToken},
     {"host", Command::Type::Host, kToken},
     {"submit", Command::Type::Submit, kToken | kRevision | kSlots},
@@ -117,6 +142,12 @@ bool readField(const json& message, unsigned field, Command& command) {
       return true;
     case kSettings:
       return readSettings(message.at("settings"), command.settings);
+    case kPlayer: {
+      const json& player = message.at("player");
+      if (!player.is_string() || !Codes::validPlayerId(player.get<std::string>())) return false;
+      command.player = player.get<std::string>();
+      return true;
+    }
     case kPacks: {
       // Ids only; whether they exist and make a deck is the library's call.
       const json& packs = message.at("packs");
@@ -168,17 +199,26 @@ std::string seatName(const PublicView& view, std::uint8_t seat) {
   return view.players[seat].name;
 }
 
-json playersJson(const PublicView& view) {
+json playersJson(const StateFrame& frame) {
   json players = json::array();
   for (std::uint8_t seat = 0; seat < kPlayers; ++seat) {
-    const PublicPlayer& player = view.players[seat];
+    const PublicPlayer& player = frame.view.players[seat];
     if (!player.seated) continue;
     players.push_back({{"seat", seat},
                        {"name", player.name},
+                       {"word", frame.words[seat] ? frame.words[seat] : ""},
                        {"points", player.points},
                        {"connected", player.connected}});
   }
   return players;
+}
+
+json linesJson(const StateFrame& frame) {
+  json lines = json::array();
+  if (frame.view.phase != Phase::Finished || frame.lines == nullptr) return lines;
+  for (const MatchLine& line : *frame.lines)
+    lines.push_back({{"name", line.name}, {"sentence", line.sentence}});
+  return lines;
 }
 
 // The submitted plays, anonymous until the reveal names their authors.
@@ -247,8 +287,10 @@ std::optional<Command> Protocol::parse(std::string_view text) {
     Command command;
     command.type = spec->type;
     std::size_t expectedKeys = 1;
-    for (unsigned field : {kName, kToken, kRevision, kSlots, kIndex, kSettings, kPacks}) {
-      if ((spec->fields & field) == 0) continue;
+    for (unsigned field : {kName, kToken, kRevision, kSlots, kIndex, kSettings, kPacks, kPlayer}) {
+      const bool required = (spec->fields & field) != 0;
+      const bool given = (spec->optional & field) != 0 && message.contains(fieldName(field));
+      if (!required && !given) continue;
       ++expectedKeys;
       if (!readField(message, field, command)) return std::nullopt;
     }
@@ -273,7 +315,7 @@ json publicState(const StateFrame& frame) {
                 {"pick", view.pick},
                 {"submitted", view.submitted},
                 {"expected", view.expected},
-                {"players", playersJson(view)},
+                {"players", playersJson(frame)},
                 {"plays", playsJson(frame)},
                 {"clock", clockName(table.clock())},
                 {"left", table.left(frame.now)},
@@ -281,7 +323,8 @@ json publicState(const StateFrame& frame) {
                 {"blockedOn", seatName(view, table.blockedOn())},
                 {"votes", table.votes()},
                 {"settings", settingsJson(frame)},
-                {"packs", packsJson(frame)}};
+                {"packs", packsJson(frame)},
+                {"lines", linesJson(frame)}};
   state["prompt"] =
       view.prompt < frame.deck->promptsCount ? frame.deck->prompts[view.prompt].text : "";
   state["selected"] = view.selected == kNone ? json(nullptr) : json(view.selected);

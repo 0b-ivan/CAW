@@ -93,6 +93,21 @@ std::string Messages::errorResponse(std::string_view errorCode) {
   return json{{"error", std::string(errorCode)}}.dump();
 }
 
+std::string Messages::fame(const std::vector<FamePlayer>& players,
+                           const std::vector<FameLine>& lines) {
+  json playerList = json::array();
+  for (const FamePlayer& player : players)
+    playerList.push_back({{"name", player.name},
+                          {"word", player.word},
+                          {"games", player.games},
+                          {"wins", player.wins},
+                          {"rounds", player.rounds}});
+  json lineList = json::array();
+  for (const FameLine& line : lines)
+    lineList.push_back({{"name", line.name}, {"word", line.word}, {"sentence", line.sentence}});
+  return json{{"players", playerList}, {"lines", lineList}}.dump();
+}
+
 std::string Messages::packCatalog(const std::vector<std::unique_ptr<CardPack>>& packs) {
   json list = json::array();
   for (const auto& pack : packs) {
@@ -131,10 +146,18 @@ std::optional<std::vector<PackEntry>> Messages::readPackManifest(std::string_vie
 }
 
 std::string Messages::saveRoom(const RoomRecord& room) {
-  return json{{"schema", 2},
+  json identities = json::array();
+  for (const Identity& identity : room.identities)
+    identities.push_back({{"player", identity.playerId}, {"word", identity.word}});
+  json lines = json::array();
+  for (const MatchLine& line : room.lines)
+    lines.push_back({{"name", line.name}, {"sentence", line.sentence}});
+  return json{{"schema", 3},
               {"language", room.language},
               {"hostToken", room.hostToken},
               {"packs", room.packs},
+              {"identities", identities},
+              {"lines", lines},
               {"state", json::parse(room.state)}}
       .dump();
 }
@@ -142,14 +165,23 @@ std::string Messages::saveRoom(const RoomRecord& room) {
 std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
   try {
     const json record = json::parse(text);
-    // Schema 1 rooms played numbered test cards; their card numbers mean nothing now.
-    if (!record.is_object() || record.size() != 5 || record.at("schema") != 2 ||
+    // Older schemas lack packs or player identities; such rooms are not restored.
+    if (!record.is_object() || record.size() != 7 || record.at("schema") != 3 ||
         !record.at("language").is_string() || !record.at("hostToken").is_string() ||
         !record.at("packs").is_array() || !record.at("state").is_object())
       return std::nullopt;
-    return RoomRecord{
-        record.at("language").get<std::string>(), record.at("hostToken").get<std::string>(),
-        record.at("packs").get<std::vector<std::string>>(), record.at("state").dump()};
+    RoomRecord room;
+    room.language = record.at("language").get<std::string>();
+    room.hostToken = record.at("hostToken").get<std::string>();
+    room.packs = record.at("packs").get<std::vector<std::string>>();
+    room.state = record.at("state").dump();
+    for (const json& identity : record.at("identities"))
+      room.identities.push_back(
+          {identity.at("player").get<std::string>(), identity.at("word").get<std::uint8_t>()});
+    for (const json& line : record.at("lines"))
+      room.lines.push_back(
+          {line.at("name").get<std::string>(), line.at("sentence").get<std::string>()});
+    return room;
   } catch (const json::exception&) {
     return std::nullopt;
   }

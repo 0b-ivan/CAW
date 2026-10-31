@@ -16,6 +16,9 @@ class Codes final {
   static void ticket(unsigned char out[16]);
   // Seed for a match's card shuffling, so two rooms never deal the same game.
   static std::uint32_t seed();
+  // A device's public player id: 16 lowercase hex characters. Labels statistics, proves nothing.
+  static std::string playerId();
+  static bool validPlayerId(std::string_view id);
   static std::string toHex(const unsigned char* bytes, std::size_t count);
   // False unless the text is exactly 2 * count lowercase hex characters.
   static bool fromHex(std::string_view text, unsigned char* out, std::size_t count);

@@ -31,6 +31,8 @@ const app = {
   menu: { open: false, page: 'main' },
   armed: null, // the row waiting for its second tap
   catalog: null, // every pack the server offers, loaded when the host opens PACKS
+  fame: null, // the Wall of Fame, loaded when the menu page opens
+  famePage: 0,
   flashedRound: 0,
   clock: { left: 0, at: 0, frozen: true },
 };
@@ -142,7 +144,7 @@ function sendJoin(input) {
   if (!name) return;
   if (new TextEncoder().encode(name).length > NAME_BYTES) {
     app.joinError = t('nameTooLong');
-  } else if (!connection?.send({ type: 'join', name })) {
+  } else if (!connection?.send({ type: 'join', name, player: secrets.playerId() })) {
     app.joinError = t('offline');
   } else {
     app.joinError = '';
@@ -172,6 +174,19 @@ const actions = {
   },
   choosePacks(ids) {
     sendHost({ type: 'packs', packs: ids });
+  },
+  loadFame() {
+    fetch('/api/fame', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((body) => {
+        app.fame = body;
+        update();
+      })
+      .catch(() => showNotice(t('offline')));
+  },
+  turnFamePage(page) {
+    app.famePage = page;
+    update();
   },
   loadCatalog() {
     if (app.catalogLoading) return;
@@ -206,6 +221,10 @@ const actions = {
     update();
   },
   openMenuPage(page) {
+    if (page === 'fame') {
+      app.fame = null;
+      app.famePage = 0;
+    }
     app.menu.page = page;
     app.armed = null;
     update();

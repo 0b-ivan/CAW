@@ -3,6 +3,7 @@
 
 #include <map>
 #include <nlohmann/json.hpp>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -44,10 +45,11 @@ struct Table {
       if (frame->at("type") == "state") return *frame;
     return json();
   }
-  void join(ConnectionId connection, const std::string& name) {
+  void join(ConnectionId connection, const std::string& name, const std::string& player = "") {
     Command command;
     command.type = Command::Type::Join;
     command.name = name;
+    command.player = player;
     send(connection, command);
   }
   void host(ConnectionId connection, Command::Type type, std::uint8_t index = 0) {
@@ -376,6 +378,73 @@ TEST_CASE("the host switches packs in the lobby only") {
   table.send(9, command);
   CHECK(table.last(9).at("code") == "rejected");  // the match runs: cards stay
   CHECK(table.session.packs() == std::vector<std::string>{"tiny"});
+}
+
+TEST_CASE("every seat gets a word nobody else at the table has") {
+  Table table;
+  // The same device id twice (two tabs of one phone) must not share an identity.
+  table.join(1, "Ada", "00000000000000aa");
+  table.join(2, "Ada", "00000000000000aa");
+  table.join(3, "Bert");
+  const json players = table.lastState(1).at("players");
+  REQUIRE(players.size() == 3);
+  std::set<std::string> words;
+  for (const json& player : players) {
+    CHECK(player.at("word") != "");
+    words.insert(player.at("word").get<std::string>());
+    CHECK(player.contains("player") == false);  // ids never leave the server
+  }
+  CHECK(words.size() == 3);
+  const auto identities = table.session.identities();
+  CHECK(identities[0].playerId == "00000000000000aa");
+  CHECK(identities[1].playerId != "00000000000000aa");
+  CHECK(identities[2].playerId.size() == 16);  // a player without an id gets one
+}
+
+TEST_CASE("rounds and matches become history, with the winning sentences of the match") {
+  Table table;
+  table.join(1, "Ada", "00000000000000aa");
+  table.join(2, "Bert", "00000000000000bb");
+  table.join(3, "Cyra", "00000000000000cc");
+  table.claimHost(9);
+  Command rounds;
+  rounds.type = Command::Type::Settings;
+  rounds.settings.rounds = 3;
+  rounds.settings.rando = false;
+  table.send(9, rounds);
+  table.host(9, Command::Type::Start);
+  for (int round = 0; round < 3; ++round) {
+    const ConnectionId juror = table.juror();
+    for (ConnectionId c : {1u, 2u, 3u})
+      if (c != juror) table.submit(c);
+    table.judge(juror, 0);
+    table.host(9, Command::Type::Next);
+  }
+  const json final = table.lastState(1);
+  REQUIRE(final.at("phase") == "finished");
+  REQUIRE(final.at("lines").size() == 3);
+  CHECK(final.at("lines").at(0).at("sentence").get<std::string>().find("Testfrage") == 0);
+
+  const auto events = table.session.takeHistory();
+  int roundsWon = 0, matches = 0, winners = 0;
+  for (const auto& event : events) {
+    if (event.kind == caw::HistoryEvent::Kind::RoundWon) {
+      ++roundsWon;
+      CHECK(event.sentence.find("___") == std::string::npos);  // the blanks are filled
+    } else {
+      ++matches;
+      if (event.wonMatch) ++winners;
+    }
+  }
+  CHECK(roundsWon == 3);
+  CHECK(matches == 3);
+  CHECK(winners >= 1);
+  CHECK(table.session.takeHistory().empty());  // counted once
+
+  // A rematch starts a new list of sentences.
+  table.host(9, Command::Type::Rematch);
+  table.host(9, Command::Type::Start);
+  CHECK(table.lastState(1).at("lines").empty());
 }
 
 TEST_CASE("settings from a player are refused") {

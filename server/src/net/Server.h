@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "session/Session.h"
+#include "store/FameCache.h"
 
 namespace caw {
 class PersistQueue;
@@ -28,8 +29,8 @@ class Server final {
   static constexpr int kTickMs = 250;
 
   // `stop` is set from the SIGTERM handler; the clock notices it and shuts down.
-  Server(SessionRegistry& sessions, const PackLibrary& packs, PersistQueue& persist,
-         const std::atomic<bool>& stop);
+  Server(SessionRegistry& sessions, const PackLibrary& packs, const FameCache& fame,
+         PersistQueue& persist, const std::atomic<bool>& stop);
   Server(const Server&) = delete;
   Server& operator=(const Server&) = delete;
 
@@ -55,6 +56,7 @@ class Server final {
 
   SessionRegistry& sessions_;
   const PackLibrary& packs_;
+  const FameCache& fame_;
   PersistQueue& persist_;
   const std::atomic<bool>& stop_;
   uWS::App* app_ = nullptr;

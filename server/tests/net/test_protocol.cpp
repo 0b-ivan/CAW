@@ -30,6 +30,14 @@ TEST_CASE("valid commands are read with their fields") {
   CHECK(kick->index == 4);
 
   CHECK(Protocol::parse(R"({"type":"start"})"));
+
+  // The device id is optional on join and must be 16 hex characters.
+  auto withId = Protocol::parse(R"({"type":"join","name":"Ada","player":"0123456789abcdef"})");
+  REQUIRE(withId);
+  CHECK(withId->player == "0123456789abcdef");
+  CHECK_FALSE(Protocol::parse(R"({"type":"join","name":"Ada","player":"xyz"})"));
+  CHECK_FALSE(Protocol::parse(R"({"type":"join","name":"Ada","player":"0000000000000000"})"));
+  CHECK_FALSE(Protocol::parse(R"({"type":"start","player":"0123456789abcdef"})"));
 }
 
 TEST_CASE("anything else is refused") {

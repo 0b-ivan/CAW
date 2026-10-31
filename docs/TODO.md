@@ -97,10 +97,11 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## M6 – Persistenz und Wall of Fame
 
-- [ ] Spieler-ID pro Gerät, Name·Wort, Kollisionen vermeiden
-- [ ] Runden- und Spielende nach Postgres: Siege, Runden, Siegersätze
-- [ ] Fame-Ansicht seitenweise; keine Spieler-IDs an fremde Clients
-- [ ] Aufräumjob: Sessions 30 Tage, keine IPs speichern
+- [x] Spieler-ID pro Gerät (16 Hex, `localStorage`), Name·Wort mit den 64 Wörtern der Firmware; doppelte IDs und Wörter am Tisch werden umgangen (`assignId` der Firmware)
+- [x] Runden- und Spielende nach Postgres über den Persistenz-Thread: Siege, Runden, Spiele, Siegersätze; Rando zählt nicht
+- [x] Ruhmeshalle im Menü, 8 Spieler pro Seite, dazu die letzten Siegersätze; `GET /api/fame` aus einem Cache, nie aus der Datenbank im Spiel-Thread, keine Spieler-IDs
+- [x] Siegersätze der Partie im Endstand am Handy und im Wechsel am Big Screen
+- [x] Aufräumen bei jedem Speichern: Spieler nach 180 Tagen ohne Spiel, nur die neuesten 500 Siegersätze; keine IPs, keine Tickets in Postgres
 
 ## M7 – Performance und Härtung
 

@@ -88,4 +88,19 @@ bool Codes::sameToken(std::string_view left, std::string_view right) {
   return difference == 0;
 }
 
+std::string Codes::playerId() {
+  unsigned char bytes[8] = {};
+  std::string id;
+  do {
+    randomBytes(bytes, sizeof(bytes));
+    id = toHex(bytes, sizeof(bytes));
+  } while (id == "0000000000000000");
+  return id;
+}
+
+bool Codes::validPlayerId(std::string_view id) {
+  unsigned char bytes[8] = {};
+  return fromHex(id, bytes, sizeof(bytes)) && id != "0000000000000000";
+}
+
 }  // namespace caw

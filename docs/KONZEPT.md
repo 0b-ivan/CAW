@@ -214,22 +214,20 @@ Wie das erreicht wird:
   neuer Socket mit gültigem Ticket übernimmt den Sitz, der alte wird
   geschlossen.
 
-## 7. Datenmodell (Postgres, Drizzle ORM)
+## 7. Datenmodell (Postgres)
 
-| Tabelle | Zweck | Wichtige Felder |
+| Tabelle | Zweck | Felder |
 |---|---|---|
-| `sessions` | Abschluss-Datensatz einer Session (der laufende Stand liegt in Redis) | `code`, `settings` (jsonb), `pack_set`, `created_at`, `ended_at` |
-| `players` | stabile Identität pro Browser | `id` (uuid), `display_name`, `word`, `first_seen`, `last_seen` |
-| `session_players` | Sitz in einer Session | `session_id`, `player_id`, `seat`, `ticket_hash`, `points`, `kicked` |
-| `packs` | ein Pack = ein unveränderliches Dokument pro Version | `id`, `slug`, `version`, `title`, `license`, `rights_holder`, `source_url`, `sha256`, `content` (jsonb: Kategorien, Fragen, Antworten), `imported_at` |
-| `rounds` | Verlauf für Fame | `session_id`, `round`, `prompt_id`, `winner_player_id`, `sentence` |
+| `players` | Statistik pro Gerät | `id` (öffentliche Geräte-ID, 16 Hex), `name`, `word`, `games`, `wins`, `rounds`, `last_seen` |
+| `winning_lines` | Siegersätze für die Ruhmeshalle | `id`, `player_id`, `sentence`, `created_at` |
 
-Redis-Schlüssel: `session:{code}` (Stand als JSON inkl. Revision und Uhren),
-`session:{code}:tickets` (Hash Sitz → Ticket-Hash), `ratelimit:{ip}:{route}`.
-
-Tickets und Host-Token werden nur gehasht gespeichert. Laufende Sessions
-verfallen in Redis nach 24 h ohne Aktivität; Postgres behält davon nur den
-Abschluss-Datensatz und die Statistik, nach 30 Tagen ohne Sitze und Tickets.
+Der Server legt die Tabellen beim Start an (`CREATE TABLE IF NOT EXISTS`).
+Geschrieben wird nur vom Persistenz-Thread, bei Rundensieg und Spielende;
+gelesen wird die Ruhmeshalle danach einmal und als fertiges JSON im Speicher
+gehalten. Die laufende Session liegt in Redis (`session:{code}`), Tickets und
+Host-Token nie in Postgres. Aufgeräumt wird bei jedem Speichern: Spieler nach
+180 Tagen ohne Spiel, Siegersätze über die neuesten 500 hinaus. Keine IPs.
+Eine Tabelle für Packs folgt erst mit hochgeladenen Packs (Abschnitt 8).
 
 ## 8. Kartenpacks und Rechte
 
