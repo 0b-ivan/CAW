@@ -3,7 +3,8 @@
 
 namespace caw {
 std::string Metrics::render() const {
-  return "# HELP caw_sessions Current sessions.\n# TYPE caw_sessions gauge\ncaw_sessions 0\n"
+  return "# HELP caw_sessions Current sessions.\n# TYPE caw_sessions gauge\ncaw_sessions " +
+         std::to_string(sessions) + "\n"
          "# HELP caw_sockets Current game sockets.\n# TYPE caw_sockets gauge\ncaw_sockets 0\n"
          "# HELP caw_actions_total Accepted game actions.\n# TYPE caw_actions_total counter\n"
          "caw_actions_total 0\n"
