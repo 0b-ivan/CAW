@@ -1,10 +1,11 @@
-# Cards vs Humanity – externe Kartensets
+# Cards vs Humanity – versionierte Original-Kartensets
 
 Quelle: https://www.cards-vs-humanity.de/set/list/
 
-Die Webseite veröffentlicht sechs Sets als CSV. Die Metaangaben und unveränderten
-Download-URLs liegen in `docs/cardpacks/cvh_sources.json`. Dort sind **keine
-Kartentexte** gespeichert.
+Die Webseite veröffentlicht sechs Sets als CSV. Die Originaldateien liegen
+unverändert unter `assets/cardpacks/cards-vs-humanity/` **einschließlich**
+`ATTRIBUTION.md` und `SHA256SUMS`. Die Metaangaben und Download-URLs stehen
+zusätzlich in `docs/cardpacks/cvh_sources.json`.
 
 | Set | Schwarze Karten | Weiße Karten |
 |---|---:|---:|
@@ -23,12 +24,14 @@ https://www.cards-vs-humanity.de/ (enthält Hinweise zu Original und
 abgeleiteten Karten). Die Seite nennt **Creative Commons BY-NC-SA 2.0**:
 https://creativecommons.org/licenses/by-nc-sa/2.0/deed.de
 
-Vor einer öffentlichen Bereitstellung oder Veränderung der Kartentexte
-Urheberschaft, Namensnennung, nichtkommerzielle Nutzung, ShareAlike und
-mögliche Rechte weiterer Beiträger konkret prüfen. Insbesondere macht ein
-kostenloser Download die Dateien nicht gemeinfrei.
+Die Website erklärt das Teilen und die Bearbeitung der Originalkarten unter
+dieser Lizenz ausdrücklich für zulässig. Unser Repo dokumentiert daher
+Namensnennung, URLs, Lizenzhinweise, Unverändertheit und SHA-256-Prüfsummen.
+Bei öffentlicher Nutzung bleiben die Bedingungen Nichtkommerzialität,
+Weitergabe unter gleichen Bedingungen und mögliche Rechte weiterer
+Fanbeiträge zwingend zu beachten; es handelt sich **nicht** um CC0/MIT.
 
-## Download – nur lokale Originaldateien
+## Optional: Quellen erneut lokal herunterladen
 
 Im Projektverzeichnis:
 
@@ -42,7 +45,7 @@ Der Downloader holt die sechs **unveränderten CSV-Dateien** in das durch
 `local-cardpacks/cards-vs-humanity/`. Mit `--set base-1` lässt sich ein
 einzelnes Set abrufen; `--force` überschreibt vorhandene Dateien.
 
-**Aktuelle Grenze:** Die CSV-Dateien sind externe Quelldaten, noch keine
+**Aktuelle Grenze:** Die versionierten CSV-Dateien sind Quelldaten, noch keine
 spielbaren CAW-Packs. Erst M5 definiert und implementiert die validierte
 CSV-Konvertierung zu unserem Pack-Format, Import nach PostgreSQL und
 Lizenzanzeige im Spiel. Dieses Downloadwerkzeug macht keinerlei Änderungen
