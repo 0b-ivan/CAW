@@ -1,0 +1,3 @@
+PASS 320x568: DE/EN, keyboard, 48px targets, no horizontal overflow
+PASS 390x844: DE/EN, keyboard, 48px targets, no horizontal overflow
+PASS 1280x800: DE/EN, keyboard, 48px targets, no horizontal overflow
