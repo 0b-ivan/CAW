@@ -8,22 +8,60 @@
   <script type="module" src="/index.js"></script>
 </head>
 <body>
-  <main>
-    <header><strong>C/A/W</strong><span class="eyebrow">CARDS AGAINST WHATEVER</span></header>
-    <section><button type="button" disabled data-text="newSession"></button></section>
-    <section>
-      <label class="eyebrow" for="code" data-text="enterCode"></label>
-      <div class="join-row">
-        <input id="code" name="code" type="text" maxlength="6" pattern="[A-HJKMNP-Z2-9]{6}"
-          autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="status">
-        <button type="button" disabled data-text="join"></button>
-      </div>
-    </section>
-    <p id="status" role="status" data-text="milestone"></p>
+  <main id="landing" class="landing">
+    <header class="landing-header">
+      <button id="replay-intro" class="brand-trigger" type="button"
+        aria-label="CAW intro replay">
+        <span class="cut-deck cut-deck--small" aria-hidden="true">
+          <span class="cut-card cut-card--c">C</span>
+          <span class="cut-card cut-card--a">A</span>
+          <span class="cut-card cut-card--w">W</span>
+        </span>
+        <span class="brand-slash" aria-hidden="true"></span>
+        <span class="brand-wordmark">
+          <strong>CAW</strong>
+          <span>CARDS AGAINST WHATEVER</span>
+        </span>
+      </button>
+    </header>
+    <div class="landing-content">
+      <section class="create-section">
+        <button type="button" disabled data-text="newSession"></button>
+      </section>
+      <section class="join-section">
+        <label class="eyebrow" for="code" data-text="enterCode"></label>
+        <div class="join-row">
+          <input id="code" name="code" type="text" maxlength="6"
+            pattern="[A-HJKMNP-Z2-9]{6}" autocomplete="off"
+            autocapitalize="characters" spellcheck="false" aria-describedby="status">
+          <button type="button" disabled data-text="join"></button>
+        </div>
+      </section>
+      <p id="status" role="status" data-text="milestone"></p>
+    </div>
     <footer>
-      <nav><button type="button" data-lang="de" aria-pressed="true">DE</button><span>/</span><button type="button" data-lang="en" aria-pressed="false">EN</button></nav>
-      <span data-text="licenses"></span><span data-text="privacy"></span>
+      <nav><button type="button" data-lang="de" aria-pressed="true">DE</button>
+        <span>/</span>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button></nav>
+      <span data-text="licenses"></span>
+      <span data-text="privacy"></span>
     </footer>
   </main>
+
+  <div id="boot-screen" class="boot-screen" hidden>
+    <div class="boot-logo" aria-hidden="true">
+      <span class="cut-deck cut-deck--intro">
+        <span class="cut-card cut-card--c">C</span>
+        <span class="cut-card cut-card--a">A</span>
+        <span class="cut-card cut-card--w">W</span>
+      </span>
+      <span class="brand-slash boot-slash"></span>
+      <span class="brand-wordmark boot-wordmark">
+        <strong>CAW</strong>
+        <span>CARDS AGAINST WHATEVER</span>
+      </span>
+    </div>
+    <button id="skip-intro" class="skip-intro" type="button" data-text="skipIntro"></button>
+  </div>
 </body>
 </html>
