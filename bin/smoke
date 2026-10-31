@@ -17,6 +17,46 @@ curl --fail --silent "$base_url/" | grep -q 'CARDS AGAINST WHATEVER'
 curl --fail --silent "$base_url/index.js" | grep -q 'translations'
 curl --fail --silent "$base_url/metrics" | grep -q 'caw_health_checks_total'
 printf 'Caddy landing page, JS module and metrics: OK\n'
+# The public lookup must not disclose the credential returned by creation.
+created=$(curl --fail --silent --show-error --header 'Content-Type: application/json' \
+  --data '{}' "$base_url/api/sessions")
+CAW_CREATED="$created" python3 - "$base_url" <<'PY'
+import json
+import os
+import sys
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
+
+base_url = sys.argv[1]
+created = json.loads(os.environ["CAW_CREATED"])
+code = created["code"]
+token = created["hostToken"]
+assert len(code) == 6
+assert len(token) == 32
+with urlopen(f"{base_url}/api/sessions/{code}") as response:
+    assert response.status == 200
+    public = response.read().decode("utf-8")
+    assert json.loads(public) == {"code": code, "language": "de", "phase": "lobby"}
+    assert token not in public
+try:
+    urlopen(f"{base_url}/api/sessions/INVALID")
+except HTTPError as error:
+    assert error.code == 404
+else:
+    raise AssertionError("Unknown room must not exist")
+request = Request(
+    f"{base_url}/api/sessions",
+    data=b'{"language":"fr"}',
+    headers={"Content-Type": "application/json"},
+)
+try:
+    urlopen(request)
+except HTTPError as error:
+    assert error.code == 400
+else:
+    raise AssertionError("Unsupported room language must fail")
+print("Room creation, public lookup and input validation: OK")
+PY
 for service in redis postgres; do
   compose stop "$service" >/dev/null
   probe 503
