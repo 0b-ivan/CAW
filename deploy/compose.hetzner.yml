@@ -1,8 +1,10 @@
-# Production override: Cloudflare Tunnel is the only public ingress.
-# Use together with compose.yml; never expose Caddy's host ports.
+# Use the EXISTING cloudflared systemd service on the Hetzner host.
+# Caddy is reachable only from the host over loopback; no new Tunnel container.
+# Requires Docker Compose 2.24.4+ (!override).
 services:
   caddy:
-    ports: !reset []
+    ports: !override
+      - "127.0.0.1:${CAW_ORIGIN_PORT:-18081}:80"
     environment:
       CADDY_ADDRESS: ":80"
     volumes:
@@ -10,22 +12,3 @@ services:
   server:
     environment:
       PUBLIC_URL: https://caw.obivan.org
-  cloudflared:
-    image: cloudflare/cloudflared:2026.10.3
-    restart: unless-stopped
-    command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflared-token
-    depends_on:
-      caddy:
-        condition: service_healthy
-    secrets:
-      - source: cloudflared_token
-        target: cloudflared-token
-    read_only: true
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
-secrets:
-  cloudflared_token:
-    file: ./secrets/cloudflared-token
