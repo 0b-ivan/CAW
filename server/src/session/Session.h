@@ -41,6 +41,14 @@ class Session final {
   // Frames produced since the last call, in order.
   std::vector<Outgoing> takeOutgoing();
 
+  // Full internal state for Redis, including tickets and hands. Never send it to a client.
+  std::string saveState(std::uint32_t now) const;
+  // Restores a saved match. Every seat starts disconnected and waits for its ticket.
+  // False leaves the session unchanged.
+  bool loadState(std::string_view text, std::uint32_t now);
+  // True once after any change worth saving.
+  bool takeChanged();
+
   bool isHostToken(std::string_view token) const;
   std::size_t seatedCount() const { return game_.seatedCount(); }
 
@@ -68,6 +76,7 @@ class Session final {
   cardparty::SessionTicket tickets_[cardparty::kPlayers] = {};
   std::set<ConnectionId> hosts_;
   std::vector<Outgoing> outgoing_;
+  bool changed_ = false;
 };
 
 }  // namespace caw

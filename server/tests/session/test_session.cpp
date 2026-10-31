@@ -228,3 +228,49 @@ TEST_CASE("a closed socket marks the seat offline without freeing it") {
   REQUIRE(players.size() == 2);
   CHECK(players.at(1).at("connected") == false);
 }
+
+TEST_CASE("a saved match comes back after a restart and goes on with the same tickets") {
+  Table before;
+  before.startThree();
+  const ConnectionId juror = before.juror();
+  ConnectionId answerer = juror == 1 ? 2 : 1;
+  before.submit(answerer);
+  const std::string saved = before.session.saveState(before.now);
+
+  // A new process: same cards, fresh session, nobody connected yet.
+  Table after;
+  REQUIRE(after.session.loadState(saved, after.now));
+  CHECK(after.session.takeChanged());
+  after.deliver();
+  CHECK(after.inbox.empty());
+
+  // Phones reconnect on new sockets with the tickets they kept.
+  for (ConnectionId c : {1u, 2u, 3u}) {
+    Command resume;
+    resume.type = Command::Type::Resume;
+    resume.token = before.tickets[c];
+    after.send(c + 20, resume);
+    REQUIRE(after.inbox[c + 20].front().at("type") == "welcome");
+  }
+  json state = after.lastState(answerer + 20);
+  CHECK(state.at("phase") == "playing");
+  CHECK(state.at("me").at("submitted") == true);
+  CHECK(state.at("submitted") == 1);
+  for (const json& player : state.at("players")) CHECK(player.at("connected") == true);
+
+  // The host claims the room again; the match continues to the reveal.
+  after.claimHost(29);
+  for (ConnectionId c : {1u, 2u, 3u})
+    if (c != juror && c != answerer) after.submit(c + 20);
+  after.judge(juror + 20, 0);
+  CHECK(after.lastState(21).at("phase") == "reveal");
+}
+
+TEST_CASE("a snapshot that does not fit is refused and changes nothing") {
+  Table table;
+  table.join(1, "Ada");
+  CHECK_FALSE(table.session.loadState("{}", table.now));
+  CHECK_FALSE(table.session.loadState("not json", table.now));
+  table.deliver();
+  CHECK(table.session.seatedCount() == 1);
+}

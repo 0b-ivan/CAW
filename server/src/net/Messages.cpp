@@ -93,6 +93,28 @@ std::string Messages::errorResponse(std::string_view errorCode) {
   return json{{"error", std::string(errorCode)}}.dump();
 }
 
+std::string Messages::saveRoom(const RoomRecord& room) {
+  return json{{"schema", 1},
+              {"language", room.language},
+              {"hostToken", room.hostToken},
+              {"state", json::parse(room.state)}}
+      .dump();
+}
+
+std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
+  try {
+    const json record = json::parse(text);
+    if (!record.is_object() || record.size() != 4 || record.at("schema") != 1 ||
+        !record.at("language").is_string() || !record.at("hostToken").is_string() ||
+        !record.at("state").is_object())
+      return std::nullopt;
+    return RoomRecord{record.at("language").get<std::string>(),
+                      record.at("hostToken").get<std::string>(), record.at("state").dump()};
+  } catch (const json::exception&) {
+    return std::nullopt;
+  }
+}
+
 json Messages::saveGame(const Game& game) {
   json players = json::array();
   for (const auto& player : game.players_) {

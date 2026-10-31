@@ -77,6 +77,18 @@ class Sessions final {
     return false;
   }
 
+  // After a server restart no socket survives: every seat waits for its
+  // ticket again. Server addition, not in the X4 firmware.
+  void disconnectAll() {
+    for (uint8_t i = 0; i < kPlayers; ++i) {
+      Seat& state = seats_[i];
+      if (!state.registered || !state.connected) continue;
+      state.connected = false;
+      state.connection = kNoConnection;
+      game_.connected(i, false);
+    }
+  }
+
   bool resume(uint32_t connection, const uint8_t oldSecret[kTicketBytes], const uint8_t freshSecret[kTicketBytes],
               SessionTicket& ticket) {
     if (connection == kNoConnection || !oldSecret || !freshSecret || !validSecret(oldSecret) ||

@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "net/Messages.h"
 #include "session/Codes.h"
 
 namespace caw {
@@ -195,11 +196,35 @@ std::vector<Outgoing> Session::takeOutgoing() {
   return frames;
 }
 
+std::string Session::saveState(std::uint32_t now) const {
+  return Messages::saveState(game_, table_, seats_, now);
+}
+
+bool Session::loadState(std::string_view text, std::uint32_t now) {
+  if (!Messages::loadState(text, game_, table_, seats_, now)) return false;
+  // The saved connection ids belonged to sockets that no longer exist.
+  seats_.disconnectAll();
+  for (ConnectionId& connection : seatConnection_) connection = kNoConnection;
+  for (SessionTicket& ticket : tickets_) ticket = SessionTicket{};
+  hosts_.clear();
+  outgoing_.clear();
+  changed_ = true;
+  return true;
+}
+
+bool Session::takeChanged() {
+  const bool changed = changed_;
+  changed_ = false;
+  return changed;
+}
+
 bool Session::isHostToken(std::string_view token) const {
   return Codes::sameToken(hostToken_, token);
 }
 
 void Session::publishAll(std::uint32_t now) {
+  // Every accepted change is published, so this is also the place to mark it for saving.
+  changed_ = true;
   for (std::uint8_t seat = 0; seat < kPlayers; ++seat)
     if (seatConnection_[seat] != kNoConnection) sendState(seatConnection_[seat], seat, now);
   for (ConnectionId host : hosts_)
