@@ -41,14 +41,14 @@ nur an `127.0.0.1:18081` (konfigurierbar über `CAW_ORIGIN_PORT`); die
 bestehende Tunnel-Route erhält zusätzlich `caw.obivan.org`.
 
 **Vollständige Anleitung:** [Hetzner + Cloudflare Tunnel](docs/operations/HETZNER-CLOUDFLARE.md).
-Auf einem frisch vorbereiteten Hetzner-Server nach Anlegen des Tunnels
-und der privaten Dateien:
+Auf dem bereits laufenden Hetzner-Host nach Ergänzen der neuen Route
+im bestehenden Tunnel und der privaten Dateien:
 
 ```sh
 cp deploy/hetzner/env.example deploy/.env
 # Passwort (openssl rand -hex 32) einsetzen, später Betreiberangaben ergänzen
 python3 bin/hetzner-preflight.py --prepare
-docker compose -f deploy/compose.yml -f deploy/compose.hetzner.yml up --build -d --wait
+docker compose -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml up --build -d --wait
 python3 bin/hetzner-preflight.py --public
 node bin/hetzner-wss-check.mjs
 ```
