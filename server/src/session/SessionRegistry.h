@@ -1,12 +1,17 @@
-// Event-loop-owned registry for M2 room identities and host credentials.
+// Event-loop-owned registry: room code → running Session, with host credentials and expiry.
 #pragma once
 
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
+
+#include "session/Session.h"
+#include "session/SyntheticDeck.h"
 
 namespace caw {
 
@@ -32,17 +37,26 @@ class SessionRegistry final {
   std::size_t activeCount(Time now = Clock::now()) const;
   void expire(Time now = Clock::now());
 
+  // The running match of a room, or nullptr. Every lookup counts as activity.
+  Session* find(std::string_view code, Time now = Clock::now());
+  // All running matches, for the clock tick.
+  std::vector<Session*> all();
+
  private:
   struct Room {
     std::string language;
     std::string hostToken;
     Time expiresAt;
+    std::unique_ptr<Session> session;
   };
 
-  static bool sameToken(std::string_view left, std::string_view right);
-
   std::chrono::hours ttl_;
+  // Placeholder cards until pack import (M5); shared read-only by every session.
+  SyntheticDeck cards_;
   std::unordered_map<std::string, Room> rooms_;
 };
+
+// Milliseconds on the steady clock, the time base of every Session and Table.
+std::uint32_t millisNow();
 
 }  // namespace caw

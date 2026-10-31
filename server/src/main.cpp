@@ -1,4 +1,4 @@
-// Keep the main event loop small while M2 routes live in net/Server.
+// Wire configuration, routes and the clock, then run the single event loop.
 #include <App.h>
 
 #include "config.h"
@@ -25,7 +25,8 @@ int main() {
           ->writeHeader("Cache-Control", "no-store")
           ->end(ready ? "ok\n" : "unavailable\n");
     });
-    caw::Server::registerSessionRoutes(app, sessions);
+    caw::Server server(sessions);
+    server.registerRoutes(app);
     app.get("/metrics", [&](auto* response, auto*) {
       metrics.sessions = sessions.activeCount();
       response->writeHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
@@ -39,6 +40,7 @@ int main() {
       caw::log::error("Could not bind HTTP port");
       return 1;
     }
+    server.startClock();
     app.run();
   } catch (const std::exception&) {
     // Library errors can contain credentials; report only this fixed message.

@@ -5,4 +5,7 @@ cd "$(dirname "$0")/.."
 find server/src server/tests -type f \( -name '*.cpp' -o -name '*.h' \) \
   -exec clang-format --dry-run --Werror {} +
 clang-tidy -p "${1:-build}" server/src/main.cpp server/src/config.cpp server/src/log.cpp \
-  server/src/net/Messages.cpp server/src/net/Metrics.cpp server/src/store/Health.cpp
+  server/src/net/Messages.cpp server/src/net/Metrics.cpp server/src/net/Protocol.cpp \
+  server/src/net/Server.cpp server/src/store/Health.cpp server/src/session/Codes.cpp \
+  server/src/session/Session.cpp server/src/session/SessionRegistry.cpp \
+  server/src/session/SyntheticDeck.cpp
