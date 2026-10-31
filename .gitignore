@@ -9,3 +9,4 @@ test-results/
 *.log
 /build*/
 .DS_Store
+local-cardpacks/

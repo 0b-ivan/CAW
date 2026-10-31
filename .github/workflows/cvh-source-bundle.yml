@@ -1,0 +1,41 @@
+name: Download external CVH card sources
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/cvh-pack-sources-20261031]
+    paths:
+      - .github/workflows/cvh-source-bundle.yml
+      - bin/fetch-cvh-sets.py
+      - docs/cardpacks/cvh_sources.json
+permissions:
+  contents: read
+jobs:
+  bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all six CSV sets
+        run: python3 bin/fetch-cvh-sets.py
+      - name: Verify all source files are present
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          catalog = json.loads(Path('docs/cardpacks/cvh_sources.json').read_text())
+          files = list(Path('local-cardpacks/cards-vs-humanity').glob('*.csv'))
+          assert len(files) == len(catalog['packs']) == 6
+          assert all(file.stat().st_size > 0 for file in files)
+          print('Six CSV sources downloaded outside Git; card counts and schema are still unverified.')
+          PY
+      - name: Bundle downloaded CSVs and attribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: cvh-source-csv-6-sets
+          path: |
+            local-cardpacks/cards-vs-humanity/*.csv
+            docs/cardpacks/CARDS-VS-HUMANITY.md
+            docs/cardpacks/cvh_sources.json
+          if-no-files-found: error
+          retention-days: 7

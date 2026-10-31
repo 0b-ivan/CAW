@@ -56,8 +56,13 @@ nicht ein Grund, ihn zu überspringen.
   Fame, Pack-Import.
 - **Kein Spieler sieht fremde Hände.** Der Big Screen bekommt nur öffentliche
   Daten. Keine Spieler-IDs, Tickets oder Host-Token an fremde Clients oder ins Log.
-- **Keine Kartentexte im Repo.** Packs kommen per Import in die DB. Test-Daten
-  sind synthetisch („Testfrage 1 ___“).
+- **Fremde Kartentexte nur als geprüfte, lizenzierte Ausnahme:** Die sechs
+  unveränderten Original-CSV-Sets unter `assets/cardpacks/cards-vs-humanity/`
+  sind gemäß `docs/KONZEPT.md` Abschnitt 8 und benachbarter `ATTRIBUTION.md`
+  ausdrücklich erlaubt (CC BY-NC-SA 2.0, nichtkommerziell, ShareAlike).
+  Keine weiteren Fremdsets ohne Quellen-/Rechteprüfung. Sonstige Packs
+  werden erst durch den M5-Importer in die DB geladen. Testdaten sind
+  ausschließlich synthetisch („Testfrage 1 ___“).
 - **Performance-Budgets sind Abnahmekriterien.** Eine Änderung, die den
   Lasttest über ein Budget schiebt, ist nicht fertig.
 - **Konfiguration nur über Umgebungsvariablen.** Keine Secrets im Repo,

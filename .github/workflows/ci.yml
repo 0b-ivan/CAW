@@ -15,6 +15,8 @@ jobs:
       HTTPS_PORT: "8443"
     steps:
       - uses: actions/checkout@v4
+      - name: Offline tests for external CSV download sources
+        run: python3 -m unittest discover -s tests -p 'test_*cvh*.py'
       - name: Create ephemeral test configuration
         run: echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" > deploy/.env
       - name: Build C++20 and run CTest in Debian

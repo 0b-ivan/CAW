@@ -68,6 +68,28 @@ Sockets. Bereitschaft prüft beide Datenbanken mit begrenzten Timeouts.
 Diese synchronen M0-Probes werden vor dem Echtzeitbetrieb in M2 in dessen
 Persistenz-/Health-Verarbeitung integriert.
 
+## Externe Kartenquellen (Vorbereitung M5)
+
+Die sechs deutschen Kartensets von Cards vs Humanity sind als Links,
+Kartenzahlen und Lizenzmetadaten erfasst. **Die sechs Original-CSV-Sets sind
+unter `assets/cardpacks/cards-vs-humanity/` versioniert**, zusammen mit
+`ATTRIBUTION.md` und `SHA256SUMS`. Die Originaldateien sind CC BY-NC-SA 2.0
+(nur nichtkommerziell mit Attribution/ShareAlike), unabhängig vom App-Code.
+CSV-Downloads und Updates lassen sich zusätzlich lokal in einem ignorierten
+Ordner durchführen:
+
+```sh
+python3 bin/fetch-cvh-sets.py --list
+python3 bin/fetch-cvh-sets.py
+python3 -m unittest discover -s tests -p 'test_*cvh*.py'
+```
+
+Die Webseite nennt CC BY-NC-SA 2.0. Details, Quellen und Anforderungen für
+den späteren Import: [Cards-vs-Humanity-Quellen](docs/cardpacks/CARDS-VS-HUMANITY.md).
+Noch nicht spielbar: Konvertierung und Import folgen in M5. Die Quellen
+im Git sind kein Ersatz für den eigentlichen Server-Import; bei öffentlichem
+Betrieb sind Kartenrechte und die Anzeige der Lizenzangaben zu prüfen.
+
 ## Herkunft und Konzept
 
 Regeln aus `0b-ivan/inx-4x-pro`:
