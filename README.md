@@ -1,10 +1,9 @@
 # CAW – Cards Against Whatever (Web)
 
-Partyspiel für 3–8 Handys, mit optionalem Big Screen. M0 bis M3 sind
+Partyspiel für 3–8 Handys, mit optionalem Big Screen. M0 bis M5 sind
 fertig: Startseite, C++-Server mit Sessions über WebSocket und Redis,
-portierte Firmware-Regeln und die Spielseite für Handys und Host. Es fehlen
-der Big Screen (M4) und echte Kartenpacks (M5); bis dahin wird mit
-nummerierten Testkarten gespielt.
+portierte Firmware-Regeln, die Spielseite für Handys und Host, der Big Screen
+und die sechs deutschen Cards-vs-Humanity-Sets als wählbare Packs.
 
 ## Lokal starten
 
@@ -74,8 +73,8 @@ Jeder Raum ist ein echter Spieltisch. Gespielt wird über den WebSocket
 `ws://…/ws/XXXXXX` (Befehle und Antworten: `docs/KONZEPT-CPP-BACKEND.md`
 Abschnitt 7). Ein Spieler tritt mit `{"type":"join","name":"Ada"}` bei, der
 Host meldet sich mit `{"type":"host","token":"…"}` an und startet mit
-`{"type":"start"}`. Bis zum Kartenpack-Import (M5) spielt jeder Tisch mit
-nummerierten Testkarten.
+`{"type":"start"}`. Ohne Pack-Dateien (`PACKS_DIR` leer) spielt der Server
+mit nummerierten Testkarten.
 
 Laufende Partien werden nach jeder Änderung in Redis gesichert
 (`session:XXXXXX`, verfällt nach `SESSION_TTL_HOURS` ohne Aktivität). Nach einem
@@ -140,11 +139,14 @@ python3 bin/fetch-cvh-sets.py
 python3 -m unittest discover -s tests -p 'test_*cvh*.py'
 ```
 
-Die Webseite nennt CC BY-NC-SA 2.0. Details, Quellen und Anforderungen für
-den späteren Import: [Cards-vs-Humanity-Quellen](docs/cardpacks/CARDS-VS-HUMANITY.md).
-Noch nicht spielbar: Konvertierung und Import folgen in M5. Die Quellen
-im Git sind kein Ersatz für den eigentlichen Server-Import; bei öffentlichem
-Betrieb sind Kartenrechte und die Anzeige der Lizenzangaben zu prüfen.
+Die Webseite nennt CC BY-NC-SA 2.0. Details und Quellen:
+[Cards-vs-Humanity-Quellen](docs/cardpacks/CARDS-VS-HUMANITY.md).
+Seit M5 sind die Sets spielbar: Der Server lädt beim Start alle Packs aus
+`PACKS_DIR` (im Image `assets/cardpacks`, je Quelle ein `packs.json` mit
+Lizenz und Rechteinhaber). Eine neue Session spielt alle Packs ihrer Sprache;
+der Host ändert das in der Lobby unter `≡` → KARTEN-PACKS. Rechteinhaber und
+Lizenz stehen in Lobby und Endstand. Bei öffentlichem Betrieb sind die
+Kartenrechte trotzdem zu prüfen (nichtkommerziell, Namensnennung).
 
 ## Herkunft und Konzept
 

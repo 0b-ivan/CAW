@@ -84,13 +84,15 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 - [x] Sechs lizenzierte Cards-vs-Humanity-Original-CSV-Sets samt Attribution und SHA-256-Prüfsummen versionieren
 - [x] CSV-Header `typ,text`, Typ `b`/`w`, Kartenanzahlen und UTF-8 prüfen (585 schwarze, 1179 weiße Karten)
-- [ ] Fremde Platzhalter/Satzkomposition vollständig prüfen und CSV-Import-Adapter für M5 bauen
+- [x] CSV-Leser (`packs/CsvPack`) mit mehrzeiligen Feldern, Platzhalter `___` → Pick, Pick 3 → Draw 2; alle 1.764 Karten laden
+- [x] `packs.json` je Quelle: Titel, Sprache, Lizenz, Rechteinhaber, Quelle sind Pflicht; Image lädt `assets/cardpacks` beim Start (`PACKS_DIR`)
+- [x] Prüfungen wie in der Firmware: Format, Längen (≤ 300 Byte), UTF-8, keine Steuerzeichen, höchstens 3 Lücken, Lizenzfelder Pflicht; kaputte Packs werden übersprungen und geloggt
+- [x] `GET /api/packs` (Liste für den Host); Host-Befehl `packs` in der Lobby, 1–8 Packs, gleiche Karten nur einmal
+- [x] Lizenz und Rechteinhaber der aktiven Packs: Lobby und Endstand am Handy, Lobby und Ende am Big Screen
+- [x] Snapshot (Schema 2) speichert die Packs; nach einem Neustart wird derselbe Stapel gebaut
 - [ ] Vor öffentlicher Bereitstellung Nutzungszweck, Namensnennung und mögliche Drittbeitragsrechte final prüfen
-
-- [ ] Import-Kommando (`server --import-pack datei`): `XCAWPK2` mit dem Reader aus der Firmware (`CardPartySdPack.h`) und JSONL aus `cardparty_l10n`
-- [ ] Prüfungen wie in der Firmware: Format, CRC, Längen, Platzhalter, Kategorien, Lizenzfelder Pflicht
-- [ ] Pack = `jsonb`-Dokument pro Version; Liste der Packs für den Host
-- [ ] Lizenz und Rechteinhaber jedes aktiven Packs in der UI anzeigen
+- Verschoben: Packs als `jsonb` in Postgres nach M6 (kommt mit der Datenbankanbindung; bis dahin sind die Dateien im Image die Quelle),
+  `XCAWPK2`- und JSONL-Import aus der Firmware offen (die Dateien liegen nicht im Repo), Kategorien entfallen für die CSV-Sets (Packs sind die Auswahl)
 - [x] Fremde Originalkarten ausschließlich in freigegebenem Lizenz-/Quellverzeichnis; Test-Fixtures nur synthetisch
 
 ## M6 – Persistenz und Wall of Fame

@@ -248,10 +248,14 @@ Abschluss-Datensatz und die Statistik, nach 30 Tagen ohne Sitze und Tickets.
   Die quelloffene App darf nicht als Freibrief zur kommerziellen Nutzung
   dieser Karten interpretiert werden. Eine Lizenzprüfung ist vor
   öffentlichem Hosting/Vertrieb weiterhin erforderlich.
-- **Quellbestand ist nicht schon Laufzeitimport:** CSV-Dateien im Repository
-  ersetzen nicht das M5-Importkommando. Der Importer prüft Format,
-  Platzhalter, Kartenanzahl und Lizenzmetadaten, importiert die Packs pro
-  Version nach PostgreSQL und zeigt Quellenangaben in der UI.
+- **Laden beim Start (M5):** Jede Quelle hat neben ihren Dateien ein
+  `packs.json` mit Titel, Sprache, Lizenz, Rechteinhaber und Quelle. Der
+  Server lädt beim Start alle Packs aus `PACKS_DIR` (im Image
+  `assets/cardpacks`), prüft Format, Platzhalter, Längen und Lizenzfelder und
+  überspringt kaputte Packs mit Log. Die UI zeigt Rechteinhaber und Lizenz der
+  aktiven Packs. Begründung, warum nicht gleich PostgreSQL: Solange alle Packs
+  als geprüfte Dateien im Image liegen, wäre die Datenbank nur eine Kopie; sie
+  kommt mit eigenen, hochgeladenen Packs (frühestens M6).
 - Packs kommen per Import ins System: vorhandenes `XCAWPK2`-Format von der
   SD-Karte bzw. aus dem Release `cardparty-packs`, oder JSONL aus
   `tools_local/cardparty_l10n`. Ein Admin-Kommando im Container importiert sie.
