@@ -67,8 +67,8 @@ std::optional<std::string> Messages::createLanguage(std::string_view body) {
     const json request = json::parse(body);
     if (!request.is_object() || request.size() > 1) return std::nullopt;
     if (request.empty()) return "de";
-    if (!request.contains("language") || !request.at("language").is_string())
-      return std::nullopt;
+    if (!request.contains("language")) return std::nullopt;
+    if (!request.at("language").is_string()) return std::nullopt;
     const std::string language = request.at("language").get<std::string>();
     if (language != "de" && language != "en") return std::nullopt;
     return language;
@@ -82,8 +82,11 @@ std::string Messages::sessionCreated(std::string_view code, std::string_view hos
 }
 
 std::string Messages::publicRoom(std::string_view code, std::string_view language) {
-  return json{{"code", std::string(code)}, {"language", std::string(language)},
-              {"phase", "lobby"}}.dump();
+  json response;
+  response["code"] = std::string(code);
+  response["language"] = std::string(language);
+  response["phase"] = "lobby";
+  return response.dump();
 }
 
 std::string Messages::errorResponse(std::string_view errorCode) {
