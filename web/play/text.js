@@ -71,6 +71,7 @@ const texts = {
     packsMenu: 'KARTEN-PACKS', packCards: '{0} / {1}', packsLobbyOnly: 'PACKS NUR IN DER LOBBY',
     packsLoading: 'LADE PACKS …', packsHint: 'FRAGEN / ANTWORTEN. MINDESTENS EIN PACK, HÖCHSTENS ACHT.',
     credits: 'KARTEN: {0}',
+    lockLobby: 'LOBBY SPERREN', unlockLobby: 'LOBBY ÖFFNEN', lobbyLocked: 'LOBBY GESPERRT',
     fame: 'RUHMESHALLE', fameStats: '{0} SIEGE · {1} RUNDEN · {2} SPIELE', fameEmpty: 'NOCH KEINE EINTRÄGE',
     fameLines: 'LETZTE SIEGERSÄTZE', fameLoading: 'LADE …', matchLines: 'SIEGERSÄTZE DER PARTIE',
     pageOf: '{0}/{1}', previous: 'Vorherige Seite', nextPage: 'Nächste Seite',
@@ -83,6 +84,7 @@ const texts = {
     errors: {
       rejected: 'NICHT MÖGLICH', not_host: 'NUR DER HOST', already_joined: 'BEREITS BEIGETRETEN',
       game_running: 'SPIEL LÄUFT BEREITS · NÄCHSTE LOBBY ABWARTEN', session_full: 'SESSION VOLL',
+      locked: 'LOBBY GESPERRT · FRAG DEN HOST', rate_limited: 'ZU VIELE VERSUCHE · KURZ WARTEN',
     },
   },
   en: {
@@ -156,6 +158,7 @@ const texts = {
     packsMenu: 'CARD PACKS', packCards: '{0} / {1}', packsLobbyOnly: 'PACKS ONLY IN THE LOBBY',
     packsLoading: 'LOADING PACKS …', packsHint: 'PROMPTS / ANSWERS. AT LEAST ONE PACK, AT MOST EIGHT.',
     credits: 'CARDS: {0}',
+    lockLobby: 'LOCK LOBBY', unlockLobby: 'OPEN LOBBY', lobbyLocked: 'LOBBY LOCKED',
     fame: 'WALL OF FAME', fameStats: '{0} WINS · {1} ROUNDS · {2} GAMES', fameEmpty: 'NO ENTRIES YET',
     fameLines: 'RECENT WINNING SENTENCES', fameLoading: 'LOADING …', matchLines: 'WINNING SENTENCES OF THIS MATCH',
     pageOf: '{0}/{1}', previous: 'Previous page', nextPage: 'Next page',
@@ -168,6 +171,7 @@ const texts = {
     errors: {
       rejected: 'NOT POSSIBLE', not_host: 'HOST ONLY', already_joined: 'ALREADY JOINED',
       game_running: 'GAME ALREADY RUNNING · WAIT FOR THE NEXT LOBBY', session_full: 'SESSION FULL',
+      locked: 'LOBBY LOCKED · ASK THE HOST', rate_limited: 'TOO MANY TRIES · WAIT A MOMENT',
     },
   },
 };

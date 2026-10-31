@@ -105,11 +105,12 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## M7 – Performance und Härtung
 
-- [ ] Lasttest mit dem Bot-Programm: 1 000 Sessions × 8 Spieler, Budgets aus KONZEPT 5a
-- [ ] Profiling des heißen Pfads; Frame-Größen messen
-- [ ] Einfache Rate-Limits in Caddy (Join, Code-Abfrage)
-- [ ] Lobby sperren (Host), damit Fremde mit dem Code nicht mehr beitreten
-- [ ] Graceful Shutdown: Sockets schließen, Redis-Flush, Clients reconnecten
+- [x] Lasttest `tests/load/load.mjs` in der CI: 1 000 Sessions × (8 Spieler + Host + Big Screen), echte Runden, Budgets aus KONZEPT 5a als Abbruchkriterium
+- [x] Heißer Pfad gemessen und entschlackt: öffentlicher Teil einmal pro Änderung serialisiert, Pack-Credits nur in Lobby und Ende, Snapshots mit 20 ms Zeitbudget pro Tick statt nach jeder Aktion
+- [x] `/metrics` echt: Sockets, Aktionen, Latenz-Histogramm, längster Tick, Frame-Größen, Speicher, Rate-Limit-Treffer
+- [x] Rate-Limits im Server pro Client-Adresse (Caddy kann es ohne Plugin nicht): Code-Abfrage und Sockets 60/min, Anlegen 6/min; `RATE_LIMIT_PER_MINUTE`
+- [x] Lobby sperren (Host), damit Fremde mit dem Code nicht mehr beitreten
+- [x] Graceful Shutdown: Sockets schließen, alle offenen Snapshots sichern, Clients reconnecten (seit M2, jetzt mit Snapshot-Budget)
 
 ## M8 – Betrieb und Release
 

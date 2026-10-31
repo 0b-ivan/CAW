@@ -73,7 +73,8 @@ int main() {
           ->writeHeader("Cache-Control", "no-store")
           ->end(ready ? "ok\n" : "unavailable\n");
     });
-    caw::Server server(sessions, packs, fame, persist, stopRequested);
+    caw::Server server(sessions, packs, fame, persist, metrics, config.rateLimitPerMinute,
+                       stopRequested);
     server.registerRoutes(app);
     app.get("/metrics", [&](auto* response, auto*) {
       metrics.sessions = sessions.activeCount();

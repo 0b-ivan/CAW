@@ -13,6 +13,8 @@ jobs:
       COMPOSE_PROJECT_NAME: caw-ci
       HTTP_PORT: "8080"
       HTTPS_PORT: "8443"
+      # The tests open many sockets from one address; the limit itself is checked at the end.
+      RATE_LIMIT_PER_MINUTE: "1000000"
     steps:
       - uses: actions/checkout@v4
       - name: Offline tests for external CSV download sources
@@ -53,6 +55,14 @@ jobs:
           /tmp/caw-browser/node_modules/.bin/playwright install --with-deps chromium
           NODE_PATH=/tmp/caw-browser/node_modules node web/tests/landing.cjs
           CAW_EXPECT_FAME=1 NODE_PATH=/tmp/caw-browser/node_modules node web/tests/play.cjs
+      - name: "Load: 1000 rooms × 8 players + host + big screen against the budgets"
+        run: node tests/load/load.mjs http://localhost:8080 1000 3
+      - name: The rate limit answers 429 to a flood from one address
+        run: |
+          RATE_LIMIT_PER_MINUTE=60 docker compose -f deploy/compose.yml up --detach --wait server
+          codes=$(for i in $(seq 1 60); do curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/api/sessions/ZZZZZZ; done | sort | uniq -c)
+          echo "$codes"
+          echo "$codes" | grep -q ' 429$'
       - name: Compose diagnostics
         if: failure()
         run: docker compose -f deploy/compose.yml logs --no-color

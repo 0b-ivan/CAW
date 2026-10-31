@@ -108,6 +108,9 @@ docker run --rm caw-build ./bin/lint
 ./bin/smoke
 ```
 
+`node tests/load/load.mjs http://localhost:8080 1000 3` spielt 1 000 Räume mit
+je 8 Bots, Host und Big Screen und prüft die Budgets aus `docs/KONZEPT.md` 5a;
+dafür `RATE_LIMIT_PER_MINUTE` hoch setzen, sonst greift das Rate-Limit.
 `bin/smoke` erwartet einen laufenden Compose-Stack, prüft Caddy und lässt
 Redis und Postgres nacheinander ausfallen und wieder anlaufen. Nur in einer
 Testinstanz verwenden. Eigene Ports über `CAW_SMOKE_URL` angeben.

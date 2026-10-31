@@ -167,8 +167,13 @@ Host-Token, bevor es die übernommenen Host-Methoden aufruft.
 - `GET  /api/fame` → Ruhmeshalle (Namen mit Wort, Zähler, Siegersätze), aus dem Speicher
 - `GET  /api/packs` → alle geladenen Packs mit Titel, Sprache, Lizenz, Rechteinhaber, Quelle, Kartenzahl
 - `GET  /healthz` → 200, wenn Redis und Postgres erreichbar sind
-- `GET  /metrics` → wenige Zähler im Prometheus-Textformat (Sessions,
-  Sockets, Aktionen, Latenz-Buckets) – von Hand geschrieben, keine Bibliothek
+- `GET  /metrics` → Prometheus-Textformat, von Hand geschrieben: Sessions,
+  Sockets, Aktionen mit Latenz-Histogramm, längster Tick, Frame-Größen,
+  Speicher, Rate-Limit-Treffer
+- Rate-Limits pro Client-Adresse (X-Forwarded-For von Caddy): Code-Abfrage und
+  Socket-Aufbau `RATE_LIMIT_PER_MINUTE` (Standard 60), Anlegen ein Zehntel;
+  zu viel → 429 `rate_limited`. Im Server, weil Caddy ohne Plugin keine
+  Rate-Limits kann.
 - `WS   /ws/{code}` (Spieler und Host), `WS /ws/{code}/screen` (Big Screen)
 
 Nachrichten wie in KONZEPT.md Abschnitt 6, als JSON. `Protocol.cpp` ist die
@@ -191,7 +196,8 @@ Befehle (Client → Server), alle mit `type`:
 | `start`, `next`, `close`, `abort`, `end`, `rematch`, `hostPause`, `hostUnpause`, `addTime`, `continueWithout` | – | Host |
 | `kick` | `index` (Sitz) | Host |
 | `settings` | `settings`: `rounds`, `answerSecs`, `extensionSecs`, `jurorSecs`, `autoSecs`, `rando` | Host; Runden nur in der Lobby, Werte wie auf dem X4 |
-| `packs` | `packs`: 1–8 Pack-IDs | Host, nur in der Lobby; jeder `state` nennt die aktiven Packs mit Lizenz |
+| `packs` | `packs`: 1–8 Pack-IDs | Host, nur in der Lobby; `state` nennt in Lobby und Ende die aktiven Packs mit Lizenz |
+| `lock`, `unlock` | – | Host; gesperrt lehnt `join` mit `locked` ab, `state.locked` zeigt es |
 
 Antworten (Server → Client): `welcome` (`token`, `seat`; das Ticket rotiert bei
 jedem `resume`), `state` (öffentlicher Stand plus `me` mit eigener Hand),

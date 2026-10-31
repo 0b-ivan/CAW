@@ -165,7 +165,16 @@ Abnahmekriterien, gemessen im CI-Lasttest, nicht Wünsche.
 | `state`-Frame typisch / Obergrenze | < 2 KB / 16 KB |
 | Kaltstart des App-Containers inkl. Wiederherstellung aus Redis | < 3 s |
 
-Wie das erreicht wird:
+**Gemessen (M7, `tests/load/load.mjs`, 1 000 Sessions × 8 Spieler + Host +
+Big Screen = 10 000 Sockets, ein Server-Thread, Bots mit 1–8 s Bedenkzeit):**
+Client p99 22 ms, p50 1,1 ms; 99,98 % der Aktionen im Server unter 10 ms;
+Frames im Spiel durchschnittlich 1,4 KB, höchstens 2,6 KB; 43 KB pro Session
+inkl. Sockets; längster Tick 30 ms; Kaltstart mit 4 700 Sessions aus Redis
+2,6 s. Ohne Bedenkzeit (alle Bots im selben Moment) misst der Test nur eine
+Warteschlange; das ist kein Spielverhalten.
+
+Wie das erreicht wird (Stand C++-Backend; Bibliotheken siehe
+KONZEPT-CPP-BACKEND.md):
 
 - **Heißer Pfad ohne Datenbank.** Eine Aktion wird im Speicher gegen die
   Engine geprüft, angewendet und verschickt. Danach (nicht davor) geht der

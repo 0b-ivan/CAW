@@ -140,8 +140,9 @@ Spieler: Spielerliste zweispaltig (`IVAN·TOAST`), „3 VON MIND. 3“, Hinweis
 „WARTE AUF HOST“. Host zusätzlich: QR links, rechts Code, URL,
 `[ LINK KOPIEREN ]` und `[ TEILEN ]` (nur wenn das Gerät einen
 Teilen-Dialog hat), darunter `[ MITSPIELEN ]`, in der Fußleiste `[ START ]`
-(gestrichelt bis 3 Spieler). `[ BIG SCREEN ]` kommt mit M4,
-`[ LOBBY SPERREN ]` mit M7.
+(gestrichelt bis 3 Spieler), dazu `[ BIG SCREEN ]`. LOBBY SPERREN steht im
+Menü; gesperrt zeigt die Fußleiste „LOBBY GESPERRT“, Neue sehen „LOBBY
+GESPERRT · FRAG DEN HOST“.
 
 ### 4.5 Antworten
 
@@ -205,9 +206,9 @@ aktuellen Zustand geht:
 - SESSION: LINK KOPIEREN · TEILEN · STARTSEITE
 
 Gefährliche Aktionen brauchen eine zweite Berührung innerhalb von 3 s
-(„NOCHMAL TIPPEN“). Später: KATEGORIEN und PACKS (M5), BIG SCREEN LINK als
-kopierbarer `/s/{code}/screen`-Link (M4), LOBBY SPERREN (M7),
-HOST ÜBERGEBEN (offen).
+(„NOCHMAL TIPPEN“). Dazu für den Host: KARTEN-PACKS (nur Lobby) und LOBBY
+SPERREN/ÖFFNEN, für alle: BIG SCREEN (QR des Links) und RUHMESHALLE. Offen:
+HOST ÜBERGEBEN.
 
 ## 5. Big Screen `/s/{code}/screen`
 

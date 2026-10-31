@@ -94,7 +94,7 @@ std::string SessionRegistry::snapshot(const std::string& code) {
   const Session& session = *room.session;
   return Messages::saveRoom({room.language, room.hostToken, session.packs(),
                              session.saveState(millisNow()), session.identities(),
-                             session.matchLines()});
+                             session.matchLines(), session.locked()});
 }
 
 bool SessionRegistry::restore(const std::string& code, std::string_view snapshot, Time now) {
@@ -107,7 +107,7 @@ bool SessionRegistry::restore(const std::string& code, std::string_view snapshot
   auto session = std::make_unique<Session>(record->hostToken, packs_, record->packs, Codes::seed(),
                                            millisNow());
   if (!session->loadState(record->state, millisNow())) return false;
-  session->restoreExtras(record->identities, record->lines);
+  session->restoreExtras(record->identities, record->lines, record->locked);
   // Restored is not a change: it is already saved exactly like this.
   session->takeChanged();
   rooms_.emplace(code, Room{record->language, record->hostToken, now + ttl_, std::move(session)});

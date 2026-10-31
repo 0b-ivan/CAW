@@ -256,6 +256,20 @@ async function run(browser) {
   await host.locator('#rematch-button').click();
   for (const page of players) await waitView(page, 'lobby');
 
+  // A locked lobby turns a newcomer away with a reason; opened again, it lets them in.
+  await host.locator('#menu-button').click();
+  await host.locator('.menu-row', { hasText: 'LOBBY SPERREN' }).click();
+  await host.locator('#lobby-status', { hasText: 'LOBBY GESPERRT' }).waitFor();
+  const late = await openPhone(browser);
+  await late.goto(`${target}/s/${code}`);
+  await late.getByLabel('DEIN NAME').fill('Dora');
+  await late.getByRole('button', { name: '[ BEITRETEN ]' }).click();
+  await late.locator('#join-error', { hasText: 'LOBBY GESPERRT' }).waitFor();
+  await host.locator('#menu-button').click();
+  await host.locator('.menu-row', { hasText: 'LOBBY ÖFFNEN' }).click();
+  await late.getByRole('button', { name: '[ BEITRETEN ]' }).click();
+  await waitView(late, 'lobby');
+
   // The host removes Cyra with two taps.
   await openMenuPage(host, 'SPIELER');
   const cyra = host.locator('.menu-row', { hasText: 'Cyra' });

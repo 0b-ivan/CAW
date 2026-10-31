@@ -38,6 +38,8 @@ struct Command {
     ContinueWithout,
     Settings,  // host only: settings
     Packs,     // host only, lobby only: packs
+    Lock,      // host only: no new players
+    Unlock,
   };
   Type type = Type::Join;
   std::string name;
@@ -66,6 +68,7 @@ struct StateFrame {
   std::vector<const CardPack*> packs;  // the packs in play, for credits on every screen
   const char* words[cardparty::kPlayers] = {};    // per seat: the word after the name, or null
   const std::vector<MatchLine>* lines = nullptr;  // sent with the final standings only
+  bool locked = false;
 };
 
 class Protocol final {
@@ -76,6 +79,10 @@ class Protocol final {
   static std::optional<Command> parse(std::string_view text);
 
   static std::string state(const StateFrame& frame);
+  // The public part once per change, then each seat's own part spliced in: a room with
+  // eight phones serializes the table once, not eight times.
+  static std::string publicState(const StateFrame& frame);
+  static std::string state(const std::string& publicState, const StateFrame& own);
   // The same table for a big screen: type "screen", no "me", never a hand.
   static std::string screen(const StateFrame& frame);
   static std::string welcome(std::string_view ticket, std::uint8_t seat);

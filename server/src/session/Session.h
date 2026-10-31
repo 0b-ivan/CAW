@@ -60,7 +60,10 @@ class Session final {
   // Seat identities and this match's winning sentences, for the room snapshot.
   std::vector<Identity> identities() const;
   const std::vector<MatchLine>& matchLines() const { return matchLines_; }
-  void restoreExtras(const std::vector<Identity>& identities, std::vector<MatchLine> lines);
+  void restoreExtras(const std::vector<Identity>& identities, std::vector<MatchLine> lines,
+                     bool locked);
+  // The host closed the lobby: nobody new may join until it is opened again.
+  bool locked() const { return locked_; }
   // Rounds won and matches played since the last call, for the statistics.
   std::vector<HistoryEvent> takeHistory();
   std::size_t seatedCount() const { return game_.seatedCount(); }
@@ -85,6 +88,9 @@ class Session final {
   // Sends the current state to every seat and every host connection.
   void publishAll(std::uint32_t now);
   void sendState(ConnectionId connection, std::uint8_t seat, std::uint32_t now);
+  // The same with the public part already serialized (Protocol::publicState).
+  void sendState(ConnectionId connection, std::uint8_t seat, const std::string& shared,
+                 std::uint32_t now);
   void sendScreen(ConnectionId connection, std::uint32_t now);
   StateFrame publicFrame(std::uint32_t now) const;
   void send(ConnectionId connection, std::string text, bool close = false);
@@ -111,6 +117,7 @@ class Session final {
   cardparty::Phase lastPhase_ = cardparty::Phase::Lobby;
   std::uint16_t lastRound_ = 0;
   bool changed_ = false;
+  bool locked_ = false;
 };
 
 }  // namespace caw

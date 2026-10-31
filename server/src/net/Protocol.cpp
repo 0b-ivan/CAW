@@ -74,6 +74,8 @@ constexpr CommandSpec kCommands[] = {
     {"continueWithout", Command::Type::ContinueWithout, 0},
     {"settings", Command::Type::Settings, kSettings},
     {"packs", Command::Type::Packs, kPacks},
+    {"lock", Command::Type::Lock, 0},
+    {"unlock", Command::Type::Unlock, 0},
 };
 
 const CommandSpec* findCommand(const std::string& name) {
@@ -247,8 +249,11 @@ json settingsJson(const StateFrame& frame) {
 }
 
 // Title, license and rights holder of every pack in play: shown wherever cards are shown.
+// Only in the lobby and at the end, where the credits are shown: during play they would make
+// every frame half again as large.
 json packsJson(const StateFrame& frame) {
   json packs = json::array();
+  if (frame.view.phase != Phase::Lobby && frame.view.phase != Phase::Finished) return packs;
   for (const CardPack* pack : frame.packs) {
     if (pack == nullptr) continue;
     packs.push_back({{"id", pack->id},
@@ -304,7 +309,7 @@ std::optional<Command> Protocol::parse(std::string_view text) {
 
 namespace {
 // Everything anyone at the table may see; state() adds the connection's own part.
-json publicState(const StateFrame& frame) {
+json publicJson(const StateFrame& frame) {
   const PublicView& view = frame.view;
   const Table& table = *frame.table;
   json state = {{"type", "state"},
@@ -324,6 +329,7 @@ json publicState(const StateFrame& frame) {
                 {"votes", table.votes()},
                 {"settings", settingsJson(frame)},
                 {"packs", packsJson(frame)},
+                {"locked", frame.locked},
                 {"lines", linesJson(frame)}};
   state["prompt"] =
       view.prompt < frame.deck->promptsCount ? frame.deck->prompts[view.prompt].text : "";
@@ -333,14 +339,17 @@ json publicState(const StateFrame& frame) {
 }
 }  // namespace
 
-std::string Protocol::state(const StateFrame& frame) {
-  json state = publicState(frame);
-  state["me"] = ownJson(frame);
-  return state.dump();
+std::string Protocol::publicState(const StateFrame& frame) { return publicJson(frame).dump(); }
+
+std::string Protocol::state(const std::string& shared, const StateFrame& own) {
+  // `shared` is one JSON object; its closing brace makes room for "me".
+  return shared.substr(0, shared.size() - 1) + ",\"me\":" + ownJson(own).dump() + "}";
 }
 
+std::string Protocol::state(const StateFrame& frame) { return state(publicState(frame), frame); }
+
 std::string Protocol::screen(const StateFrame& frame) {
-  json screen = publicState(frame);
+  json screen = publicJson(frame);
   screen["type"] = "screen";
   return screen.dump();
 }
