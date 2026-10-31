@@ -141,7 +141,7 @@ def main():
                         help="Check local configuration before operator details are ready")
     args = parser.parse_args()
 
-    errors = check_files(ROOT, require_operator=not args.prepare) + check_caddy(ROOT)
+    errors = check_files(ROOT, require_operator=(not args.prepare or args.public)) + check_caddy(ROOT)
     try:
         settings = configuration(ROOT / "deploy" / ".env")
         expected_port = settings.get("CAW_ORIGIN_PORT", "18081")
@@ -160,7 +160,7 @@ def main():
         for error in errors:
             print("FAIL:", error)
         return 1
-    print("OK: vorhandener Host-Tunnel, Loopback-Origin und CAW-Konfiguration")
+    print("OK: CAW-Compose und Loopback-Origin; Host-Tunnel separat prüfen")
     if args.prepare:
         print("HINWEIS: Impressum vor Livebetrieb separat prüfen")
     if args.public:
