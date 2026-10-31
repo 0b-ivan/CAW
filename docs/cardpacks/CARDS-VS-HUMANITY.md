@@ -47,6 +47,8 @@ spielbaren CAW-Packs. Erst M5 definiert und implementiert die validierte
 CSV-Konvertierung zu unserem Pack-Format, Import nach PostgreSQL und
 Lizenzanzeige im Spiel. Dieses Downloadwerkzeug macht keinerlei Änderungen
 an Datenbank, Server oder Spielregeln. Die hier dokumentierten Zahlen
-stammen von der Quellseite und wurden noch nicht gegen die CSV-Inhalte
-abgeglichen; das Datenformat konnte zum Zeitpunkt der Einbindung nicht
-direkt eingesehen werden.
+stammen von der Quellseite und wurden am 31.10.2026 gegen die sechs
+Original-CSV-Dateien abgeglichen: Header `typ,text`, `b` für schwarze
+und `w` für weiße Karten; alle **1.764** Datenzeilen stimmen mit den
+angegebenen Anzahlen überein. Die Platzhalterkonventionen und die
+Rechte einzelner Fanbeiträge müssen vor dem Import noch geprüft werden.
