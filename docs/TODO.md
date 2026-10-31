@@ -67,6 +67,9 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## M5 – Kartenpacks
 
+- [x] Externe Cards-vs-Humanity-CSV-Quellen und Lizenzangaben als Metadaten erfassen; Originaldateien nur lokal laden (keine Kartentexte im Git)
+- [ ] Externe CSV-Dateien auf Schema, Kartenanzahl, Platzhalter und Rechtehinweise prüfen; gegebenenfalls Import-Adapter und Konzeption ergänzen
+
 - [ ] Import-Kommando (`server --import-pack datei`): `XCAWPK2` mit dem Reader aus der Firmware (`CardPartySdPack.h`) und JSONL aus `cardparty_l10n`
 - [ ] Prüfungen wie in der Firmware: Format, CRC, Längen, Platzhalter, Kategorien, Lizenzfelder Pflicht
 - [ ] Pack = `jsonb`-Dokument pro Version; Liste der Packs für den Host
