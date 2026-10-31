@@ -1,0 +1,4 @@
+# Keep upstream rule layout intact so the port stays easy to compare.
+BasedOnStyle: InheritParentConfig
+DisableFormat: true
+SortIncludes: Never

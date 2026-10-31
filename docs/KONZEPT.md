@@ -1,6 +1,6 @@
 # Cards Against Whatever – Web-App: Konzept
 
-Stand: 2026-10-31 · Status: Entwurf, noch kein Code · Gestaltung und
+Stand: 2026-10-31 · Status: Entwurf; M0/M1 implementiert · Gestaltung und
 Ansichten im Detail: [UI-KONZEPT.md](UI-KONZEPT.md)
 
 > **Das Backend wird in C++ gebaut.** Wo dieses Dokument Node.js, TypeScript,

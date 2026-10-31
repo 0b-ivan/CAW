@@ -1,0 +1,36 @@
+#!/bin/sh
+# Exercise readiness, static assets and both dependency failure paths.
+set -eu
+compose_file=${CAW_COMPOSE_FILE:-deploy/compose.yml}
+base_url=${CAW_SMOKE_URL:-http://localhost:8080}
+compose() { docker compose -f "$compose_file" "$@"; }
+recover() { compose start redis postgres >/dev/null; }
+trap recover EXIT HUP INT TERM
+probe() {
+  expected=$1
+  code=$(curl --silent --output /dev/null --max-time 8 --write-out '%{http_code}' "$base_url/healthz")
+  test "$code" = "$expected"
+  printf 'healthz: %s\n' "$code"
+}
+probe 200
+curl --fail --silent "$base_url/" | grep -q 'CARDS AGAINST WHATEVER'
+curl --fail --silent "$base_url/index.js" | grep -q 'translations'
+curl --fail --silent "$base_url/metrics" | grep -q 'caw_health_checks_total'
+printf 'Caddy landing page, JS module and metrics: OK\n'
+for service in redis postgres; do
+  compose stop "$service" >/dev/null
+  probe 503
+  compose start "$service" >/dev/null
+  ready=0
+  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    if curl --fail --silent --max-time 8 "$base_url/healthz" >/dev/null; then
+      ready=1
+      break
+    fi
+    sleep 1
+  done
+  test "$ready" = 1
+  probe 200
+  printf '%s outage and recovery: OK\n' "$service"
+done
+trap - EXIT HUP INT TERM

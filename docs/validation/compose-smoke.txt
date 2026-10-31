@@ -1,0 +1,16 @@
+healthz: 200
+Caddy landing page, JS module and metrics: OK
+ Container caw-m0m1-20261031-redis-1  Stopping
+ Container caw-m0m1-20261031-redis-1  Stopped
+healthz: 503
+ Container caw-m0m1-20261031-redis-1  Starting
+ Container caw-m0m1-20261031-redis-1  Started
+healthz: 200
+redis outage and recovery: OK
+ Container caw-m0m1-20261031-postgres-1  Stopping
+ Container caw-m0m1-20261031-postgres-1  Stopped
+healthz: 503
+ Container caw-m0m1-20261031-postgres-1  Starting
+ Container caw-m0m1-20261031-postgres-1  Started
+healthz: 200
+postgres outage and recovery: OK

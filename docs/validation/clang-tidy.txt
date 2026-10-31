@@ -1,0 +1,14 @@
+[1/6] Processing file /app/server/src/main.cpp.
+283 warnings generated.
+[2/6] Processing file /app/server/src/config.cpp.
+384 warnings generated.
+[3/6] Processing file /app/server/src/log.cpp.
+550 warnings generated.
+[4/6] Processing file /app/server/src/net/Messages.cpp.
+1110 warnings generated.
+[5/6] Processing file /app/server/src/net/Metrics.cpp.
+1191 warnings generated.
+[6/6] Processing file /app/server/src/store/Health.cpp.
+1817 warnings generated.
+Suppressed 1817 warnings (1817 in non-user code).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.

@@ -1,0 +1,53 @@
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /work/build-baseline
+[1/22] Building CXX object tests/CMakeFiles/test_sessions.dir/game/test_sessions.cpp.o
+[2/22] Building CXX object tests/CMakeFiles/test_cardparty.dir/game/test_cardparty.cpp.o
+[3/22] Building CXX object tests/CMakeFiles/test_shuffle.dir/game/test_shuffle.cpp.o
+[4/22] Building CXX object tests/CMakeFiles/test_deck_set.dir/game/test_deck_set.cpp.o
+[5/22] Building CXX object tests/CMakeFiles/test_full_match.dir/game/test_full_match.cpp.o
+[6/22] Building CXX object tests/CMakeFiles/test_disconnect_progress.dir/game/test_disconnect_progress.cpp.o
+[7/22] Building CXX object tests/CMakeFiles/test_catalog.dir/game/test_catalog.cpp.o
+[8/22] Building CXX object tests/CMakeFiles/test_sd_pack.dir/game/test_sd_pack.cpp.o
+[9/22] Linking CXX executable tests/test_cardparty
+[10/22] Linking CXX executable tests/test_shuffle
+[11/22] Linking CXX executable tests/test_deck_set
+[12/22] Linking CXX executable tests/test_sessions
+[13/22] Linking CXX executable tests/test_full_match
+[14/22] Linking CXX executable tests/test_disconnect_progress
+[15/22] Linking CXX executable tests/test_sd_pack
+[16/22] Linking CXX executable tests/test_catalog
+[17/22] Building CXX object tests/CMakeFiles/test_table.dir/game/test_table.cpp.o
+[18/22] Linking CXX executable tests/test_table
+[19/22] Building CXX object tests/CMakeFiles/test_history.dir/game/test_history.cpp.o
+[20/22] Building CXX object tests/CMakeFiles/test_sentence.dir/game/test_sentence.cpp.o
+[21/22] Linking CXX executable tests/test_history
+[22/22] Linking CXX executable tests/test_sentence
+Internal ctest changing into directory: /work/build-baseline
+Test project /work/build-baseline
+      Start  1: game.cardparty
+ 1/11 Test  #1: game.cardparty ...................   Passed    0.00 sec
+      Start  2: game.shuffle
+ 2/11 Test  #2: game.shuffle .....................   Passed    0.08 sec
+      Start  3: game.deck_set
+ 3/11 Test  #3: game.deck_set ....................   Passed    0.01 sec
+      Start  4: game.sessions
+ 4/11 Test  #4: game.sessions ....................   Passed    0.00 sec
+      Start  5: game.full_match
+ 5/11 Test  #5: game.full_match ..................   Passed    0.00 sec
+      Start  6: game.disconnect_progress
+ 6/11 Test  #6: game.disconnect_progress .........   Passed    0.00 sec
+      Start  7: game.sd_pack
+ 7/11 Test  #7: game.sd_pack .....................   Passed    0.00 sec
+      Start  8: game.catalog
+ 8/11 Test  #8: game.catalog .....................   Passed    0.00 sec
+      Start  9: game.table
+ 9/11 Test  #9: game.table .......................   Passed    0.00 sec
+      Start 10: game.history
+10/11 Test #10: game.history .....................   Passed    0.04 sec
+      Start 11: game.sentence
+11/11 Test #11: game.sentence ....................   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 11
+
+Total Test time (real) =   0.16 sec

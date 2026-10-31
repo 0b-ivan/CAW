@@ -107,6 +107,30 @@ Regeln für Dateien und Funktionen:
 4. Was die Firmware nur wegen des X4 hat (E-Ink, SD-Karte, Hotspot,
    `HalStorage`), bleibt draußen.
 
+### M1: interner JSON-Spielzustand
+
+`net/Messages.cpp` speichert Game, Table und die übernommenen Sitzbindungen
+in einem versionierten Snapshot (Schema 1). Enthalten sind private Hände,
+anonyme Ablage mit internen Autoren, RNG, Ziehstapel-Bits, Kategorien,
+Regeln, Uhren, Pause/Warten, Votes, Tickets und Revisionen. Dieser Snapshot
+ist ausschließlich für interne Persistenz bestimmt und darf niemals als
+öffentlicher Client-Frame verschickt oder geloggt werden.
+
+Der Aufrufer stellt dasselbe unveränderliche Deck bereit; ein stabiler
+Inhaltsfingerabdruck prüft Kartenreihenfolge, Kategorien und Pick/Draw-Werte.
+Deck-Zeiger und optionale Blocker-Callbacks bleiben lokale Referenzen und
+werden nicht serialisiert. Uhren speichern Restzeiten, Offline-Sitze die
+verstrichene Wartezeit. Beim Laden werden sie auf den neuen monotonen
+Zeitursprung bezogen; während eines Server-Neustarts steht die Spielzeit.
+Ungültige oder fremde Snapshots ändern den vorhandenen Zustand nicht.
+
+Die übernommenen numerischen Verbindungsbindungen sind in M1 lediglich
+Teil des vollständigen Regelzustands. M2 muss beim echten Server-Neustart
+alte Socket-Bindungen lösen und Tickets beim Resume drehen. M1 eröffnet
+keine Netzwerk-Session und prüft keine Host-Token. `kHost` bezeichnet die
+authentifizierte Host-Rolle unabhängig von einem Spieler-Sitz; M2 prüft den
+Host-Token, bevor es die übernommenen Host-Methoden aufruft.
+
 ## 6. Ablauf im Prozess
 
 ```

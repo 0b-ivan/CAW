@@ -1,0 +1,58 @@
+# Prefer Debian packages; only missing libraries come from fixed upstream commits.
+find_package(nlohmann_json 3.11 CONFIG QUIET)
+if(NOT nlohmann_json_FOUND)
+  FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3 GIT_SHALLOW TRUE)
+  FetchContent_MakeAvailable(json)
+endif()
+
+if(CAW_BUILD_SERVER)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(PQXX REQUIRED IMPORTED_TARGET libpqxx)
+  pkg_check_modules(HIREDIS REQUIRED IMPORTED_TARGET hiredis)
+  find_package(Threads REQUIRED)
+  find_package(ZLIB REQUIRED)
+  find_package(redis++ CONFIG QUIET)
+  if(NOT TARGET redis++::redis++ AND NOT TARGET redis++::redis++_static)
+    set(REDIS_PLUS_PLUS_BUILD_TEST OFF CACHE BOOL "" FORCE)
+    set(REDIS_PLUS_PLUS_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+    set(REDIS_PLUS_PLUS_BUILD_STATIC ON CACHE BOOL "" FORCE)
+    set(REDIS_PLUS_PLUS_CXX_STANDARD 17 CACHE STRING "" FORCE)
+    FetchContent_Declare(redis_plus_plus GIT_REPOSITORY https://github.com/sewenew/redis-plus-plus.git
+      GIT_TAG 3257aa87ca2591f0ede5d6293c47f47c6e0828bd)
+    # Pinned upstream declares an old CMake baseline; keep its policy-age notice local.
+    set(CAW_WARN_DEPRECATED "${CMAKE_WARN_DEPRECATED}")
+    set(CMAKE_WARN_DEPRECATED OFF)
+    FetchContent_MakeAvailable(redis_plus_plus)
+    if(CAW_WARN_DEPRECATED STREQUAL "")
+      unset(CMAKE_WARN_DEPRECATED)
+    else()
+      set(CMAKE_WARN_DEPRECATED "${CAW_WARN_DEPRECATED}")
+    endif()
+    # Upstream exposes this generated header only to its own build target.
+    target_include_directories(redis++_static SYSTEM PUBLIC "$<BUILD_INTERFACE:${redis_plus_plus_BINARY_DIR}/src>")
+    target_link_libraries(redis++_static PUBLIC PkgConfig::HIREDIS)
+  endif()
+  if(TARGET redis++::redis++_static)
+    set(CAW_REDIS_TARGET redis++::redis++_static)
+  elseif(TARGET redis++::redis++)
+    set(CAW_REDIS_TARGET redis++::redis++)
+  else()
+    set(CAW_REDIS_TARGET redis++_static)
+  endif()
+
+  FetchContent_Declare(uwebsockets GIT_REPOSITORY https://github.com/uNetworking/uWebSockets.git
+    GIT_TAG 53e835c1fa71ea64303b48418fec46533318bf91
+    GIT_SUBMODULES uSockets GIT_SUBMODULES_RECURSE FALSE)
+  FetchContent_MakeAvailable(uwebsockets)
+  set(USOCKETS_DIR "${uwebsockets_SOURCE_DIR}/uSockets")
+  file(GLOB USOCKETS_SOURCES CONFIGURE_DEPENDS "${USOCKETS_DIR}/src/*.c"
+    "${USOCKETS_DIR}/src/eventing/*.c" "${USOCKETS_DIR}/src/crypto/*.c")
+  add_library(usockets STATIC ${USOCKETS_SOURCES})
+  target_include_directories(usockets SYSTEM PUBLIC "${USOCKETS_DIR}/src")
+  target_compile_definitions(usockets PUBLIC LIBUS_NO_SSL)
+  target_link_libraries(usockets PUBLIC Threads::Threads)
+  add_library(uwebsockets INTERFACE)
+  target_include_directories(uwebsockets SYSTEM INTERFACE "${uwebsockets_SOURCE_DIR}/src")
+  target_link_libraries(uwebsockets INTERFACE usockets ZLIB::ZLIB)
+endif()

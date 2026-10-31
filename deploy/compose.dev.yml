@@ -1,0 +1,26 @@
+# Standalone development command: docker compose -f deploy/compose.dev.yml up --build.
+services:
+  caddy:
+    extends:
+      file: compose.yml
+      service: caddy
+  server:
+    extends:
+      file: compose.yml
+      service: server
+    build:
+      args:
+        CMAKE_BUILD_TYPE: Debug
+  redis:
+    extends:
+      file: compose.yml
+      service: redis
+  postgres:
+    extends:
+      file: compose.yml
+      service: postgres
+volumes:
+  caddy_data:
+  caddy_config:
+  redisdata:
+  pgdata:

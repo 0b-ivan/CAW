@@ -7,30 +7,32 @@ Handy-UI: `web/CardPartyPage.html`; Tests: `host-tests/cardparty/`).
 
 ## Vor M2 zu entscheiden
 
-- [ ] Postgres oder MySQL (Vorschlag Postgres, siehe KONZEPT 11; libpqxx bzw. MySQL Connector/C++)
+- [x] Postgres mit libpqxx gemäß vorrangigem KONZEPT-CPP-BACKEND.md
 - [ ] Domain und Zielserver
 - [ ] Big Screen nur Anzeige oder auch Juror-Wahl per Tastatur
 
+Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
+
 ## M0 – Gerüst und Infrastruktur
 
-- [ ] Ordner `server/`, `web/`, `deploy/` wie in KONZEPT-CPP-BACKEND.md Abschnitt 4
-- [ ] CMake (C++20, `-Wall -Wextra -Werror`), Abhängigkeiten über Debian-Pakete bzw. `FetchContent` mit fester Version
-- [ ] doctest eingebunden, `ctest` läuft; `.clang-format`, `.clang-tidy` (wenige Checks), `bin/format`
-- [ ] `server/src/main.cpp`: Config aus Umgebung, Logger, uWebSockets mit `/healthz` und `/metrics`
-- [ ] `deploy/compose.yml`: caddy, server, redis (AOF, maxmemory, noeviction), postgres; Volumes; Healthchecks
-- [ ] `deploy/compose.dev.yml`, `.env.example`; `.env` in `.gitignore`
-- [ ] `deploy/server.Dockerfile` zweistufig, Laufzeit als non-root
-- [ ] `deploy/Caddyfile`: `web/` statisch, `/api` und `/ws` an den Server
-- [ ] `web/index.html` + `web/style.css` (Startseite, Tokens aus UI-KONZEPT)
-- [ ] GitHub Actions: Build + `ctest`, Docker-Build, Compose-Smoke (`/healthz` == 200)
+- [x] Ordner `server/`, `web/`, `deploy/` wie in KONZEPT-CPP-BACKEND.md Abschnitt 4
+- [x] CMake (C++20, `-Wall -Wextra -Werror`), Abhängigkeiten über Debian-Pakete bzw. `FetchContent` mit fester Version
+- [x] doctest eingebunden, `ctest` läuft; `.clang-format`, `.clang-tidy` (wenige Checks), `bin/format`
+- [x] `server/src/main.cpp`: Config aus Umgebung, Logger, uWebSockets mit `/healthz` und `/metrics`
+- [x] `deploy/compose.yml`: caddy, server, redis (AOF, maxmemory, noeviction), postgres; Volumes; Healthchecks
+- [x] `deploy/compose.dev.yml`, `.env.example`; `.env` in `.gitignore`
+- [x] `deploy/server.Dockerfile` zweistufig, Laufzeit als non-root
+- [x] `deploy/Caddyfile`: `web/` statisch, `/api` und `/ws` an den Server
+- [x] `web/index.html` + `web/style.css` (Startseite, Tokens aus UI-KONZEPT)
+- [x] GitHub Actions: Build + `ctest`, Docker-Build, Compose-Smoke (`/healthz` == 200)
 
 ## M1 – Spielregeln aus der Firmware übernehmen
 
-- [ ] Header aus `src/apps_local/cardparty/` nach `server/src/game/` kopieren (Quell-Commit im Commit-Text)
-- [ ] Zugehörige Host-Tests aus `host-tests/cardparty/` auf doctest umstellen und grün bekommen, **bevor** etwas geändert wird
-- [ ] X4-Reste entfernen (SD, HalStorage, E-Ink); `kHost` → Host-Rolle der Web-Session
-- [ ] Abgedeckt und getestet: Phasen, Juror-Rotation, Pick 1/2/3, Draw 2, Abwerfen, faire Rundenzahl, Uhren, Pause, 15-s-Warten, Kick, Ende, „nochmal“, Kategorien, Deck-Set (8 Packs), Siegersatz
-- [ ] Zustand als JSON speichern und laden (für Redis), mit Rundlauf-Test
+- [x] Header aus `src/apps_local/cardparty/` nach `server/src/game/` kopieren (Quell-Commit im Commit-Text)
+- [x] Zugehörige Host-Tests aus `host-tests/cardparty/` auf doctest umstellen und grün bekommen, **bevor** etwas geändert wird
+- [x] X4-Reste entfernen (SD, HalStorage, E-Ink); `kHost` → Host-Rolle der Web-Session
+- [x] Abgedeckt und getestet: Phasen, Juror-Rotation, Pick 1/2/3, Draw 2, Abwerfen, faire Rundenzahl, Uhren, Pause, 15-s-Warten, Kick, Ende, „nochmal“, Kategorien, Deck-Set (8 Packs), Siegersatz
+- [x] Zustand als JSON speichern und laden (für Redis), mit Rundlauf-Test
 
 ## M2 – Echtzeit-Server und Sessions
 

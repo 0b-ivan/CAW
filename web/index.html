@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>C/A/W · Cards Against Whatever</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/index.js"></script>
+</head>
+<body>
+  <main>
+    <header><strong>C/A/W</strong><span class="eyebrow">CARDS AGAINST WHATEVER</span></header>
+    <section><button type="button" disabled data-text="newSession"></button></section>
+    <section>
+      <label class="eyebrow" for="code" data-text="enterCode"></label>
+      <div class="join-row">
+        <input id="code" name="code" type="text" maxlength="6" pattern="[A-HJKMNP-Z2-9]{6}"
+          autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="status">
+        <button type="button" disabled data-text="join"></button>
+      </div>
+    </section>
+    <p id="status" role="status" data-text="milestone"></p>
+    <footer>
+      <nav><button type="button" data-lang="de" aria-pressed="true">DE</button><span>/</span><button type="button" data-lang="en" aria-pressed="false">EN</button></nav>
+      <span data-text="licenses"></span><span data-text="privacy"></span>
+    </footer>
+  </main>
+</body>
+</html>
