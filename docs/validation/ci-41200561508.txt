@@ -1,0 +1,20 @@
+GitHub Actions: C++ build and Compose smoke
+Run: https://github.com/0b-ivan/CAW/actions/runs/41200561508
+Head: 6ebed78bb23b97cc756120252b9268913de26180
+Result: completed / success
+Selected verbatim log lines:
+
+2026-10-31T12:19:31.2911597Z #11 0.406 -- Found ZLIB: /usr/lib/x86_64-linux-gnu/libz.so (found version "1.3.1")
+2026-10-31T12:20:17.9104648Z #13 33.74 100% tests passed, 0 tests failed out of 14
+2026-10-31T12:20:28.3025805Z 100% tests passed, 0 tests failed out of 14
+2026-10-31T12:21:05.9767104Z healthz: 200
+2026-10-31T12:21:06.2112626Z healthz: 503
+2026-10-31T12:21:06.3850724Z healthz: 200
+2026-10-31T12:21:06.3851187Z redis outage and recovery: OK
+2026-10-31T12:21:06.5400528Z healthz: 503
+2026-10-31T12:21:07.7411791Z healthz: 200
+2026-10-31T12:21:07.7412070Z postgres outage and recovery: OK
+2026-10-31T12:21:29.5761130Z PASS 320x568: DE/EN, keyboard, 48px targets, no horizontal overflow
+2026-10-31T12:21:29.7195659Z PASS 390x844: DE/EN, keyboard, 48px targets, no horizontal overflow
+2026-10-31T12:21:29.8682543Z PASS 1280x800: DE/EN, keyboard, 48px targets, no horizontal overflow
+

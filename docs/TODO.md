@@ -24,7 +24,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] `deploy/server.Dockerfile` zweistufig, Laufzeit als non-root
 - [x] `deploy/Caddyfile`: `web/` statisch, `/api` und `/ws` an den Server
 - [x] `web/index.html` + `web/style.css` (Startseite, Tokens aus UI-KONZEPT)
-- [ ] GitHub Actions: Build + `ctest`, Docker-Build, Compose-Smoke (`/healthz` == 200)
+- [x] GitHub Actions: Build + `ctest`, Docker-Build, Compose-Smoke (`/healthz` == 200)
 
 ## M1 – Spielregeln aus der Firmware übernehmen
 
