@@ -79,6 +79,13 @@ CODE EINGEBEN
 DE / EN · LIZENZEN · DATENSCHUTZ
 ```
 
+Die Startseite soll ohne vertikales oder horizontales Scrollen in 320×568,
+390×844 und 1280×800 px passen. Der Header bleibt kompakt; Session-Aktion,
+Code-Eingabe, Sprachwahl und Status müssen ohne Scrollen sichtbar bleiben.
+Erst wenn Textzoom/Extremgrößen den Platz überschreiten, ist vertikales
+Scrollen als barrierefreie Ausnahme erlaubt. Keine festen Höhen, die Inhalte
+abschneiden.
+
 Die Kopfzeile verwendet die **CUT-DECK-Marke**: geneigte, rechteckige C- und
 W-Karten mit geraden 90°-Ecken und spiegelbildlichen Eckwinkeln unten links
 bzw. rechts; die mittlere A-Karte ist weiß invertiert. Rechts folgt ein
