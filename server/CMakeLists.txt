@@ -33,7 +33,7 @@ add_library(caw_messages src/net/Messages.cpp)
 target_include_directories(caw_messages PUBLIC src)
 target_link_libraries(caw_messages PUBLIC caw_game nlohmann_json::nlohmann_json PRIVATE caw_warnings)
 if(CAW_BUILD_SERVER)
-  add_executable(caw-server src/main.cpp src/store/Health.cpp)
+  add_executable(caw-server src/main.cpp src/net/Server.cpp src/store/Health.cpp)
   target_include_directories(caw-server PRIVATE src)
   target_link_libraries(caw-server PRIVATE caw_support caw_session caw_messages caw_warnings
     uwebsockets PkgConfig::PQXX ${CAW_REDIS_TARGET})
