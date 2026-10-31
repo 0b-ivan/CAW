@@ -272,58 +272,58 @@ Umgebungsvariablen wie bisher: `PUBLIC_URL`, `DATABASE_URL`, `REDIS_URL`,
 - M3/M4: statisches Frontend auf Basis der Firmware-Seite.
 - Lasttest: kleines C++- oder Python-Bot-Programm, das echte Partien spielt.
 
-## 13. Hetzner Cloud mit Cloudflare Tunnel
+## 13. Bestehender Hetzner-Server mit vorhandenem Cloudflare Tunnel
 
-CAW v1 läuft auf **einem** Hetzner-Cloud-Server (Ubuntu 24.04 LTS).
-Ein dedizierter, im Cloudflare-Dashboard verwalteter Tunnel veröffentlicht
-`caw.obivan.org`. `cloudflared` läuft zusammen mit dem vorhandenen Compose-
-Stack und verbindet sich **ausgehend** zu Cloudflare; Caddy hört nur im
-Docker-Netz auf HTTP :80. Es gibt **keine öffentlichen HTTP-/HTTPS-Ports**
-auf Hetzner, weder für Caddy noch für Redis, Postgres oder Prometheus.
-Das `deploy/compose.hetzner.yml`-Override entfernt die Port-Mappings von
-Caddy vollständig; das bisherige `deploy/compose.yml` bleibt für CI/Lokal.
-Es wird kein zweites Backend und kein Kubernetes eingeführt.
+CAW läuft neben den bereits vorhandenen Anwendungen auf dem bestehenden
+Hetzner-Docker-Host. Es wird **keine neue VM und kein zweiter Tunnel**
+angelegt. Der vorhandene `cloudflared`-Dienst auf dem Host wird um genau
+eine Route für `caw.obivan.org` ergänzt. Bereits benutzte Hostnamen,
+Container, Ports und Tunnel-Routen bleiben unangetastet.
 
-- Die Hetzner Cloud Firewall lässt eingehend ausschließlich SSH TCP 22
-  vom **eigenen Admin-IP-Netz** zu. Ausgehend muss Cloudflare Tunnel über
-  TCP/UDP 7844 erreichbar sein; 443/53 für Updates, DNS und Paketbezug.
-  Auf dem Host wird SSH-Key-Login erzwungen, Passwortlogin deaktiviert.
-- Die Cloudflare-Route wird **im Dashboard** als Published Application
-  `caw.obivan.org` → `http://caddy:80` angelegt. DNS wird über den
-  Tunnel verwaltet; **keine A-/AAAA-Records zur Hetzner-Origin-IP**.
-  Bei einem bereits verwendeten Tunnel muss dessen Connector das
-  Docker-Netz erreichen. Ein separater Tunnel für CAW ist übersichtlicher
-  und verhindert, dass fremde Connector-Replikate an falsche Origins gehen.
-- TLS wird von **Cloudflare am öffentlichen Edge** terminiert, nicht von
-  Caddy; die Strecke Cloudflare ↔ cloudflared ist verschlüsselt, die
-  lokale Strecke cloudflared ↔ Caddy läuft über das private Docker-Netz.
-  `PUBLIC_URL=https://caw.obivan.org`. HTTPS und WSS müssen von außen
-  getestet werden; ohne Tunnel ist die Web-App nicht öffentlich erreichbar.
-- Nur `cloudflared` liest das Token aus einer **nicht versionierten**
-  Datei `deploy/secrets/cloudflared-token` per `--token-file`. Das
-  Token wird weder in Env, Shell-Befehl, Git noch Logs gespeichert.
-- Die Tunnel-Konfiguration blockiert `/metrics` **immer** an Caddy:
-  Die übliche `remote_ip private_ranges`-Abfrage ist hinter `cloudflared`
-  gefährlich, weil das Gateway selbst eine private Docker-IP besitzt.
-  Prometheus erreicht weiterhin `server:8080/metrics` direkt intern.
-  Caddy setzt die Rate-Limit-Quell-IP aus `CF-Connecting-IP` als
-  `X-Forwarded-For` für den C++-Server. Der Caddy-Container wird
-  nicht direkt aus dem Internet erreichbar gemacht.
-- Cloudflare Access darf die öffentliche Spieloberfläche oder die
-  WebSocket-Pfade nicht durch eine Login-Seite blockieren; sonst können
-  anonyme Mitspieler nicht beitreten. Keine aggressiven Caching-Regeln
-  für `/api/*` oder `/ws/*`.
+Das bestehende `deploy/compose.yml` wird für CI und lokale Entwicklung
+beibehalten. Das Produktions-Override `deploy/compose.hetzner.yml` bindet
+Caddy ausschließlich an `127.0.0.1:${CAW_ORIGIN_PORT:-18081}` auf dem
+Host. Cloudflare Tunnel leitet `caw.obivan.org` intern an
+`http://127.0.0.1:18081`; dieser Hostport ist **nicht aus dem Internet**
+erreichbar. Der Port wird vor dem Start auf Kollisionen geprüft und kann
+bei Bedarf über `CAW_ORIGIN_PORT` angepasst werden. Keine Host-Port-
+Veröffentlichung für CAW-Server, Redis oder PostgreSQL. Die bestehende
+`cloudflared`-Installation/Unit/Token wird nicht verändert; nur ihre
+Published Application beziehungsweise Ingress-Regel wird ergänzt.
 
-Persistente Docker-Volumes bleiben über Container-Updates erhalten.
-Postgres-Dumps im Compose-Volume (14 Tage) sind nur **lokale Sicherungen**:
-Zusätzlich müssen verschlüsselte Offsite-Backups und eine Restore-Probe
-eingerichtet werden; Redis-AOF muss für vollständige laufende Sessions
-ebenfalls außerhalb des Servers gesichert werden. Hetzner-Snapshots allein
-sind kein konsistentes Postgres-Backup. Der Produktions-Rollout benutzt
-ausschließlich `bin/hetzner-preflight.py` und die unter `deploy/hetzner/`
-dokumentierten Schritte. `bin/smoke` ist **nicht** für Produktion geeignet,
-weil es Redis und Postgres absichtlich neu startet.
+- Cloudflare terminiert Browser-HTTPS und WSS. Das Tunnelprotokoll verbindet
+  den bestehenden Hostdienst ausgehend; die lokale Origin-Strecke ist HTTP
+  über Loopback. `PUBLIC_URL=https://caw.obivan.org`; Caddy hört auf
+  `:80` im eigenen Docker-Netz. Es gibt **keinen** zusätzlichen
+  `cloudflared`-Compose-Dienst und keine neuen Token-Secrets im CAW-Repo.
+- Die Hetzner-Firewall und die vorhandenen SSH-Zugangsregeln bleiben
+  bestehen; unnötige Änderungen würden andere Anwendungen gefährden.
+  Weder Port 80 noch 443 noch der CAW-Origin-Port dürfen neu als öffentlich
+  erreichbare Ingress-Regeln geöffnet werden. Cloudflare Tunnel benötigt
+  weiter die bereits funktionierende ausgehende Verbindung.
+- `deploy/Caddyfile.hetzner` blockiert `/metrics` **ausnahmslos** als 404.
+  Der Tunnel-Connector besitzt eine vertrauenswürdige lokale Quelladresse;
+  eine einfache `remote_ip private_ranges`-Freigabe wäre falsch.
+  Prometheus scrapt intern `server:8080/metrics`. Der öffentliche
+  `CF-Connecting-IP`-Header wird für CAW-Rate-Limits in
+  `X-Forwarded-For` übertragen. Externe Clients dürfen den
+  Loopback-Origin nicht direkt erreichen.
+- Die Cloudflare-Route muss die bestehenden Hostnamen und Ingress-Regeln
+  erhalten; bei einer lokal verwalteten YAML-Konfiguration steht der
+  CAW-Eintrag **vor** der abschließenden Catch-all-Regel.
+  Cloudflare Access darf `/ws/*` nicht mit einer Login-Schranke blockieren.
+  Für `/api/*` und `/ws/*` werden keine aggressiven Cache-Regeln gesetzt.
 
-Die rechtliche Freigabe der Karten, das echte Impressum und ein geprüfter
-Public-HTTPS-/WSS-Test bleiben Voraussetzung für `v1.0.0`; es wird kein
-Tag automatisch erstellt.
+Vor Rollout werden mit `bin/hetzner-preflight.py` Compose-Portbindung,
+geheime Umgebungsvariablen und Betreiberangaben geprüft. Danach kontrollieren
+HTTPS, WSS und die öffentliche 404-Antwort auf `/metrics` das Routing.
+`bin/smoke` darf **nicht auf dem Produktivserver** ausgeführt werden,
+weil es absichtlich Redis/PostgreSQL neu startet.
+
+Daten bleiben in getrennten Docker-Volumes; die bestehenden fremden
+Anwendungen werden nicht in den CAW-Compose-Stack eingebunden.
+Lokale Postgres-Dumps mit 14 Tagen Aufbewahrung sind kein Schutz bei
+vollständigem Hostausfall. Verschlüsselte Offsite-Backups für Postgres und
+Redis-AOF sowie eine Restore-Probe bleiben vor der Produktionsfreigabe
+erforderlich. Ebenso rechtliche Prüfung der Karten und echte Betreiber-
+angaben. Der Release-Tag `v1.0.0` wird nicht vor Live-Abnahme erzeugt.
