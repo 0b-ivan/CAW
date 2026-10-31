@@ -156,9 +156,13 @@ Nach Abgabe: „ABGEGEBEN · 4/6“ mit Fortschritt aus Zeichen (`████�
 
 ### 4.6 Juror wählt
 
-Juror: alle Antworten als **ganze eingesetzte Sätze**, nummeriert, anonym;
-antippen = auswählen, `[ BESTÄTIGEN ]`. Alle anderen: „JUROR ENTSCHEIDET“ und
-dieselben Sätze zum Mitlesen (ohne Auswahl).
+Die Frage steht **einmal oben**, darunter nur die Antworten, nummeriert und
+anonym (`[2] ANTWORT A / ANTWORT B`). Lange Fragen würden sonst in jedem
+Eintrag wiederholt und die Liste etwa verdoppeln. Juror: antippen = auswählen;
+die gewählte Antwort erscheint invertiert in den Lücken der Frage oben, so
+liest er den ganzen Satz vor dem `[ BESTÄTIGEN ]`. Alle anderen:
+„JUROR ENTSCHEIDET“ und dieselbe Liste zum Mitlesen (ohne Auswahl). Der Big
+Screen zeigt weiterhin ganze eingesetzte Sätze (Abschnitt 5).
 
 ### 4.7 Auflösung
 

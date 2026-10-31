@@ -174,6 +174,9 @@ function renderJudge(app, actions) {
   const frame = app.frame;
   const canJudge = isSeated(app) && frame.me.isJuror;
   $('judge-eyebrow').textContent = canJudge ? t('chooseWinner') : t('jurorDecides', frame.juror);
+  // The prompt stands once on top; the Juror's pick appears in its blanks, like a hand pick does.
+  const picked = canJudge && app.judgePick !== null ? frame.plays[app.judgePick].cards : [];
+  fillSentence($('judge-prompt'), frame.prompt, picked);
   const list = $('judge-list');
   const scroll = list.scrollTop;
   list.replaceChildren(...frame.plays.map((play, index) => playItem(app, actions, play, index, canJudge)));
@@ -191,9 +194,13 @@ function playItem(app, actions, play, index, canJudge) {
   const number = document.createElement('span');
   number.className = 'choice-number';
   number.textContent = `[${index + 1}]`;
-  const sentence = document.createElement('span');
-  fillSentence(sentence, app.frame.prompt, play.cards);
-  body.append(number, ' ', sentence);
+  // Only the answers: repeating a long prompt in every play would double the list.
+  body.append(number);
+  play.cards.forEach((card, i) => {
+    const mark = document.createElement('mark');
+    mark.textContent = card;
+    body.append(i === 0 ? ' ' : ' / ', mark);
+  });
   if (canJudge) {
     body.type = 'button';
     body.setAttribute('aria-pressed', String(app.judgePick === index));

@@ -98,7 +98,10 @@
       </section>
 
       <section id="view-judge" class="view" hidden>
-        <p class="eyebrow" id="judge-eyebrow"></p>
+        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+          <p class="eyebrow" id="judge-eyebrow"></p>
+          <h1 id="judge-prompt" class="sentence"></h1>
+        </div>
         <ol id="judge-list" class="choices" data-label="playsLabel"></ol>
         <div class="bar"><span id="judge-status"></span>
           <button id="judge-button" type="button" hidden data-text="confirm"></button></div>

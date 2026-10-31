@@ -136,6 +136,8 @@ async function playRound(host, players, round) {
   assert.equal(await answering[0].locator('#judge-list button').count(), 0, 'only the Juror can choose');
   if (round === 1) await checkFit(juror, 'judge', '#judge-button');
   await juror.locator('#judge-list .choice').first().click();
+  // The pick fills the blanks of the prompt shown once on top.
+  assert.ok(await juror.locator('#judge-prompt mark').count() >= 1, 'the pick appears in the prompt');
   await juror.getByRole('button', { name: '[ BESTÄTIGEN ]' }).click();
 
   for (const page of [host, ...players]) await waitView(page, 'reveal');
