@@ -1,6 +1,5 @@
-# With a domain in CADDY_ADDRESS (e.g. caw.example.org) Caddy gets a certificate and
-# redirects HTTP to HTTPS on its own. ":80" serves plain HTTP for local use and CI.
-{$CADDY_ADDRESS::80} {
+# Cloudflare terminates HTTPS/WSS at the edge; Caddy is private HTTP only.
+:80 {
   encode zstd gzip
   header {
     X-Content-Type-Options nosniff
