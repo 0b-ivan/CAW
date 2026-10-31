@@ -48,11 +48,13 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Revision pro Stand; veraltete `submit`/`judge` → Fehler + sofortiger Resync
 - [x] Timer alle 250 ms → `Table::tick`
 - [ ] Host-Befehl für Regeln/Uhren (`settings`); bisher laufen die Standardregeln ohne Uhren
-- [ ] `store/PersistQueue` + `RedisStore`: Snapshot je Änderung (nur neuester je Session), TTL 24 h, Laden beim Start.
-  **Bis dahin löscht ein Neustart alle laufenden Partien.**
-- [ ] Graceful Shutdown bei SIGTERM
+- [x] `store/PersistQueue` + `RedisStore`: Snapshot je Änderung (nur neuester je Raum) im
+  Hintergrund-Thread, `session:{code}` mit TTL, Laden beim Start; alle Sitze starten getrennt
+  und kommen per Ticket zurück. Ohne Redis läuft das Spiel weiter, nur ohne Speichern.
+- [x] Graceful Shutdown bei SIGTERM/SIGINT: Sockets schließen, Warteschlange leeren, Exit 0
 - [ ] Bot-Programm im Repo: 8 Bots spielen eine ganze Partie; Reload-Sturm; Neustart mitten in der Runde
-  (ein Rundentest mit 3 Bots über echte WebSockets lief lokal; noch nicht im Repo/CI)
+  (lokal von Hand geprüft: 3 Bots über echte WebSockets, Neustart mitten in der Runde mit
+  echtem Redis, Fortsetzung mit den alten Tickets bis zur Auflösung; noch nicht im Repo/CI)
 
 ## M3 – Spieler- und Host-UI
 

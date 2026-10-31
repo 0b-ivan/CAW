@@ -58,9 +58,15 @@ Host meldet sich mit `{"type":"host","token":"…"}` an und startet mit
 `{"type":"start"}`. Bis zum Kartenpack-Import (M5) spielt jeder Tisch mit
 nummerierten Testkarten.
 
-**Noch nicht produktiv:** Laufende Partien liegen nur im Arbeitsspeicher; ein
-Neustart löscht sie (Redis-Snapshots folgen). Die spielbare Oberfläche folgt in
-M3; die Startseiten-Aktionen bleiben bis dahin deaktiviert.
+Laufende Partien werden nach jeder Änderung in Redis gesichert
+(`session:XXXXXX`, verfällt nach `SESSION_TTL_HOURS` ohne Aktivität). Nach einem
+Neustart holen sich die Handys ihren Sitz mit ihrem Ticket zurück
+(`{"type":"resume","token":"…"}`), der Host meldet sich erneut mit dem
+Host-Token an. Bei SIGTERM (`docker stop`) schließt der Server alle Sockets und
+schreibt ausstehende Stände, bevor er endet.
+
+**Noch nicht produktiv:** Die spielbare Oberfläche folgt in M3; die
+Startseiten-Aktionen bleiben bis dahin deaktiviert.
 
 ## Bauen und prüfen
 
