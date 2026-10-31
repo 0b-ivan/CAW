@@ -71,12 +71,14 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## M4 – Big Screen
 
-- [ ] `/s/{code}/screen`: eigene Frames, nur öffentliche Daten
-- [ ] Lobby: großer QR + URL + Code + Spieler; Antworten: Frage + Fortschritt + Uhr
-- [ ] Juror-Phase: alle Antworten als eingesetzte Sätze, nummeriert, anonym
-- [ ] Auflösung: Siegersatz hervorgehoben, Gewinner, Punktestand; Ende: Zeremonie
-- [ ] Vollbild-Taste, Lesbarkeit aus 4 m (große Schrift, hoher Kontrast), 16:9 und 4:3
-- [ ] Host kann Big-Screen-Link als QR zeigen
+- [x] `/s/{code}/screen`: eigener Socket `/ws/{code}/screen`, `screen`-Frames ohne `me` und Hand, keine Befehle
+- [x] Lobby: großer QR + URL + Code + Spieler; Antworten: Frage + Fortschritt + Uhr
+- [x] Juror-Phase: alle Antworten als eingesetzte Sätze, nummeriert, anonym, ab 5 zweispaltig
+- [x] Auflösung: Siegersatz hervorgehoben, Gewinner, Punktestand; Ende: Sieger-Typografie und Balken
+- [x] Vollbild-Taste (blendet sich aus), Text wird eingepasst, 16:9 und 4:3 ohne Scrollen
+- [x] Big-Screen-Link als QR im Menü und in der Host-Lobby (`[ BIG SCREEN ]`), für alle Geräte
+- [x] Playwright: Big Screen bei 1920×1080 und 1024×768 in jeder Phase, nie ein fremder Frame
+- Verschoben: Siegersätze der Partie im Ende nach M6, Lizenzzeile der Packs nach M5
 
 ## M5 – Kartenpacks
 

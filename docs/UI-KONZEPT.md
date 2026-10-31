@@ -206,8 +206,11 @@ HOST ÜBERGEBEN (offen).
 ## 5. Big Screen `/s/{code}/screen`
 
 Für 16:9 und 4:3, lesbar aus 4 m. Kein Scrollen, kein Bedienelement außer
-`[ VOLLBILD ]` (blendet sich nach 3 s aus). Text wird auf die Fläche
-eingepasst (Schriftgröße schrittweise kleiner, bis alles passt).
+`[ VOLLBILD ]` (blendet sich nach 3 s ohne Mausbewegung aus). Text wird auf
+die Fläche eingepasst: Er startet bei `clamp(40px, 5vw, 96px)` und wird in
+Schritten von 8 % kleiner, bis alles passt. Kopfzeile: Marke, Runde und
+Juror, Uhr rechts; Fußzeile: Status in Worten. Den Link findet jeder im Menü
+unter BIG SCREEN als QR-Code, der Host zusätzlich in der Lobby.
 
 ### Lobby
 
@@ -246,8 +249,9 @@ und eine schmale Punktetabelle.
 
 ### Ende
 
-Zeremonie ohne Krone: Sieger-Typografie, Balken-Endstand, danach im Wechsel die
-Siegersätze der Partie. Fußzeile mit Lizenz und Rechteinhaber der Packs.
+Zeremonie ohne Krone: Sieger-Typografie, Balken-Endstand, „x VON y WOLLEN
+NOCHMAL“. Später: im Wechsel die Siegersätze der Partie (M6) und eine
+Fußzeile mit Lizenz und Rechteinhaber der Packs (M5).
 
 ## 6. Responsiv
 

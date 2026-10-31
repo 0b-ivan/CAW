@@ -162,6 +162,34 @@ TEST_CASE("a full round: answers, anonymous judging, reveal with author and poin
   CHECK(points == 1);
 }
 
+TEST_CASE("a big screen follows the table without ever seeing a hand") {
+  Table table;
+  table.session.addScreen(50, table.now);
+  table.deliver();
+  REQUIRE(table.inbox[50].size() == 1);
+  CHECK(table.inbox[50].back().at("type") == "screen");
+  CHECK(table.inbox[50].back().at("phase") == "lobby");
+
+  table.startThree();
+  const ConnectionId juror = table.juror();
+  for (ConnectionId c : {1u, 2u, 3u})
+    if (c != juror) table.submit(c);
+  const json screen = table.inbox[50].back();
+  CHECK(screen.at("phase") == "judging");
+  CHECK(screen.at("plays").size() == 3);
+  // Every screen frame is public: no "me", no hand, no tickets.
+  for (const json& frame : table.inbox[50]) {
+    CHECK(frame.at("type") == "screen");
+    CHECK(frame.contains("me") == false);
+    CHECK(frame.dump().find("hand") == std::string::npos);
+  }
+
+  table.session.connectionClosed(50, table.now);
+  const std::size_t before = table.inbox[50].size();
+  table.judge(juror, 0);
+  CHECK(table.inbox[50].size() == before);  // a closed screen gets nothing more
+}
+
 TEST_CASE("a stale revision is rejected and the sender gets the current state again") {
   Table table;
   table.startThree();

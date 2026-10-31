@@ -199,9 +199,12 @@ const actions = {
     applyLanguage(language);
   },
   copyLink() {
+    actions.copyText(sessionUrl(code));
+  },
+  copyText(text) {
     const done = (key) => showNotice(t(key));
     if (!navigator.clipboard) return done('copyFailed');
-    navigator.clipboard.writeText(sessionUrl(code)).then(() => done('copied'), () => done('copyFailed'));
+    navigator.clipboard.writeText(text).then(() => done('copied'), () => done('copyFailed'));
   },
   share() {
     navigator.share?.({ title: 'C/A/W', url: sessionUrl(code) }).catch(() => {});
@@ -279,6 +282,10 @@ function bindButtons() {
   on('pause-button', () => actions.player('pause'));
   on('copy-link', actions.copyLink);
   on('share-link', actions.share);
+  on('screen-link', () => {
+    app.menu = { open: true, page: 'screen' };
+    update();
+  });
   on('rejoin-button', () => {
     app.removed = false;
     openConnection();

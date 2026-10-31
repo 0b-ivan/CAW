@@ -68,6 +68,11 @@ const texts = {
     off: 'AUS', on: 'AN', seconds: '{0} S', fewer: 'Weniger', more: 'Mehr',
     roundsLocked: 'RUNDEN NUR IN DER LOBBY',
     noPlayers: 'NOCH KEINE SPIELER',
+    bigScreen: 'BIG SCREEN', bigScreenButton: '[ BIG SCREEN ]',
+    bigScreenText: 'Am Fernseher oder Laptop öffnen: zeigt Frage, Uhr und Sätze für alle.',
+    copyScreenLink: '[ LINK KOPIEREN ]', openScreen: '[ ÖFFNEN ]', screenQrLabel: 'QR-Code für den Big-Screen-Link',
+    screenTitle: 'C/A/W · Big Screen {0}', screenJoin: 'HANDY SCANNEN ODER CODE EINGEBEN',
+    submittedBar: 'ABGEGEBEN', fullscreen: '[ VOLLBILD ]',
 
     errors: {
       rejected: 'NICHT MÖGLICH', not_host: 'NUR DER HOST', already_joined: 'BEREITS BEIGETRETEN',
@@ -142,6 +147,11 @@ const texts = {
     off: 'OFF', on: 'ON', seconds: '{0} S', fewer: 'Less', more: 'More',
     roundsLocked: 'ROUNDS ONLY IN THE LOBBY',
     noPlayers: 'NO PLAYERS YET',
+    bigScreen: 'BIG SCREEN', bigScreenButton: '[ BIG SCREEN ]',
+    bigScreenText: 'Open on a TV or laptop: shows prompt, clock and sentences for everyone.',
+    copyScreenLink: '[ COPY LINK ]', openScreen: '[ OPEN ]', screenQrLabel: 'QR code for the big screen link',
+    screenTitle: 'C/A/W · Big Screen {0}', screenJoin: 'SCAN WITH YOUR PHONE OR ENTER THE CODE',
+    submittedBar: 'SUBMITTED', fullscreen: '[ FULL SCREEN ]',
 
     errors: {
       rejected: 'NOT POSSIBLE', not_host: 'HOST ONLY', already_joined: 'ALREADY JOINED',

@@ -234,7 +234,9 @@ std::optional<Command> Protocol::parse(std::string_view text) {
   }
 }
 
-std::string Protocol::state(const StateFrame& frame) {
+namespace {
+// Everything anyone at the table may see; state() adds the connection's own part.
+json publicState(const StateFrame& frame) {
   const PublicView& view = frame.view;
   const Table& table = *frame.table;
   json state = {{"type", "state"},
@@ -252,13 +254,25 @@ std::string Protocol::state(const StateFrame& frame) {
                 {"pausedBy", seatName(view, table.pausedBy())},
                 {"blockedOn", seatName(view, table.blockedOn())},
                 {"votes", table.votes()},
-                {"settings", settingsJson(frame)},
-                {"me", ownJson(frame)}};
+                {"settings", settingsJson(frame)}};
   state["prompt"] =
       view.prompt < frame.deck->promptsCount ? frame.deck->prompts[view.prompt].text : "";
   state["selected"] = view.selected == kNone ? json(nullptr) : json(view.selected);
   state["winner"] = seatName(view, view.winner);
+  return state;
+}
+}  // namespace
+
+std::string Protocol::state(const StateFrame& frame) {
+  json state = publicState(frame);
+  state["me"] = ownJson(frame);
   return state.dump();
+}
+
+std::string Protocol::screen(const StateFrame& frame) {
+  json screen = publicState(frame);
+  screen["type"] = "screen";
+  return screen.dump();
 }
 
 std::string Protocol::welcome(std::string_view ticket, std::uint8_t seat) {

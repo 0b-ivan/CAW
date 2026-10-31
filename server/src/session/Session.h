@@ -33,6 +33,8 @@ class Session final {
 
   void handle(ConnectionId connection, const Command& command, std::uint32_t now);
   void connectionClosed(ConnectionId connection, std::uint32_t now);
+  // A big screen: gets the public table on every change and cannot send commands.
+  void addScreen(ConnectionId connection, std::uint32_t now);
   // Runs the clocks; call a few times per second.
   void tick(std::uint32_t now);
   // Sends this connection its current state again, e.g. after frames were dropped.
@@ -65,6 +67,8 @@ class Session final {
   // Sends the current state to every seat and every host connection.
   void publishAll(std::uint32_t now);
   void sendState(ConnectionId connection, std::uint8_t seat, std::uint32_t now);
+  void sendScreen(ConnectionId connection, std::uint32_t now);
+  StateFrame publicFrame(std::uint32_t now) const;
   void send(ConnectionId connection, std::string text, bool close = false);
 
   std::string hostToken_;
@@ -76,6 +80,7 @@ class Session final {
   ConnectionId seatConnection_[cardparty::kPlayers];
   cardparty::SessionTicket tickets_[cardparty::kPlayers] = {};
   std::set<ConnectionId> hosts_;
+  std::set<ConnectionId> screens_;
   std::vector<Outgoing> outgoing_;
   bool changed_ = false;
 };

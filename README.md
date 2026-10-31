@@ -40,6 +40,10 @@ intern erreichbar. Das Datenbankpasswort muss in einer URL verwendbar sein
    Startseite ein) und treten mit Namen bei. Der Host kann mit
    `[ MITSPIELEN ]` selbst einen Platz nehmen.
 3. Regeln stellt der Host im Menü `[ ≡ ]` → SPIELREGELN ein, dann `[ START ]`.
+4. Optional ein Fernseher oder Laptop als Big Screen: In der Host-Lobby
+   `[ BIG SCREEN ]` (oder Menü → BIG SCREEN) zeigt den Link
+   `/s/XXXXXX/screen` als QR-Code. Der Big Screen zeigt Frage, Uhr, die
+   eingesetzten Sätze und den Endstand, nie eine Hand.
 
 Für Handys im WLAN statt `localhost` die IP des Rechners verwenden. Ein
 Reload oder ein kurzer Netzabbruch kostet keinen Platz: Das Sitz-Ticket liegt

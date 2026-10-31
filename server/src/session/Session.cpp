@@ -184,8 +184,14 @@ std::string Session::joinError(ConnectionId connection) const {
   return "rejected";
 }
 
+void Session::addScreen(ConnectionId connection, std::uint32_t now) {
+  screens_.insert(connection);
+  sendScreen(connection, now);
+}
+
 void Session::connectionClosed(ConnectionId connection, std::uint32_t now) {
   hosts_.erase(connection);
+  screens_.erase(connection);
   if (!seats_.disconnect(connection)) return;
   for (ConnectionId& seatConnection : seatConnection_)
     if (seatConnection == connection) seatConnection = kNoConnection;
@@ -200,6 +206,7 @@ void Session::tick(std::uint32_t now) {
 void Session::resync(ConnectionId connection, std::uint32_t now) {
   const std::uint8_t seat = seats_.seatOf(connection);
   if (seat != kNone || hosts_.count(connection) != 0) sendState(connection, seat, now);
+  if (screens_.count(connection) != 0) sendScreen(connection, now);
 }
 
 std::vector<Outgoing> Session::takeOutgoing() {
@@ -219,6 +226,7 @@ bool Session::loadState(std::string_view text, std::uint32_t now) {
   for (ConnectionId& connection : seatConnection_) connection = kNoConnection;
   for (SessionTicket& ticket : tickets_) ticket = SessionTicket{};
   hosts_.clear();
+  screens_.clear();
   outgoing_.clear();
   changed_ = true;
   return true;
@@ -241,19 +249,29 @@ void Session::publishAll(std::uint32_t now) {
     if (seatConnection_[seat] != kNoConnection) sendState(seatConnection_[seat], seat, now);
   for (ConnectionId host : hosts_)
     if (seats_.seatOf(host) == kNone) sendState(host, kNone, now);
+  for (ConnectionId screen : screens_) sendScreen(screen, now);
 }
 
-void Session::sendState(ConnectionId connection, std::uint8_t seat, std::uint32_t now) {
+StateFrame Session::publicFrame(std::uint32_t now) const {
   StateFrame frame;
   frame.deck = &deck_;
   frame.table = &table_;
   frame.view = game_.publicView();
   frame.rounds = game_.rules().rounds;
   frame.now = now;
-  frame.seat = seat;
-  frame.isHost = hosts_.count(connection) != 0;
   frame.settings = table_.settings();
   frame.requestedRounds = game_.requestedRounds();
+  return frame;
+}
+
+void Session::sendScreen(ConnectionId connection, std::uint32_t now) {
+  send(connection, Protocol::screen(publicFrame(now)));
+}
+
+void Session::sendState(ConnectionId connection, std::uint8_t seat, std::uint32_t now) {
+  StateFrame frame = publicFrame(now);
+  frame.seat = seat;
+  frame.isHost = hosts_.count(connection) != 0;
   if (seat < kPlayers &&
       !seats_.privateHand(connection, tickets_[seat].secret, frame.hand, frame.revision))
     frame.seat = kNone;  // never show a hand the connection cannot prove it owns

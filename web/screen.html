@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>C/A/W · Big Screen</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/screen/main.js"></script>
+</head>
+<body class="screen-body">
+  <div class="screen" id="screen">
+    <header class="screen-head">
+      <span class="screen-brand">C/A/W</span>
+      <span id="screen-meta" class="screen-meta"></span>
+      <span id="screen-clock" class="clock screen-clock"></span>
+    </header>
+
+    <main class="screen-main">
+      <section id="screen-connecting" class="screen-view">
+        <p class="screen-title" data-text="connectingTitle"></p>
+      </section>
+
+      <section id="screen-missing" class="screen-view" hidden>
+        <p class="screen-title" data-text="missingTitle"></p>
+        <p data-text="missingText"></p>
+      </section>
+
+      <section id="screen-lobby" class="screen-view screen-lobby" hidden>
+        <div id="screen-qr" class="screen-qr"></div>
+        <div class="screen-lobby-text">
+          <p class="eyebrow" data-text="session"></p>
+          <p id="screen-code" class="screen-code"></p>
+          <p id="screen-url" class="screen-url"></p>
+          <p id="screen-count" class="eyebrow"></p>
+          <ul id="screen-players" class="screen-players"></ul>
+        </div>
+      </section>
+
+      <section id="screen-answers" class="screen-view" hidden>
+        <div class="fit"><p id="screen-prompt" class="screen-prompt"></p></div>
+        <p id="screen-progress" class="screen-progress"></p>
+      </section>
+
+      <section id="screen-judging" class="screen-view" hidden>
+        <div class="fit"><ol id="screen-plays" class="screen-plays"></ol></div>
+      </section>
+
+      <section id="screen-reveal" class="screen-view" hidden>
+        <div class="fit"><p id="screen-sentence" class="screen-prompt"></p></div>
+        <p id="screen-winner" class="screen-winner"></p>
+        <ol id="screen-scores" class="screen-scores"></ol>
+      </section>
+
+      <section id="screen-hold" class="screen-view screen-hold" hidden>
+        <p id="screen-hold-title" class="screen-title"></p>
+        <p id="screen-hold-text"></p>
+      </section>
+
+      <section id="screen-finished" class="screen-view" hidden>
+        <p id="screen-champion" class="screen-champion"></p>
+        <ol id="screen-bars" class="screen-bars"></ol>
+      </section>
+    </main>
+
+    <footer class="screen-foot">
+      <span id="screen-status"></span>
+      <button id="fullscreen" class="mini" type="button" data-text="fullscreen"></button>
+    </footer>
+  </div>
+</body>
+</html>

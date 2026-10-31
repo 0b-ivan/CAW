@@ -524,3 +524,77 @@ div.choice { min-height: 48px; }
 @media (prefers-reduced-motion: reduce) {
   .clock.blink, .flash.flash-on { animation: none; }
 }
+
+/* ---------- Big screen /s/{code}/screen ---------- */
+/* Fills the TV, never scrolls: the text in .fit boxes shrinks until it fits. */
+.screen-body { overflow: hidden; }
+.screen {
+  height: 100vh;
+  height: 100dvh;
+  padding: 2.5vh 3vw;
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+  font-size: clamp(16px, 1.6vw, 32px);
+}
+.screen-head, .screen-foot {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  flex: none;
+}
+.screen-head { padding-bottom: 1.5vh; border-bottom: var(--line); }
+.screen-foot { padding-top: 1.5vh; border-top: var(--line); justify-content: space-between; min-height: 48px; }
+.screen-brand { font-weight: 900; font-size: 1.4em; letter-spacing: -.04em; }
+.screen-meta { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.screen-clock { font-size: 1.6em; }
+.screen-clock.urgent { font-size: 2.2em; }
+.idle #fullscreen { visibility: hidden; }
+#screen-status { font-size: 1.3em; }
+.screen .eyebrow { font-size: .8em; }
+.screen-progress { font-size: 2em; letter-spacing: .05em; }
+
+.screen-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.screen-view { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 2vh; }
+.screen-view > * { flex-shrink: 0; }
+.screen-view > .fit { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.screen-title { font-size: 3em; font-weight: 700; }
+.screen-hold { text-align: center; }
+.screen-hold .screen-title { padding: 3vh 0; border-block: var(--line); }
+
+.screen-lobby { flex-direction: row; align-items: center; gap: 4vw; }
+.screen-qr { width: min(42vw, 62vh); flex: none; }
+.screen-qr svg { display: block; width: 100%; height: auto; }
+.screen-lobby-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.5vh; }
+.screen-code { font-size: 4em; font-weight: 900; letter-spacing: .12em; line-height: 1; }
+.screen-url { font-size: 1.1em; overflow-wrap: anywhere; }
+.screen-players {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 2vw;
+  font-size: 1.4em;
+}
+.screen-players li { border-bottom: var(--line); padding: .3em 0; overflow-wrap: anywhere; }
+
+.screen-prompt { margin: 0; font-weight: 500; line-height: 1.25; overflow-wrap: break-word; hyphens: auto; }
+.screen-plays { list-style: none; margin: 0; padding: 0; line-height: 1.3; }
+.screen-plays li { padding: .35em 0; border-bottom: var(--line); overflow-wrap: break-word; hyphens: auto; }
+.screen-plays.two-columns { columns: 2; column-gap: 3vw; }
+.screen-plays.two-columns li { break-inside: avoid; }
+.screen-winner { font-size: 2em; font-weight: 700; }
+.screen-scores { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5em 2.5em; font-size: 1.2em; }
+
+.screen-champion { font-size: clamp(40px, 7vw, 140px); font-weight: 900; line-height: 1.05; overflow-wrap: anywhere; }
+.screen-bars { list-style: none; margin: 0; padding: 0; font-size: 1.4em; }
+.screen-bars li { display: flex; justify-content: space-between; gap: 2vw; padding: .25em 0; border-bottom: var(--line); }
+.screen-bars li span:last-child { white-space: nowrap; }
+
+@media (max-aspect-ratio: 4/3) {
+  .screen-lobby { gap: 3vw; }
+  .screen-qr { width: min(40vw, 55vh); }
+  .screen-code { font-size: 3em; }
+}
+.menu-qr { width: min(60%, 240px); margin: 12px 0 4px; }
