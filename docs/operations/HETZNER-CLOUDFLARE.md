@@ -56,9 +56,9 @@ beschreibt die benötigten Zieladressen in der verlinkten Anleitung.
 ```sh
 git clone https://github.com/0b-ivan/CAW.git /opt/caw
 cd /opt/caw
-# Solange die Hetzner-PR offen ist, deren Feature-Branch testen.
-# Nach dem Merge main verwenden:
-git switch main
+# Solange die Hetzner-PR offen ist, deren Feature-Branch testen:
+git switch feat/hetzner-deployment-prep-20261031
+# Nach dem Merge: git switch main && git pull --ff-only
 cp deploy/hetzner/env.example deploy/.env
 openssl rand -hex 32
 ```
