@@ -15,3 +15,8 @@ add_executable(test_config net/test_config.cpp)
 target_compile_definitions(test_config PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
 target_link_libraries(test_config PRIVATE caw_support caw_warnings doctest::doctest)
 add_test(NAME net.config_metrics_log COMMAND test_config)
+
+add_executable(test_session_codes session/test_codes.cpp)
+target_compile_definitions(test_session_codes PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+target_link_libraries(test_session_codes PRIVATE caw_session caw_warnings doctest::doctest)
+add_test(NAME session.codes COMMAND test_session_codes)
