@@ -8,6 +8,7 @@
 #include "config.h"
 #include "log.h"
 #include "net/Metrics.h"
+#include "net/RateLimiter.h"
 
 namespace {
 void defaults() {
@@ -64,4 +65,30 @@ TEST_CASE("metrics count actual readiness requests") {
   CHECK(text.find("caw_health_checks_total 3\n") != std::string::npos);
   CHECK(text.find("caw_health_failures_total 1\n") != std::string::npos);
   CHECK(text.find("caw_action_seconds_bucket{le=\"+Inf\"} 0\n") != std::string::npos);
+}
+TEST_CASE("the action histogram is cumulative and frames keep their maximum") {
+  caw::Metrics metrics;
+  metrics.observeAction(0.0004);
+  metrics.observeAction(0.007);
+  metrics.observeAction(0.2);
+  metrics.observeFrame(900);
+  metrics.observeFrame(300);
+  const auto text = metrics.render();
+  CHECK(text.find("caw_action_seconds_bucket{le=\"0.001\"} 1\n") != std::string::npos);
+  CHECK(text.find("caw_action_seconds_bucket{le=\"0.01\"} 2\n") != std::string::npos);
+  CHECK(text.find("caw_action_seconds_bucket{le=\"0.05\"} 2\n") != std::string::npos);
+  CHECK(text.find("caw_action_seconds_bucket{le=\"+Inf\"} 3\n") != std::string::npos);
+  CHECK(text.find("caw_frame_bytes_max 900\n") != std::string::npos);
+}
+
+TEST_CASE("the rate limit allows a burst, then refills over time, per client") {
+  caw::RateLimiter limit(60, 3);  // one per second, three at once
+  CHECK(limit.allow("a", 0));
+  CHECK(limit.allow("a", 0));
+  CHECK(limit.allow("a", 0));
+  CHECK_FALSE(limit.allow("a", 0));
+  CHECK(limit.allow("b", 0));  // another client is not affected
+  CHECK_FALSE(limit.allow("a", 500));
+  CHECK(limit.allow("a", 1600));
+  CHECK_FALSE(limit.allow("a", 1600));
 }
