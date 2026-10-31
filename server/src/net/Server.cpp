@@ -69,7 +69,8 @@ Server::Server(SessionRegistry& sessions, PersistQueue& persist, const std::atom
 
 void Server::registerRoutes(uWS::App& app) {
   registerSessionRoutes(app);
-  registerGameSocket(app);
+  registerGameSocket(app, false);
+  registerGameSocket(app, true);
 }
 
 void Server::registerSessionRoutes(uWS::App& app) {
@@ -86,30 +87,38 @@ void Server::registerSessionRoutes(uWS::App& app) {
   });
 }
 
-void Server::registerGameSocket(uWS::App& app) {
+void Server::registerGameSocket(uWS::App& app, bool screen) {
   uWS::App::WebSocketBehavior<SocketData> behavior;
   behavior.maxPayloadLength = Protocol::kMaxMessageBytes;
   behavior.idleTimeout = 60;
   // Above this, uWebSockets drops frames for that socket; it is resynced on drain.
   behavior.maxBackpressure = 64 * 1024;
-  behavior.upgrade = [this](auto* response, auto* request, auto* context) {
+  behavior.upgrade = [this, screen](auto* response, auto* request, auto* context) {
     const std::string code(request->getParameter(0));
     if (sessions_.find(code) == nullptr) {
       jsonReply(response, "404 Not Found", Messages::errorResponse("room_not_found"));
       return;
     }
-    response->template upgrade<SocketData>(SocketData{code, nextId_++, false},
+    response->template upgrade<SocketData>(SocketData{code, nextId_++, false, screen},
                                            request->getHeader("sec-websocket-key"),
                                            request->getHeader("sec-websocket-protocol"),
                                            request->getHeader("sec-websocket-extensions"), context);
   };
-  behavior.open = [this](Socket* socket) { sockets_[socket->getUserData()->id] = socket; };
+  behavior.open = [this](Socket* socket) {
+    SocketData& data = *socket->getUserData();
+    sockets_[data.id] = socket;
+    if (!data.screen) return;
+    Session* session = sessions_.find(data.code);
+    if (session == nullptr) return;
+    session->addScreen(data.id, millisNow());
+    deliver(data.code, *session);
+  };
   behavior.message = [this](Socket* socket, std::string_view text, uWS::OpCode) {
     onMessage(socket, text);
   };
   behavior.drain = [this](Socket* socket) { onDrain(socket); };
   behavior.close = [this](Socket* socket, int, std::string_view) { onClose(socket); };
-  app.ws<SocketData>("/ws/:code", std::move(behavior));
+  app.ws<SocketData>(screen ? "/ws/:code/screen" : "/ws/:code", std::move(behavior));
 }
 
 void Server::onMessage(Socket* socket, std::string_view text) {
@@ -117,6 +126,10 @@ void Server::onMessage(Socket* socket, std::string_view text) {
   Session* session = sessions_.find(data.code);
   if (session == nullptr) {
     socket->end(1000, "room_closed");
+    return;
+  }
+  if (data.screen) {
+    socket->send(Protocol::error("screen_read_only"), uWS::OpCode::TEXT);
     return;
   }
   const auto command = Protocol::parse(text);

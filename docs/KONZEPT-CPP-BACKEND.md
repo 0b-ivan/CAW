@@ -196,6 +196,11 @@ jedem `resume`), `state` (öffentlicher Stand plus `me` mit eigener Hand),
 folgt sofort ein `state`, damit die Host-Seite den Tisch ohne Warten zeigt.
 Nach `replaced` und `kicked` schließt der Server den Socket.
 
+Der Big Screen verbindet sich mit `/ws/{code}/screen`. Er bekommt sofort und
+nach jeder Änderung einen `screen`-Frame: derselbe öffentliche Stand wie
+`state`, aber ohne `me`, also nie eine Hand oder ein Ticket. Er sendet nichts;
+jede Nachricht wird mit `error` `screen_read_only` beantwortet.
+
 ## 8. Sicherheit: bewusst pragmatisch
 
 Behalten, weil billig und wichtig:

@@ -18,6 +18,7 @@ struct SocketData {
   std::string code;
   ConnectionId id = 0;
   bool needsResync = false;  // a frame was dropped under backpressure
+  bool screen = false;       // a big screen: receives the public table, sends nothing
 };
 
 class Server final {
@@ -37,7 +38,8 @@ class Server final {
 
  private:
   void registerSessionRoutes(uWS::App& app);
-  void registerGameSocket(uWS::App& app);
+  // `screen` selects the big-screen route /ws/{code}/screen instead of /ws/{code}.
+  void registerGameSocket(uWS::App& app, bool screen);
   void onMessage(Socket* socket, std::string_view text);
   void onDrain(Socket* socket);
   void onClose(Socket* socket);

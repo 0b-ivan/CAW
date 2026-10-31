@@ -68,6 +68,8 @@ class Protocol final {
   static std::optional<Command> parse(std::string_view text);
 
   static std::string state(const StateFrame& frame);
+  // The same table for a big screen: type "screen", no "me", never a hand.
+  static std::string screen(const StateFrame& frame);
   static std::string welcome(std::string_view ticket, std::uint8_t seat);
   static std::string error(std::string_view code);
   // A frame that only carries its type: "expired", "kicked", "host".
