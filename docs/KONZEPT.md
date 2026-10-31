@@ -25,7 +25,9 @@ X4. Neu sind drei Dinge:
    Screen zeigen sie als QR-Code.
 
 Nicht-Ziele (v1): Konten und Passwörter, öffentliche Lobby-Liste, Matchmaking
-über das Internet, Bezahlfunktionen, native Apps, eigene Kartentexte im Repo.
+über das Internet, Bezahlfunktionen, native Apps und beliebige, ungeprüft
+übernommene Kartentexte im Repo. Die in Abschnitt 8 dokumentierten und
+lizenzierten externen Original-CSV-Packs sind eine bewusste Ausnahme.
 
 ## 2. Rollen und Ansichten
 
@@ -231,7 +233,25 @@ Abschluss-Datensatz und die Statistik, nach 30 Tagen ohne Sitze und Tickets.
 
 ## 8. Kartenpacks und Rechte
 
-- **Keine fremden Kartentexte im Repo.** Gleiche Regel wie in der Firmware.
+- **Externe Kartentexte nur mit dokumentierter Weiterverbreitungslizenz.**
+  Ausnahme vom bisherigen Repo-Verbot: Die sechs unveränderten Original-CSV-
+  Kartensets von [Cards vs Humanity](https://www.cards-vs-humanity.de/set/list/)
+  dürfen unter `assets/cardpacks/cards-vs-humanity/` versioniert werden.
+  Der Quellbestand bleibt als Originaldatei erhalten, ohne redaktionelle
+  Änderungen. Die Lizenz- und Rechteangaben liegen direkt daneben in
+  `ATTRIBUTION.md`; Prüfsummen sichern die Herkunft. Andere fremde Sets
+  dürfen nicht ohne Prüfung und dokumentierte Erlaubnis hinzugefügt werden.
+- **Lizenztrennung:** Die Originalkarten bleiben unter CC BY-NC-SA 2.0.
+  Anwendungs-Code und Kartentexte werden nicht pauschal gleich lizenziert.
+  Nutzung und Weitergabe dieser Kartendaten müssen nichtkommerziell sein,
+  die Quelle/Urheber nennen und bei abgeleiteten Packs ShareAlike beachten.
+  Die quelloffene App darf nicht als Freibrief zur kommerziellen Nutzung
+  dieser Karten interpretiert werden. Eine Lizenzprüfung ist vor
+  öffentlichem Hosting/Vertrieb weiterhin erforderlich.
+- **Quellbestand ist nicht schon Laufzeitimport:** CSV-Dateien im Repository
+  ersetzen nicht das M5-Importkommando. Der Importer prüft Format,
+  Platzhalter, Kartenanzahl und Lizenzmetadaten, importiert die Packs pro
+  Version nach PostgreSQL und zeigt Quellenangaben in der UI.
 - Packs kommen per Import ins System: vorhandenes `XCAWPK2`-Format von der
   SD-Karte bzw. aus dem Release `cardparty-packs`, oder JSONL aus
   `tools_local/cardparty_l10n`. Ein Admin-Kommando im Container importiert sie.
