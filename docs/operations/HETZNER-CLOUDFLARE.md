@@ -54,6 +54,8 @@ beschreibt die benötigten Zieladressen in der verlinkten Anleitung.
 ## 2. Projekt und lokale Geheimnisse
 
 ```sh
+sudo mkdir -p /opt/caw
+sudo chown "$USER":"$(id -gn)" /opt/caw
 git clone https://github.com/0b-ivan/CAW.git /opt/caw
 cd /opt/caw
 # Solange die Hetzner-PR offen ist, deren Feature-Branch testen:
