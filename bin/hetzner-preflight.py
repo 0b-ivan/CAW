@@ -30,10 +30,9 @@ def configuration(path):
     return result
 
 
-def check_files(root):
+def check_files(root, require_operator=True):
     errors = []
     env_path = root / "deploy" / ".env"
-    token_path = root / "deploy" / "secrets" / "cloudflared-token"
     operator_path = root / "web" / "operator.json"
     if not env_path.is_file():
         errors.append("deploy/.env fehlt (Vorlage: deploy/hetzner/env.example)")
@@ -47,18 +46,13 @@ def check_files(root):
         if settings.get("CADDY_ADDRESS") != ":80":
             errors.append("CADDY_ADDRESS muss :80 sein (TLS am Cloudflare-Edge)")
         if "CLOUDFLARE_TUNNEL_TOKEN" in settings or "TUNNEL_TOKEN" in settings:
-            errors.append("Tunnel-Token gehört nur in deploy/secrets/cloudflared-token")
-    if not token_path.is_file():
-        errors.append("deploy/secrets/cloudflared-token fehlt")
-    else:
-        token = token_path.read_text(encoding="utf-8").strip()
-        if len(token) < 50 or any(character.isspace() for character in token):
-            errors.append("Tunnel-Token-Datei ist leer oder ungültig")
-        # Never print the token or its contents.
-        if token_path.stat().st_mode & 0o077:
-            errors.append("Tunnel-Token muss auf dem Host chmod 600 haben")
+            errors.append("Bestehendes Tunnel-Token nicht in CAW .env kopieren")
+        port = settings.get("CAW_ORIGIN_PORT", "18081")
+        if not port.isdigit() or not (1024 <= int(port) <= 65535):
+            errors.append("CAW_ORIGIN_PORT muss ein freier TCP-Port von 1024 bis 65535 sein")
     if not operator_path.is_file():
-        errors.append("web/operator.json fehlt (Impressum vor Go-live ergänzen)")
+        if require_operator:
+            errors.append("web/operator.json fehlt (Impressum vor Go-live ergänzen)")
     else:
         try:
             operator = json.loads(operator_path.read_text(encoding="utf-8"))
@@ -72,36 +66,37 @@ def check_files(root):
     return errors
 
 
-def check_compose(model):
+def check_compose(model, expected_port="18081"):
     errors = []
     services = model.get("services", {})
     caddy = services.get("caddy", {})
-    if caddy.get("ports"):
-        errors.append("Caddy darf keine Host-Ports veröffentlichen")
-    if services.get("server", {}).get("ports"):
-        errors.append("C++-Server darf keine Host-Ports veröffentlichen")
-    if not services.get("cloudflared"):
-        errors.append("cloudflared-Dienst fehlt")
-    if services.get("cloudflared", {}).get("ports"):
-        errors.append("cloudflared darf keine Host-Ports veröffentlichen")
-    if "cloudflared_token" not in model.get("secrets", {}):
-        errors.append("Compose-Secret für Tunnel-Token fehlt")
-    for service in ("redis", "postgres"):
-        if services.get(service, {}).get("ports"):
-            errors.append(f"{service} darf keine Host-Ports haben")
+    ports = caddy.get("ports", [])
+    if len(ports) != 1:
+        errors.append("Caddy muss exakt einen Loopback-Port haben")
+    else:
+        port = ports[0]
+        if (port.get("host_ip") != "127.0.0.1" or
+                str(port.get("published")) != str(expected_port) or
+                port.get("target") != 80):
+            errors.append("Caddy-Origin darf nur 127.0.0.1:PORT:80 binden")
+    if "cloudflared" in services:
+        errors.append("CAW darf keinen zweiten cloudflared-Dienst starten")
+    for name in ("server", "redis", "postgres", "backup"):
+        if services.get(name, {}).get("ports"):
+            errors.append(f"{name} darf keine Host-Ports haben")
     for port in services.get("prometheus", {}).get("ports", []):
         if port.get("host_ip") not in ("127.0.0.1", "::1"):
             errors.append("Prometheus darf nur auf Loopback veröffentlicht werden")
     return errors
-
 
 def check_caddy(root):
     text = (root / "deploy" / "Caddyfile.hetzner").read_text(encoding="utf-8")
     errors = []
     if "respond @metrics 404" not in text:
         errors.append("Tunnel-Caddy muss /metrics ausnahmslos blockieren")
-    if "remote_ip private_ranges" in text:
-        # The tunnel connector has a private source address.
+    active_lines = [line.strip() for line in text.splitlines()
+                    if line.strip() and not line.lstrip().startswith("#")]
+    if any(line.startswith("remote_ip private_ranges") for line in active_lines):
         errors.append("IP-Range-Ausnahmen für /metrics sind hinter Tunnel unsicher")
     if "header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}" not in text:
         errors.append("Echte Client-IP wird für Rate-Limits nicht weitergereicht")
@@ -142,11 +137,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--public", action="store_true",
                         help="Check edge TLS and safe public routes after DNS/Tunnel setup")
+    parser.add_argument("--prepare", action="store_true",
+                        help="Check local configuration before operator details are ready")
     args = parser.parse_args()
 
-    errors = check_files(ROOT) + check_caddy(ROOT)
+    errors = check_files(ROOT, require_operator=not args.prepare) + check_caddy(ROOT)
     try:
-        errors += check_compose(resolved_compose(ROOT))
+        settings = configuration(ROOT / "deploy" / ".env")
+        expected_port = settings.get("CAW_ORIGIN_PORT", "18081")
+        errors += check_compose(resolved_compose(ROOT), expected_port)
     except (ValueError, json.JSONDecodeError) as error:
         errors.append(str(error))
 
@@ -161,7 +160,9 @@ def main():
         for error in errors:
             print("FAIL:", error)
         return 1
-    print("OK: Tunnel-Compose, Secrets, Impressum, Firewall-Origin-Konzept")
+    print("OK: vorhandener Host-Tunnel, Loopback-Origin und CAW-Konfiguration")
+    if args.prepare:
+        print("HINWEIS: Impressum vor Livebetrieb separat prüfen")
     if args.public:
         print("OK: öffentliches HTTPS, Healthcheck und /metrics-Sperre")
         print("WSS muss zusätzlich mit node bin/hetzner-wss-check.mjs geprüft werden")
