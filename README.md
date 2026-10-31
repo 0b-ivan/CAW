@@ -31,6 +31,31 @@ noch nicht geprüft. Nur Caddy veröffentlicht Ports. Redis und Postgres sind
 intern erreichbar. Das Datenbankpasswort muss in einer URL verwendbar sein
 (z.B. Hex-Zeichen); `.env` wird nicht eingecheckt.
 
+## M2 – Session-Grundlage (in Entwicklung)
+
+Der C++-Server stellt nun zwei erste REST-Routen bereit:
+
+```sh
+# Auf einem laufenden Compose-Stack:
+curl -sS -H 'Content-Type: application/json' -d '{"language":"de"}' \
+  http://localhost:8080/api/sessions
+# -> {"code":"XXXXXX","hostToken":"<32 geheime Hex-Zeichen>"}
+
+curl -sS http://localhost:8080/api/sessions/XXXXXX
+# -> {"code":"XXXXXX","language":"de","phase":"lobby"}
+```
+
+Der private Host-Token wird nur beim Anlegen zurückgegeben, nicht im
+öffentlichen GET. Sechsstellige Codes verwenden ein eindeutiges
+31-Zeichen-Alphabet; die 128-Bit-Host-Tokens kommen aus Betriebssystemzufall.
+Leere oder unerwartete JSON-Felder werden abgelehnt. Ein abgelaufener
+Code wird wie ein unbekannter Code behandelt.
+
+**Noch nicht produktiv:** Diese Räume sind reine Metadaten im Arbeitsspeicher.
+Ein Neustart löscht sie. WebSocket-Beitritt, echte Spieltische, Redis-Snapshots,
+Reconnect, Host-Befehle und die spielbare Oberfläche folgen in weiteren
+M2/M3-Schritten. Die bestehenden Startseiten-Aktionen bleiben deaktiviert.
+
 ## Bauen und prüfen
 
 Unter Debian 13: `build-essential`, `cmake`, `ninja-build`, `git`,
