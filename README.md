@@ -81,7 +81,7 @@ Ordner durchführen:
 ```sh
 python3 bin/fetch-cvh-sets.py --list
 python3 bin/fetch-cvh-sets.py
-python3 -m unittest discover -s tests -p 'test_fetch_cvh_sets.py'
+python3 -m unittest discover -s tests -p 'test_*cvh*.py'
 ```
 
 Die Webseite nennt CC BY-NC-SA 2.0. Details, Quellen und Anforderungen für
