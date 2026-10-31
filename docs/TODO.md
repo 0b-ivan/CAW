@@ -67,14 +67,16 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## M5 – Kartenpacks
 
-- [x] Externe Cards-vs-Humanity-CSV-Quellen und Lizenzangaben als Metadaten erfassen; Originaldateien nur lokal laden (keine Kartentexte im Git)
-- [ ] Externe CSV-Dateien auf Schema, Kartenanzahl, Platzhalter und Rechtehinweise prüfen; gegebenenfalls Import-Adapter und Konzeption ergänzen
+- [x] Sechs lizenzierte Cards-vs-Humanity-Original-CSV-Sets samt Attribution und SHA-256-Prüfsummen versionieren
+- [x] CSV-Header `typ,text`, Typ `b`/`w`, Kartenanzahlen und UTF-8 prüfen (585 schwarze, 1179 weiße Karten)
+- [ ] Fremde Platzhalter/Satzkomposition vollständig prüfen und CSV-Import-Adapter für M5 bauen
+- [ ] Vor öffentlicher Bereitstellung Nutzungszweck, Namensnennung und mögliche Drittbeitragsrechte final prüfen
 
 - [ ] Import-Kommando (`server --import-pack datei`): `XCAWPK2` mit dem Reader aus der Firmware (`CardPartySdPack.h`) und JSONL aus `cardparty_l10n`
 - [ ] Prüfungen wie in der Firmware: Format, CRC, Längen, Platzhalter, Kategorien, Lizenzfelder Pflicht
 - [ ] Pack = `jsonb`-Dokument pro Version; Liste der Packs für den Host
 - [ ] Lizenz und Rechteinhaber jedes aktiven Packs in der UI anzeigen
-- [ ] Keine Kartentexte im Repo; Test-Fixtures nur synthetisch
+- [x] Fremde Originalkarten ausschließlich in freigegebenem Lizenz-/Quellverzeichnis; Test-Fixtures nur synthetisch
 
 ## M6 – Persistenz und Wall of Fame
 
