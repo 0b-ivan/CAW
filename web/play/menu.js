@@ -22,10 +22,12 @@ export function renderMenu(app, actions) {
   if (!app.menu.open) return;
   const hostPage = ['rules', 'players', 'packs'].includes(app.menu.page);
   const page = hostPage && !(app.isHost && app.frame) ? 'main' : app.menu.page;
-  const pages = { main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage, packs: packsPage };
+  const pages = {
+    main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage, packs: packsPage, fame: famePage,
+  };
   const titles = {
     main: t('sessionCode', app.code), rules: t('rules'), players: t('playersMenu'),
-    screen: t('bigScreen'), packs: t('packsMenu'),
+    screen: t('bigScreen'), packs: t('packsMenu'), fame: t('fame'),
   };
   $('menu-title').textContent = titles[page];
   $('menu-body').replaceChildren(...pages[page](app, actions));
@@ -72,6 +74,7 @@ function sessionGroup(app, actions) {
   const rows = [heading('groupSession'), row(t('copyLinkRow'), '', () => actions.copyLink())];
   if (typeof navigator.share === 'function') rows.push(row(t('shareRow'), '', () => actions.share()));
   rows.push(row(t('bigScreen'), '›', () => actions.openMenuPage('screen')));
+  rows.push(row(t('fame'), '›', () => actions.openMenuPage('fame')));
   const home = document.createElement('a');
   home.className = 'menu-row';
   home.href = '/';
@@ -171,6 +174,42 @@ function packsPage(app, actions) {
     rows.push(line);
   }
   return rows;
+}
+
+// --- Wall of Fame: eight players per page, then the latest winning sentences ---
+
+const FAME_PAGE = 8;
+
+function famePage(app, actions) {
+  const rows = [backRow(actions)];
+  if (!app.fame) {
+    actions.loadFame();
+    return [...rows, note(t('fameLoading'))];
+  }
+  const players = app.fame.players;
+  if (!players.length) return [...rows, note(t('fameEmpty'))];
+  const pages = Math.ceil(players.length / FAME_PAGE);
+  const page = Math.min(app.famePage, pages - 1);
+  for (const player of players.slice(page * FAME_PAGE, (page + 1) * FAME_PAGE)) {
+    const line = document.createElement('div');
+    line.className = 'menu-row fame-row';
+    line.append(cell(`${player.name}·${player.word}`), cell(t('fameStats', player.wins, player.rounds, player.games)));
+    rows.push(line);
+  }
+  if (pages > 1) rows.push(pager(page, pages, actions));
+  rows.push(heading('fameLines'));
+  for (const line of app.fame.lines.slice(0, 5)) rows.push(note(`${line.name}·${line.word}: ${line.sentence}`));
+  return rows;
+}
+
+function pager(page, pages, actions) {
+  const line = document.createElement('div');
+  line.className = 'menu-row stepper';
+  const shown = cell(t('pageOf', page + 1, pages));
+  shown.className = 'stepper-value';
+  line.append(cell(''), stepButton('‹', 'previous', page === 0, () => actions.turnFamePage(page - 1)), shown,
+    stepButton('›', 'nextPage', page >= pages - 1, () => actions.turnFamePage(page + 1)));
+  return line;
 }
 
 // --- Players ---

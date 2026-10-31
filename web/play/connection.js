@@ -26,6 +26,15 @@ export const secrets = {
   setTicket: (code, ticket) => write(`caw.ticket.${code}`, ticket),
   hostToken: (code) => (TOKEN.test(read(`caw.host.${code}`) ?? '') ? read(`caw.host.${code}`) : null),
   setHostToken: (code, token) => write(`caw.host.${code}`, token),
+  // A public label for the statistics, made once per browser. It proves nothing.
+  playerId: () => {
+    const saved = read('caw.player');
+    if (/^[0-9a-f]{16}$/.test(saved ?? '') && saved !== '0000000000000000') return saved;
+    const bytes = crypto.getRandomValues(new Uint8Array(8));
+    const id = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+    write('caw.player', id);
+    return id;
+  },
   language: () => read('caw.lang'),
   setLanguage: (code) => write('caw.lang', code),
 };

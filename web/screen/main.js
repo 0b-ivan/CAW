@@ -4,19 +4,21 @@ import { Connection, lookupSession, secrets } from '../play/connection.js';
 import { applyStaticTexts, setTextLanguage, t } from '../play/text.js';
 import { fillSentence } from '../play/sentence.js';
 import { qrSvg } from '../play/qr.js';
-import { creditsText } from '../play/views.js';
+import { creditsText, nameWithWord } from '../play/views.js';
 
 const $ = (id) => document.getElementById(id);
 const CODE = /^[A-HJKMNP-Z2-9]{6}$/;
 const VIEWS = ['connecting', 'missing', 'lobby', 'answers', 'judging', 'reveal', 'hold', 'finished'];
 const BAR_WIDTH = 20;
 const IDLE_MS = 3000;
+const LINE_MS = 6000;
 
 const code = (location.pathname.match(/^\/s\/([^/]+)\/screen\/?$/)?.[1] ?? '').toUpperCase();
 const screen = { frame: null, missing: false, clock: { left: 0, at: 0, frozen: true } };
 let connection = null;
 let retryDelay = 1000;
 let idleTimer = null;
+let lineIndex = 0;
 
 const joinUrl = () => `${location.origin}/s/${code}`;
 const isRunning = (frame) => ['playing', 'judging', 'reveal'].includes(frame.phase);
@@ -97,7 +99,7 @@ function renderLobby(frame) {
   $('screen-code').textContent = code;
   $('screen-url').textContent = joinUrl().replace(/^https?:\/\//, '');
   $('screen-count').textContent = t('players', frame.players.length);
-  $('screen-players').replaceChildren(...frame.players.map((player) => item(player.name)));
+  $('screen-players').replaceChildren(...frame.players.map((player) => item(nameWithWord(player))));
   $('screen-status').textContent = `${t('screenJoin')} · ${t('waitForHost')}`;
 }
 
@@ -158,6 +160,23 @@ function renderFinished(frame) {
     return entry;
   }));
   $('screen-status').textContent = t('votes', frame.votes, frame.players.length);
+  showLine();
+}
+
+// At the end the match's winning sentences take turns under the standings.
+function showLine() {
+  const lines = screen.frame?.lines ?? [];
+  $('screen-line').hidden = lines.length === 0;
+  if (!lines.length) return;
+  const line = lines[lineIndex % lines.length];
+  $('screen-line-text').textContent = `${line.name}: ${line.sentence}`;
+  fitAll();
+}
+
+function nextLine() {
+  if (chooseView() !== 'finished') return;
+  lineIndex += 1;
+  showLine();
 }
 
 function ranked(frame) {
@@ -242,6 +261,7 @@ async function start() {
   render();
   openConnection();
   setInterval(tickClock, 250);
+  setInterval(nextLine, LINE_MS);
 }
 
 start();

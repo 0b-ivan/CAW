@@ -199,7 +199,10 @@ async function run(browser) {
   for (const name of ['Ada', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
   await checkFit(players[0], 'lobby', '#lobby-status');
-  await screen.locator('#screen-players li', { hasText: 'Cyra' }).waitFor();
+  await screen.locator('#screen-players li', { hasText: 'Cyra·' }).waitFor();
+  // Every name carries its word, and the three words differ.
+  const words = await host.locator('#lobby-players li').allTextContents();
+  assert.equal(new Set(words.map((label) => label.split('·')[1])).size, 3, 'three different words');
   await checkScreen(screen, 'lobby', 'lobby');
 
   // The host finds the big screen link as a QR in the menu.
@@ -239,6 +242,8 @@ async function run(browser) {
 
   for (const page of [host, ...players]) await waitView(page, 'finished');
   await checkScreen(screen, 'finished', 'finished');
+  assert.equal(await players[0].locator('#finished-lines li').count(), 3, 'the three winning sentences');
+  await screen.locator('#screen-line-text', { hasText: ':' }).waitFor();
   for (const payload of screenFrames) {
     const frame = JSON.parse(payload);
     assert.equal(frame.type, 'screen', 'the big screen only gets screen frames');
@@ -268,6 +273,25 @@ async function run(browser) {
   await players[1].locator('#menu-close').click();
   await players[1].locator('#lobby-count', { hasText: 'PLAYERS' }).waitFor();
   assert.equal(await host.locator('html').getAttribute('lang'), 'de');
+
+  // The Wall of Fame: with Postgres (CI) the match is in it; without, it says so.
+  let fameRows = 0;
+  for (let attempt = 0; attempt < 20 && fameRows === 0; attempt++) {
+    await players[0].locator('#menu-button').click();
+    await players[0].locator('.menu-row', { hasText: 'RUHMESHALLE' }).click();
+    await players[0].locator('#menu-body .fame-row, #menu-body .menu-note').first().waitFor();
+    fameRows = await players[0].locator('#menu-body .fame-row').count();
+    if (fameRows === 0 && process.env.CAW_EXPECT_FAME) {
+      await players[0].locator('#menu-close').click();
+      await players[0].waitForTimeout(500);
+    } else break;
+  }
+  if (process.env.CAW_EXPECT_FAME) {
+    assert.ok(fameRows > 0, 'the finished match is in the Wall of Fame');
+    await players[0].locator('#menu-body .fame-row', { hasText: 'Ada·' }).first().waitFor();
+    await checkFit(players[0], 'menu-fame', '#menu-close');
+  }
+  await players[0].locator('#menu-close').click();
 
   // An unknown code ends on a clear page instead of a spinner.
   const lost = await openPhone(browser);
