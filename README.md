@@ -34,11 +34,11 @@ intern erreichbar. Das Datenbankpasswort muss in einer URL verwendbar sein
 
 ## Hetzner Cloud / Cloudflare Tunnel (Produktion)
 
-Die Produktion wird **ausschließlich über Cloudflare Tunnel** veröffentlicht.
-Ein `cloudflared`-Container führt ausgehende Verbindungen zu Cloudflare;
-Caddy ist nur über das Docker-Netz auf HTTP :80 erreichbar. Die zusätzliche
-`deploy/compose.hetzner.yml` entfernt alle Caddy-Hostports und nutzt ein
-lokales, nicht eingechecktes Tunnel-Token.
+Die Produktion wird über den **bereits bestehenden Cloudflare Tunnel des
+Hetzner-Servers** veröffentlicht. Es wird kein weiterer `cloudflared`-Container
+und keine neue VM eingerichtet. `deploy/compose.hetzner.yml` bindet Caddy
+nur an `127.0.0.1:18081` (konfigurierbar über `CAW_ORIGIN_PORT`); die
+bestehende Tunnel-Route erhält zusätzlich `caw.obivan.org`.
 
 **Vollständige Anleitung:** [Hetzner + Cloudflare Tunnel](docs/operations/HETZNER-CLOUDFLARE.md).
 Auf einem frisch vorbereiteten Hetzner-Server nach Anlegen des Tunnels
