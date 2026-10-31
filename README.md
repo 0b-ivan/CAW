@@ -1,9 +1,10 @@
 # CAW – Cards Against Whatever (Web)
 
-Partyspiel für 3–8 Handys, mit optionalem Big Screen. M0 und M1 sind
-implementiert: statische Startseite, C++-HTTP-Gerüst und portierte,
-getestete Firmware-Regeln mit internem JSON-Spielzustand. Spielen im
-Browser, WebSocket-Protokoll und Session-Verwaltung beginnen erst mit M2.
+Partyspiel für 3–8 Handys, mit optionalem Big Screen. M0 bis M3 sind
+fertig: Startseite, C++-Server mit Sessions über WebSocket und Redis,
+portierte Firmware-Regeln und die Spielseite für Handys und Host. Es fehlen
+der Big Screen (M4) und echte Kartenpacks (M5); bis dahin wird mit
+nummerierten Testkarten gespielt.
 
 ## Lokal starten
 
@@ -19,8 +20,8 @@ Startseite: http://localhost:8080, Bereitschaft: `/healthz`, Metriken:
 `/metrics`. Die statischen Dateien sind als Volume eingebunden; nach einer
 Änderung genügt Neuladen. Der Server wird im Entwicklungsprofil als
 Debug-Build gebaut; C++-Änderungen benötigen einen erneuten Build.
-Session-Aktionen auf der Startseite sind bis M2 deaktiviert. Lizenz- und
-Datenschutzseiten folgen mit M8; die Fußzeile enthält noch keine Links.
+Lizenz- und Datenschutzseiten folgen mit M8; die Fußzeile enthält noch keine
+Links.
 
 Das Produktionsgerüst wird mit
 `docker compose -f deploy/compose.yml up --build -d --wait` gestartet.
@@ -31,7 +32,21 @@ noch nicht geprüft. Nur Caddy veröffentlicht Ports. Redis und Postgres sind
 intern erreichbar. Das Datenbankpasswort muss in einer URL verwendbar sein
 (z.B. Hex-Zeichen); `.env` wird nicht eingecheckt.
 
-## M2 – Session-Grundlage (in Entwicklung)
+## Spielen
+
+1. Am Laptop oder Handy http://localhost:8080 öffnen, `[ NEUE SESSION ]`.
+   Die Seite wechselt auf `/s/XXXXXX` und zeigt QR-Code, Code und Link.
+2. Drei bis acht Handys scannen den QR-Code (oder geben den Code auf der
+   Startseite ein) und treten mit Namen bei. Der Host kann mit
+   `[ MITSPIELEN ]` selbst einen Platz nehmen.
+3. Regeln stellt der Host im Menü `[ ≡ ]` → SPIELREGELN ein, dann `[ START ]`.
+
+Für Handys im WLAN statt `localhost` die IP des Rechners verwenden. Ein
+Reload oder ein kurzer Netzabbruch kostet keinen Platz: Das Sitz-Ticket liegt
+im `localStorage` des Browsers. Keine Ansicht scrollt; nur Listen, die nicht
+passen, scrollen in sich (`docs/UI-KONZEPT.md` Abschnitt 1).
+
+## Server-Protokoll (M2)
 
 Der C++-Server stellt zwei REST-Routen und den Spiel-WebSocket bereit:
 
@@ -65,9 +80,6 @@ Neustart holen sich die Handys ihren Sitz mit ihrem Ticket zurück
 Host-Token an. Bei SIGTERM (`docker stop`) schließt der Server alle Sockets und
 schreibt ausstehende Stände, bevor er endet.
 
-**Noch nicht produktiv:** Die spielbare Oberfläche folgt in M3; die
-Startseiten-Aktionen bleiben bis dahin deaktiviert.
-
 ## Bauen und prüfen
 
 Unter Debian 13: `build-essential`, `cmake`, `ninja-build`, `git`,
@@ -96,8 +108,11 @@ docker run --rm caw-build ./bin/lint
 Redis und Postgres nacheinander ausfallen und wieder anlaufen. Nur in einer
 Testinstanz verwenden. Eigene Ports über `CAW_SMOKE_URL` angeben.
 `web/tests/landing.cjs` prüft mit Playwright Deutsch/Englisch, Tastatur,
-Tippziele und Überlauf bei 320/390/1280 px. CI installiert Playwright nur
-für diesen Test; die Web-App selbst braucht weder Node noch einen Build.
+Tippziele und Überlauf bei 320/390/1280 px. `web/tests/play.cjs` spielt mit
+einem Host und drei Handys eine ganze Partie (Reload, Pause, Juror, Endstand,
+Rematch, Entfernen, Sprache) und prüft jede Ansicht bei 320/390/1280 px auf
+Scrollen und sichtbare Hauptaktion. CI installiert Playwright nur für diese
+Tests; die Web-App selbst braucht weder Node noch einen Build.
 
 Die drei Gameplay-Metriken und das Latenz-Histogramm stehen in M0 auf null;
 Health-Zähler zählen echte Probes. Es gibt noch keine Spielaktionen oder

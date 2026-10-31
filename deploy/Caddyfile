@@ -9,6 +9,13 @@
   handle @backend {
     reverse_proxy server:8080
   }
+  # Every session link opens the same game page; the code is read from the path.
+  @session path_regexp ^/s/[A-Za-z0-9]{6}/?$
+  handle @session {
+    root * /srv/web
+    rewrite * /play.html
+    file_server
+  }
   handle {
     root * /srv/web
     file_server

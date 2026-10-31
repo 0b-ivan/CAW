@@ -130,7 +130,11 @@ TEST_CASE("host commands need the host token") {
   table.claimHost(9, "ffffffffffffffffffffffffffffffff");
   CHECK(table.last(9).at("code") == "not_host");
   table.claimHost(9);
-  CHECK(table.last(9).at("type") == "host");
+  // The notice, then the table right away, before anything changes.
+  REQUIRE(table.inbox[9].size() >= 2);
+  CHECK(table.inbox[9][table.inbox[9].size() - 2].at("type") == "host");
+  CHECK(table.last(9).at("type") == "state");
+  CHECK(table.last(9).at("players").size() == 3);
   table.host(9, Command::Type::Start);
   CHECK(table.lastState(1).at("phase") == "playing");
   CHECK(table.lastState(9).at("me").at("isHost") == true);

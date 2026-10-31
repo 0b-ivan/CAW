@@ -39,7 +39,7 @@ Session::Session(std::string hostToken, const Deck& deck, std::uint32_t seed, st
 void Session::handle(ConnectionId connection, const Command& command, std::uint32_t now) {
   if (command.type == Command::Type::Join) return join(connection, command, now);
   if (command.type == Command::Type::Resume) return resume(connection, command, now);
-  if (command.type == Command::Type::Host) return claimHost(connection, command);
+  if (command.type == Command::Type::Host) return claimHost(connection, command, now);
 
   if (isPlayerMove(command.type)) {
     if (!playerMove(connection, command, now)) {
@@ -92,10 +92,12 @@ void Session::resume(ConnectionId connection, const Command& command, std::uint3
   publishAll(now);
 }
 
-void Session::claimHost(ConnectionId connection, const Command& command) {
+void Session::claimHost(ConnectionId connection, const Command& command, std::uint32_t now) {
   if (!isHostToken(command.token)) return send(connection, Protocol::error("not_host"));
   hosts_.insert(connection);
   send(connection, Protocol::notice("host"));
+  // A host page needs the table at once, not after the next change.
+  sendState(connection, seats_.seatOf(connection), now);
 }
 
 bool Session::playerMove(ConnectionId connection, const Command& command, std::uint32_t now) {

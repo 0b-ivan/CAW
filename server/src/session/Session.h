@@ -55,7 +55,7 @@ class Session final {
  private:
   void join(ConnectionId connection, const Command& command, std::uint32_t now);
   void resume(ConnectionId connection, const Command& command, std::uint32_t now);
-  void claimHost(ConnectionId connection, const Command& command);
+  void claimHost(ConnectionId connection, const Command& command, std::uint32_t now);
   bool playerMove(ConnectionId connection, const Command& command, std::uint32_t now);
   bool hostCommand(const Command& command, std::uint32_t now);
   bool kick(std::uint8_t seat);

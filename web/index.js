@@ -1,4 +1,4 @@
-// Landing-page language switching and the one-shot Cut Deck introduction.
+// Landing page: new session, join by code, language and the one-shot Cut Deck introduction.
 import { translations } from './translations.js';
 
 const landing = document.querySelector('#landing');
@@ -11,7 +11,22 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let pendingTimers = [];
 let introRun = 0;
 
-function setLanguage(language) {
+function storedLanguage() {
+  try {
+    return localStorage.getItem('caw.lang');
+  } catch {
+    return null;
+  }
+}
+
+function setLanguage(language, remember = false) {
+  if (remember) {
+    try {
+      localStorage.setItem('caw.lang', language);
+    } catch {
+      // The choice then lasts for this page only.
+    }
+  }
   document.documentElement.lang = language;
   const copy = translations[language];
   for (const element of document.querySelectorAll('[data-text]')) {
@@ -116,9 +131,49 @@ function startIntro() {
   later(3130, zoomMiddleCard);
 }
 
-for (const button of document.querySelectorAll('[data-lang]')) {
-  button.addEventListener('click', () => setLanguage(button.dataset.lang));
+function showStatus(key) {
+  document.querySelector('#status').textContent = translations[document.documentElement.lang][key];
 }
+
+// The host token is the only proof of being host; it stays in this browser.
+async function createSession(button) {
+  button.disabled = true;
+  showStatus('creating');
+  try {
+    const response = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: document.documentElement.lang }),
+    });
+    if (!response.ok) throw new Error(`status ${response.status}`);
+    const session = await response.json();
+    localStorage.setItem(`caw.host.${session.code}`, session.hostToken);
+    location.assign(`/s/${session.code}`);
+  } catch {
+    showStatus('createFailed');
+    button.disabled = false;
+  }
+}
+
+async function joinSession(input) {
+  if (!input.checkValidity()) return showStatus('badCode');
+  try {
+    const response = await fetch(`/api/sessions/${input.value}`, { cache: 'no-store' });
+    if (response.ok) return location.assign(`/s/${input.value}`);
+    showStatus(response.status === 404 ? 'notFound' : 'serverDown');
+  } catch {
+    showStatus('serverDown');
+  }
+}
+
+for (const button of document.querySelectorAll('[data-lang]')) {
+  button.addEventListener('click', () => setLanguage(button.dataset.lang, true));
+}
+document.querySelector('#new-session').addEventListener('click', (event) => createSession(event.currentTarget));
+document.querySelector('#join-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  joinSession(document.querySelector('#code'));
+});
 document.querySelector('#code').addEventListener('input', (event) => {
   event.target.value = event.target.value.toUpperCase();
 });
@@ -128,5 +183,5 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !boot.hidden) finishIntro(true);
 });
 
-setLanguage(navigator.language.startsWith('de') ? 'de' : 'en');
+setLanguage(storedLanguage() ?? (navigator.language.startsWith('de') ? 'de' : 'en'));
 if (!hasSeenIntro() && !reducedMotion.matches) startIntro();

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>C/A/W · Session</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/play/main.js"></script>
+</head>
+<body>
+  <div class="shell" id="shell">
+    <header class="mast">
+      <a class="mast-brand" href="/">C/A/W</a>
+      <span id="connection" class="mast-status" role="status" data-text="connecting"></span>
+      <span class="mast-tools">
+        <button id="pause-button" class="mini" type="button" hidden data-text="pause"></button>
+        <button id="menu-button" class="mini" type="button" aria-expanded="false" aria-controls="menu"
+          data-text="menu" data-label="menuLabel"></button>
+      </span>
+    </header>
+    <div class="meta">
+      <span id="meta-left"></span>
+      <span id="clock" class="clock" aria-live="off"></span>
+    </div>
+    <p id="notice" class="notice-line" role="status" aria-live="polite"></p>
+
+    <main class="views">
+      <section id="view-connecting" class="view">
+        <h1 data-text="connectingTitle"></h1>
+      </section>
+
+      <section id="view-missing" class="view" hidden>
+        <h1 data-text="missingTitle"></h1>
+        <p data-text="missingText"></p>
+        <div class="bar"><span></span><a class="button" href="/" data-text="home"></a></div>
+      </section>
+
+      <section id="view-join" class="view" hidden>
+        <p class="eyebrow" data-text="session"></p>
+        <p class="session-code" id="join-code"></p>
+        <form id="join-form" class="view-form">
+          <label class="eyebrow" for="join-name" data-text="yourName"></label>
+          <input id="join-name" type="text" maxlength="23" required autocomplete="nickname"
+            spellcheck="false" data-placeholder="namePlaceholder">
+          <p id="join-error" class="form-error" role="status"></p>
+          <div class="bar"><span data-text="joinHint"></span>
+            <button type="submit" data-text="join"></button></div>
+        </form>
+      </section>
+
+      <section id="view-lobby" class="view" hidden>
+        <div id="lobby-share" class="share" hidden>
+          <div id="lobby-qr" class="qr"></div>
+          <div class="share-text">
+            <p class="eyebrow" data-text="session"></p>
+            <p class="session-code" id="lobby-code"></p>
+            <p class="share-url" id="lobby-url"></p>
+            <div class="share-buttons">
+              <button id="copy-link" type="button" data-text="copyLink"></button>
+              <button id="share-link" type="button" data-text="share" hidden></button>
+            </div>
+          </div>
+        </div>
+        <p class="eyebrow" id="lobby-count"></p>
+        <ul id="lobby-players" class="roster"></ul>
+        <form id="host-join" class="inline-form" hidden>
+          <label class="visually-hidden" for="host-name" data-text="hostName"></label>
+          <input id="host-name" type="text" maxlength="23" required autocomplete="nickname"
+            spellcheck="false" data-placeholder="namePlaceholder">
+          <button type="submit" data-text="playAlong"></button>
+        </form>
+        <div class="bar"><span id="lobby-status"></span>
+          <button id="start-button" type="button" hidden data-text="start"></button></div>
+      </section>
+
+      <section id="view-answer" class="view" hidden>
+        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+          <p class="eyebrow" id="answer-eyebrow"></p>
+          <h1 id="answer-prompt" class="sentence"></h1>
+        </div>
+        <div id="hand" class="hand" role="group" data-label="handLabel"></div>
+        <div class="bar">
+          <button id="swap-button" class="mini" type="button" data-text="swap"></button>
+          <span id="answer-count"></span>
+          <button id="submit-button" type="button" data-text="submit"></button>
+        </div>
+      </section>
+
+      <section id="view-waiting" class="view" hidden>
+        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+          <p class="eyebrow" id="waiting-eyebrow"></p>
+          <h1 id="waiting-prompt" class="sentence"></h1>
+        </div>
+        <p class="big-status" id="waiting-title"></p>
+        <p class="progress" id="waiting-progress" aria-hidden="true"></p>
+        <div class="bar"><span id="waiting-hint"></span>
+          <button id="close-button" type="button" hidden data-text="reveal"></button></div>
+      </section>
+
+      <section id="view-judge" class="view" hidden>
+        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+          <p class="eyebrow" id="judge-eyebrow"></p>
+          <h1 id="judge-prompt" class="sentence"></h1>
+        </div>
+        <ol id="judge-list" class="choices" data-label="playsLabel"></ol>
+        <div class="bar"><span id="judge-status"></span>
+          <button id="judge-button" type="button" hidden data-text="confirm"></button></div>
+      </section>
+
+      <section id="view-reveal" class="view" hidden>
+        <p class="eyebrow" id="reveal-eyebrow"></p>
+        <p id="reveal-flash" class="flash" hidden data-text="youWon"></p>
+        <h1 id="reveal-sentence" class="sentence"></h1>
+        <p id="reveal-winner" class="winner-line"></p>
+        <ol id="reveal-scores" class="scores" data-label="scoresLabel"></ol>
+        <div class="bar"><span id="reveal-status"></span>
+          <button id="next-button" type="button" hidden data-text="nextRound"></button></div>
+      </section>
+
+      <section id="view-finished" class="view" hidden>
+        <p class="eyebrow" id="finished-eyebrow"></p>
+        <h1 id="finished-winner" class="winner-type"></h1>
+        <ol id="finished-bars" class="bars" data-label="standingsLabel"></ol>
+        <div class="bar"><span id="finished-votes"></span>
+          <button id="again-button" type="button" hidden data-text="again"></button>
+          <button id="rematch-button" type="button" hidden data-text="rematch"></button></div>
+      </section>
+
+      <section id="view-hold" class="view view-hold" hidden>
+        <p class="eyebrow" id="hold-eyebrow"></p>
+        <h1 id="hold-title"></h1>
+        <p id="hold-text"></p>
+        <div class="bar"><span></span>
+          <button id="hold-resume" type="button" hidden data-text="resume"></button>
+          <button id="hold-without" type="button" hidden></button></div>
+      </section>
+
+      <section id="view-removed" class="view view-hold" hidden>
+        <h1 data-text="removedTitle"></h1>
+        <p data-text="removedText"></p>
+        <div class="bar"><span></span><button id="rejoin-button" type="button" data-text="nextLobby"></button></div>
+      </section>
+
+      <section id="view-replaced" class="view view-hold" hidden>
+        <h1 data-text="replacedTitle"></h1>
+        <p data-text="replacedText"></p>
+        <div class="bar"><span></span><button id="play-here-button" type="button" data-text="playHere"></button></div>
+      </section>
+    </main>
+
+    <div id="menu" class="menu" hidden>
+      <div class="menu-head">
+        <p class="eyebrow" id="menu-title"></p>
+        <button id="menu-close" class="mini" type="button" data-text="close"></button>
+      </div>
+      <div id="menu-body" class="menu-body"></div>
+    </div>
+  </div>
+</body>
+</html>
