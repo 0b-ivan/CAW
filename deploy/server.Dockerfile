@@ -29,6 +29,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 10001 --no-create-home caw
 COPY --from=build /app/build/caw-server /usr/local/bin/caw-server
+COPY --from=build /app/build/_deps/uwebsockets-src/LICENSE /usr/share/doc/caw/uWebSockets.LICENSE
+COPY --from=build /app/build/_deps/uwebsockets-src/uSockets/LICENSE /usr/share/doc/caw/uSockets.LICENSE
+COPY --from=build /app/build/_deps/redis_plus_plus-src/LICENSE /usr/share/doc/caw/redis-plus-plus.LICENSE
+COPY --from=build /app/server/src/game/LICENSE.upstream /usr/share/doc/caw/game.LICENSE
 USER 10001:10001
 EXPOSE 8080
 CMD ["caw-server"]
