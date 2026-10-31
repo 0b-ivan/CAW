@@ -447,6 +447,22 @@ TEST_CASE("rounds and matches become history, with the winning sentences of the 
   CHECK(table.lastState(1).at("lines").empty());
 }
 
+TEST_CASE("a locked lobby turns new players away, seated ones keep playing") {
+  Table table;
+  table.join(1, "Ada");
+  table.claimHost(9);
+  table.host(9, Command::Type::Lock);
+  CHECK(table.lastState(1).at("locked") == true);
+  table.join(2, "Bert");
+  CHECK(table.last(2).at("code") == "locked");
+  table.host(9, Command::Type::Lock);
+  CHECK(table.last(9).at("code") == "rejected");  // already locked
+  table.host(9, Command::Type::Unlock);
+  table.join(2, "Bert");
+  CHECK(table.last(2).at("type") != "error");
+  CHECK(table.lastState(1).at("players").size() == 2);
+}
+
 TEST_CASE("settings from a player are refused") {
   Table table;
   table.join(1, "Ada");

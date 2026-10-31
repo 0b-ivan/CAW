@@ -69,6 +69,7 @@ void Session::handle(ConnectionId connection, const Command& command, std::uint3
 }
 
 void Session::join(ConnectionId connection, const Command& command, std::uint32_t now) {
+  if (locked_) return send(connection, Protocol::error("locked"));
   unsigned char secret[kTicketBytes] = {};
   Codes::ticket(secret);
   SessionTicket ticket{};
@@ -182,6 +183,11 @@ bool Session::hostCommand(const Command& command, std::uint32_t now) {
       return applySettings(command.settings, now);
     case Command::Type::Packs:
       return selectPacks(command.packs);
+    case Command::Type::Lock:
+    case Command::Type::Unlock:
+      if (locked_ == (command.type == Command::Type::Lock)) return false;
+      locked_ = command.type == Command::Type::Lock;
+      return true;
     default:
       return false;
   }
@@ -291,7 +297,9 @@ std::vector<Identity> Session::identities() const {
   return std::vector<Identity>(std::begin(identities_), std::end(identities_));
 }
 
-void Session::restoreExtras(const std::vector<Identity>& identities, std::vector<MatchLine> lines) {
+void Session::restoreExtras(const std::vector<Identity>& identities, std::vector<MatchLine> lines,
+                            bool locked) {
+  locked_ = locked;
   for (std::size_t seat = 0; seat < kPlayers && seat < identities.size(); ++seat)
     identities_[seat] = identities[seat];
   matchLines_ = std::move(lines);
@@ -352,11 +360,15 @@ void Session::publishAll(std::uint32_t now) {
   // Every accepted change is published, so this is also the place to mark it for saving.
   changed_ = true;
   noteProgress();
+  const StateFrame table = publicFrame(now);
+  const std::string shared = Protocol::publicState(table);
   for (std::uint8_t seat = 0; seat < kPlayers; ++seat)
-    if (seatConnection_[seat] != kNoConnection) sendState(seatConnection_[seat], seat, now);
+    if (seatConnection_[seat] != kNoConnection) sendState(seatConnection_[seat], seat, shared, now);
   for (ConnectionId host : hosts_)
-    if (seats_.seatOf(host) == kNone) sendState(host, kNone, now);
-  for (ConnectionId screen : screens_) sendScreen(screen, now);
+    if (seats_.seatOf(host) == kNone) sendState(host, kNone, shared, now);
+  if (screens_.empty()) return;
+  const std::string screen = Protocol::screen(table);
+  for (ConnectionId connection : screens_) send(connection, screen);
 }
 
 StateFrame Session::publicFrame(std::uint32_t now) const {
@@ -372,6 +384,7 @@ StateFrame Session::publicFrame(std::uint32_t now) const {
   for (std::uint8_t seat = 0; seat < kPlayers; ++seat)
     if (!identities_[seat].playerId.empty()) frame.words[seat] = playerWord(identities_[seat].word);
   frame.lines = &matchLines_;
+  frame.locked = locked_;
   return frame;
 }
 
@@ -380,13 +393,22 @@ void Session::sendScreen(ConnectionId connection, std::uint32_t now) {
 }
 
 void Session::sendState(ConnectionId connection, std::uint8_t seat, std::uint32_t now) {
-  StateFrame frame = publicFrame(now);
-  frame.seat = seat;
-  frame.isHost = hosts_.count(connection) != 0;
+  sendState(connection, seat, Protocol::publicState(publicFrame(now)), now);
+}
+
+void Session::sendState(ConnectionId connection, std::uint8_t seat, const std::string& shared,
+                        std::uint32_t now) {
+  // Only what "me" needs: the seat, the host flag and the private hand.
+  StateFrame own;
+  own.table = &table_;
+  own.deck = &deck_;
+  own.now = now;
+  own.seat = seat;
+  own.isHost = hosts_.count(connection) != 0;
   if (seat < kPlayers &&
-      !seats_.privateHand(connection, tickets_[seat].secret, frame.hand, frame.revision))
-    frame.seat = kNone;  // never show a hand the connection cannot prove it owns
-  send(connection, Protocol::state(frame));
+      !seats_.privateHand(connection, tickets_[seat].secret, own.hand, own.revision))
+    own.seat = kNone;  // never show a hand the connection cannot prove it owns
+  send(connection, Protocol::state(shared, own));
 }
 
 void Session::send(ConnectionId connection, std::string text, bool close) {

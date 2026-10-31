@@ -23,6 +23,7 @@ struct RoomRecord {
   std::string state;               // Session::saveState()
   std::vector<Identity> identities;
   std::vector<MatchLine> lines;
+  bool locked = false;
 };
 
 class Messages {

@@ -95,7 +95,8 @@ TEST_CASE("a room survives a registry restart through its snapshot") {
 TEST_CASE("room records keep language, host token and state together") {
   const caw::RoomRecord record{
       "de",         "0123456789abcdef0123456789abcdef", {"test"},
-      R"({"a":1})", {{"00000000000000aa", 7}, {}},      {{"Ada", "Ein ganzer Satz."}}};
+      R"({"a":1})", {{"00000000000000aa", 7}, {}},      {{"Ada", "Ein ganzer Satz."}},
+      true};
   const auto loaded = caw::Messages::loadRoom(caw::Messages::saveRoom(record));
   REQUIRE(loaded);
   CHECK(loaded->language == "de");
@@ -107,6 +108,7 @@ TEST_CASE("room records keep language, host token and state together") {
   CHECK(loaded->identities[1].playerId.empty());
   REQUIRE(loaded->lines.size() == 1);
   CHECK(loaded->lines[0].sentence == "Ein ganzer Satz.");
+  CHECK(loaded->locked);
   CHECK(nlohmann::json::parse(loaded->state) == nlohmann::json::parse(record.state));
   CHECK_FALSE(caw::Messages::loadRoom(R"({"schema":2})"));
   CHECK_FALSE(caw::Messages::loadRoom("[]"));

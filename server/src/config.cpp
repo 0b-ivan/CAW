@@ -35,6 +35,7 @@ Config readConfig() {
   config.redisUrl = environment("REDIS_URL");
   config.logLevel = environment("LOG_LEVEL", "info");
   config.packsDir = environment("PACKS_DIR", "/app/packs");
+  config.rateLimitPerMinute = number("RATE_LIMIT_PER_MINUTE", "60", 10000000);
   if (!config.publicUrl.starts_with("http://") && !config.publicUrl.starts_with("https://"))
     throw std::runtime_error("Invalid PUBLIC_URL");
   requireUrl(config.databaseUrl, "postgresql://", "DATABASE_URL");

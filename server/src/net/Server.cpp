@@ -3,6 +3,7 @@
 
 #include <libusockets.h>
 
+#include <chrono>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -65,8 +66,28 @@ void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions,
 }  // namespace
 
 Server::Server(SessionRegistry& sessions, const PackLibrary& packs, const FameCache& fame,
-               PersistQueue& persist, const std::atomic<bool>& stop)
-    : sessions_(sessions), packs_(packs), fame_(fame), persist_(persist), stop_(stop) {}
+               PersistQueue& persist, Metrics& metrics, double requestsPerMinute,
+               const std::atomic<bool>& stop)
+    : sessions_(sessions),
+      packs_(packs),
+      fame_(fame),
+      persist_(persist),
+      metrics_(metrics),
+      createLimit_(requestsPerMinute / 10, 5),
+      roomLimit_(requestsPerMinute, requestsPerMinute / 2),
+      stop_(stop) {}
+
+// Caddy is the only way in and sets X-Forwarded-For; the server port is not published.
+bool Server::admitted(RateLimiter& limiter, uWS::HttpResponse<false>* response,
+                      uWS::HttpRequest* request) {
+  std::string client(request->getHeader("x-forwarded-for"));
+  client = client.substr(0, client.find(','));
+  if (client.empty()) client = std::string(response->getRemoteAddressAsText());
+  if (limiter.allow(client, millisNow())) return true;
+  ++metrics_.rateLimited;
+  jsonReply(response, "429 Too Many Requests", Messages::errorResponse("rate_limited"));
+  return false;
+}
 
 void Server::registerRoutes(uWS::App& app) {
   registerSessionRoutes(app);
@@ -82,9 +103,12 @@ void Server::registerSessionRoutes(uWS::App& app) {
   app.get("/api/packs", [this](auto* response, auto*) {
     jsonReply(response, "200 OK", Messages::packCatalog(packs_.packs()));
   });
-  auto createHandler = [this](auto* response, auto*) { createRoom(response, sessions_, persist_); };
+  auto createHandler = [this](auto* response, auto* request) {
+    if (admitted(createLimit_, response, request)) createRoom(response, sessions_, persist_);
+  };
   app.post("/api/sessions", createHandler);
   app.get("/api/sessions/:code", [this](auto* response, auto* request) {
+    if (!admitted(roomLimit_, response, request)) return;
     const std::string_view code = request->getParameter(0);
     const auto language = sessions_.language(code);
     if (!language) {
@@ -102,6 +126,7 @@ void Server::registerGameSocket(uWS::App& app, bool screen) {
   // Above this, uWebSockets drops frames for that socket; it is resynced on drain.
   behavior.maxBackpressure = 64 * 1024;
   behavior.upgrade = [this, screen](auto* response, auto* request, auto* context) {
+    if (!admitted(roomLimit_, response, request)) return;
     const std::string code(request->getParameter(0));
     if (sessions_.find(code) == nullptr) {
       jsonReply(response, "404 Not Found", Messages::errorResponse("room_not_found"));
@@ -115,6 +140,7 @@ void Server::registerGameSocket(uWS::App& app, bool screen) {
   behavior.open = [this](Socket* socket) {
     SocketData& data = *socket->getUserData();
     sockets_[data.id] = socket;
+    metrics_.sockets = sockets_.size();
     if (!data.screen) return;
     Session* session = sessions_.find(data.code);
     if (session == nullptr) return;
@@ -145,8 +171,11 @@ void Server::onMessage(Socket* socket, std::string_view text) {
     socket->send(Protocol::error("invalid_message"), uWS::OpCode::TEXT);
     return;
   }
+  const auto started = std::chrono::steady_clock::now();
   session->handle(data.id, *command, millisNow());
   deliver(data.code, *session);
+  metrics_.observeAction(
+      std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count());
 }
 
 void Server::onDrain(Socket* socket) {
@@ -162,6 +191,7 @@ void Server::onDrain(Socket* socket) {
 void Server::onClose(Socket* socket) {
   const SocketData data = *socket->getUserData();
   sockets_.erase(data.id);
+  metrics_.sockets = sockets_.size();
   Session* session = sessions_.find(data.code);
   if (session == nullptr) return;
   session->connectionClosed(data.id, millisNow());
@@ -173,12 +203,23 @@ void Server::deliver(const std::string& code, Session& session) {
     const auto found = sockets_.find(frame.connection);
     if (found == sockets_.end()) continue;
     Socket* socket = found->second;
+    metrics_.observeFrame(frame.text.size());
     if (socket->send(frame.text, uWS::OpCode::TEXT) == Socket::SendStatus::DROPPED)
       socket->getUserData()->needsResync = true;
     if (frame.close) socket->end(1000, "closed");
   }
-  if (session.takeChanged()) persist(code);
+  if (session.takeChanged() && dirty_.insert(code).second) dirtyOrder_.push_back(code);
   persist_.pushHistory(session.takeHistory());
+}
+
+void Server::persistDirty(bool all) {
+  const auto deadline = std::chrono::steady_clock::now() + kSnapshotBudget;
+  while (!dirtyOrder_.empty() && (all || std::chrono::steady_clock::now() < deadline)) {
+    const std::string code = std::move(dirtyOrder_.front());
+    dirtyOrder_.pop_front();
+    dirty_.erase(code);
+    persist(code);
+  }
 }
 
 void Server::persist(const std::string& code) {
@@ -188,12 +229,16 @@ void Server::persist(const std::string& code) {
 
 void Server::tickAll() {
   if (stop_) return shutdown();
+  const auto started = std::chrono::steady_clock::now();
   sessions_.expire();
   const std::uint32_t now = millisNow();
   for (const auto& [code, session] : sessions_.all()) {
     session->tick(now);
     deliver(code, *session);
   }
+  persistDirty(false);
+  metrics_.observeTick(
+      std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count());
 }
 
 bool Server::start(uWS::App& app, int port) {
@@ -209,6 +254,7 @@ bool Server::start(uWS::App& app, int port) {
 
 void Server::shutdown() {
   log::info("Shutting down: closing sockets, saving rooms");
+  persistDirty(true);
   us_timer_close(timer_);
   us_listen_socket_close(0, listenSocket_);
   // Phones reconnect with their tickets once the server is back.

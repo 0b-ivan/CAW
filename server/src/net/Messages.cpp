@@ -152,21 +152,19 @@ std::string Messages::saveRoom(const RoomRecord& room) {
   json lines = json::array();
   for (const MatchLine& line : room.lines)
     lines.push_back({{"name", line.name}, {"sentence", line.sentence}});
-  return json{{"schema", 3},
-              {"language", room.language},
-              {"hostToken", room.hostToken},
-              {"packs", room.packs},
-              {"identities", identities},
-              {"lines", lines},
-              {"state", json::parse(room.state)}}
-      .dump();
+  const std::string head = json{
+      {"schema", 4},          {"language", room.language}, {"hostToken", room.hostToken},
+      {"packs", room.packs},  {"identities", identities},  {"lines", lines},
+      {"locked", room.locked}}.dump();
+  // room.state is already JSON text (saveState); spliced in rather than parsed again.
+  return head.substr(0, head.size() - 1) + ",\"state\":" + room.state + "}";
 }
 
 std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
   try {
     const json record = json::parse(text);
     // Older schemas lack packs or player identities; such rooms are not restored.
-    if (!record.is_object() || record.size() != 7 || record.at("schema") != 3 ||
+    if (!record.is_object() || record.size() != 8 || record.at("schema") != 4 ||
         !record.at("language").is_string() || !record.at("hostToken").is_string() ||
         !record.at("packs").is_array() || !record.at("state").is_object())
       return std::nullopt;
@@ -175,6 +173,7 @@ std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
     room.hostToken = record.at("hostToken").get<std::string>();
     room.packs = record.at("packs").get<std::vector<std::string>>();
     room.state = record.at("state").dump();
+    room.locked = record.at("locked").get<bool>();
     for (const json& identity : record.at("identities"))
       room.identities.push_back(
           {identity.at("player").get<std::string>(), identity.at("word").get<std::uint8_t>()});
