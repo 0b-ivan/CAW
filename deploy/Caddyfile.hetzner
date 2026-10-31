@@ -1,0 +1,46 @@
+# With a domain in CADDY_ADDRESS (e.g. caw.example.org) Caddy gets a certificate and
+# redirects HTTP to HTTPS on its own. ":80" serves plain HTTP for local use and CI.
+{$CADDY_ADDRESS::80} {
+  encode zstd gzip
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy same-origin
+    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    # Browsers honour this only over HTTPS; on plain HTTP it does nothing.
+    Strict-Transport-Security "max-age=31536000"
+    -Server
+  }
+  # A cloudflared connector has a private Docker IP; private_ranges is NOT safe.
+  # Prometheus scrapes server:8080 directly on the Compose network.
+  @metrics path /metrics
+  respond @metrics 404
+  @backend path /api /api/* /ws /ws/* /healthz
+  handle @backend {
+    reverse_proxy server:8080 {
+      # Cloudflare provides the authentic visitor IP at the edge.
+      # This origin is reachable ONLY through the private Tunnel network.
+      header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}
+      header_up X-Forwarded-Proto https
+    }
+  }
+  # Every session link opens the same game page; the code is read from the path.
+  @session path_regexp ^/s/[A-Za-z0-9]{6}/?$
+  handle @session {
+    root * /srv/web
+    rewrite * /play.html
+    file_server
+  }
+  @screen path_regexp ^/s/[A-Za-z0-9]{6}/screen/?$
+  handle @screen {
+    root * /srv/web
+    rewrite * /screen.html
+    file_server
+  }
+  # Plain file names without hashes: browsers check back (ETag) instead of caching blindly.
+  handle {
+    root * /srv/web
+    header Cache-Control "no-cache"
+    file_server
+  }
+}
