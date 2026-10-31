@@ -279,7 +279,9 @@ async function run(browser) {
   for (let attempt = 0; attempt < 20 && fameRows === 0; attempt++) {
     await players[0].locator('#menu-button').click();
     await players[0].locator('.menu-row', { hasText: 'RUHMESHALLE' }).click();
-    await players[0].locator('#menu-body .fame-row, #menu-body .menu-note').first().waitFor();
+    // Rows, or the explicit "no entries" note; "LADE …" is neither and must not count.
+    await players[0].locator('#menu-body .fame-row, #menu-body .menu-note:has-text("NOCH KEINE")')
+      .first().waitFor();
     fameRows = await players[0].locator('#menu-body .fame-row').count();
     if (fameRows === 0 && process.env.CAW_EXPECT_FAME) {
       await players[0].locator('#menu-close').click();
