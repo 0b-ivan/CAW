@@ -1,0 +1,51 @@
+{
+  "source": "Cards vs Humanity",
+  "index": "https://www.cards-vs-humanity.de/set/list/",
+  "license": "CC BY-NC-SA 2.0",
+  "license_url": "https://creativecommons.org/licenses/by-nc-sa/2.0/",
+  "language": "de",
+  "packs": [
+    {
+      "id": "base-1",
+      "title": "Basisspiel 1 – Minions mit Genitalherpes",
+      "black_count": 45,
+      "white_count": 216,
+      "csv_url": "https://www.cards-vs-humanity.de/csv/Basisspiel%2B1%2B-%2BMinions%2Bmit%2BGenitalherpes/1/"
+    },
+    {
+      "id": "base-2",
+      "title": "Basisspiel 2 – Heidi Klums Hungersnot",
+      "black_count": 45,
+      "white_count": 216,
+      "csv_url": "https://www.cards-vs-humanity.de/csv/Basisspiel%2B2%2B-%2BHeidi%2BKlums%2BHungersnot/2/"
+    },
+    {
+      "id": "expansion-1",
+      "title": "Erweiterung 1 – Wir werden bösartig",
+      "black_count": 18,
+      "white_count": 153,
+      "csv_url": "https://www.cards-vs-humanity.de/csv/Erweiterung%2B1%2B-%2BWir%2Bwerden%2Bb%C3%B6sartig/3/"
+    },
+    {
+      "id": "expansion-2",
+      "title": "Erweiterung 2 – Black Cards Matter",
+      "black_count": 144,
+      "white_count": 0,
+      "csv_url": "https://www.cards-vs-humanity.de/csv/Erweiterung%2B2%2B-%2BBlack%2BCards%2BMatter/4/"
+    },
+    {
+      "id": "fan-1",
+      "title": "Fan-Erweiterung 1 – That's what they said",
+      "black_count": 45,
+      "white_count": 180,
+      "csv_url": "https://www.cards-vs-humanity.de/csv/Fan-Erweiterung%2B1%2B-%2BThat%27s%2Bwhat%2Bthey%2Bsaid/5/"
+    },
+    {
+      "id": "fan-2",
+      "title": "Fan-Erweiterung 2 – Deine Mudda!",
+      "black_count": 288,
+      "white_count": 414,
+      "csv_url": "https://www.cards-vs-humanity.de/csv/Fan-Erweiterung%2B2%2B-%2BDeine%2BMudda%21/6/"
+    }
+  ]
+}
