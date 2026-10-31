@@ -33,7 +33,7 @@ intern erreichbar. Das Datenbankpasswort muss in einer URL verwendbar sein
 
 ## M2 – Session-Grundlage (in Entwicklung)
 
-Der C++-Server stellt nun zwei erste REST-Routen bereit:
+Der C++-Server stellt zwei REST-Routen und den Spiel-WebSocket bereit:
 
 ```sh
 # Auf einem laufenden Compose-Stack:
@@ -51,10 +51,16 @@ Der private Host-Token wird nur beim Anlegen zurückgegeben, nicht im
 Leere oder unerwartete JSON-Felder werden abgelehnt. Ein abgelaufener
 Code wird wie ein unbekannter Code behandelt.
 
-**Noch nicht produktiv:** Diese Räume sind reine Metadaten im Arbeitsspeicher.
-Ein Neustart löscht sie. WebSocket-Beitritt, echte Spieltische, Redis-Snapshots,
-Reconnect, Host-Befehle und die spielbare Oberfläche folgen in weiteren
-M2/M3-Schritten. Die bestehenden Startseiten-Aktionen bleiben deaktiviert.
+Jeder Raum ist ein echter Spieltisch. Gespielt wird über den WebSocket
+`ws://…/ws/XXXXXX` (Befehle und Antworten: `docs/KONZEPT-CPP-BACKEND.md`
+Abschnitt 7). Ein Spieler tritt mit `{"type":"join","name":"Ada"}` bei, der
+Host meldet sich mit `{"type":"host","token":"…"}` an und startet mit
+`{"type":"start"}`. Bis zum Kartenpack-Import (M5) spielt jeder Tisch mit
+nummerierten Testkarten.
+
+**Noch nicht produktiv:** Laufende Partien liegen nur im Arbeitsspeicher; ein
+Neustart löscht sie (Redis-Snapshots folgen). Die spielbare Oberfläche folgt in
+M3; die Startseiten-Aktionen bleiben bis dahin deaktiviert.
 
 ## Bauen und prüfen
 

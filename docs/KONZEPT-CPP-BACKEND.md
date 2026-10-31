@@ -68,7 +68,9 @@ server/
       Codes.h / .cpp         Session-Code und Tickets erzeugen
     net/
       Server.h / .cpp        uWebSockets: Routen, Verbindungen, Senden
-      Messages.h / .cpp      JSON ⇄ Befehle/Zustände, nur hier wird JSON angefasst
+      Protocol.h / .cpp      Live-Spiel: JSON-Befehle lesen, Zustands-Frames schreiben
+      Messages.h / .cpp      Snapshots für Redis und REST-Antworten
+                             (nur diese beiden Dateien fassen JSON an)
     store/
       PersistQueue.h / .cpp  Warteschlange + Persistenz-Thread
       RedisStore.h / .cpp    laufende Sessions speichern/laden
@@ -135,7 +137,7 @@ Host-Token, bevor es die übernommenen Host-Methoden aufruft.
 
 ```
             uWebSockets-Loop (Thread 1, besitzt alle Sessions)
-  WS-Nachricht ─► Messages::parse ─► Session::handle(Befehl, now)
+  WS-Nachricht ─► Protocol::parse ─► Session::handle(Befehl, now)
                                          │ Game/Table ändern
                                          ├─► Frames bauen, an Sitze + Big Screens senden
                                          └─► PersistQueue::push(Snapshot)  (kopiert, kein Warten)
@@ -167,9 +169,30 @@ Host-Token, bevor es die übernommenen Host-Methoden aufruft.
   Sockets, Aktionen, Latenz-Buckets) – von Hand geschrieben, keine Bibliothek
 - `WS   /ws/{code}` (Spieler und Host), `WS /ws/{code}/screen` (Big Screen)
 
-Nachrichten wie in KONZEPT.md Abschnitt 6, als JSON. `Messages.cpp` ist die
-einzige Stelle, die JSON in Befehle umwandelt und Zustände in JSON; sie prüft
-Typen und Längen und lehnt alles andere ab.
+Nachrichten wie in KONZEPT.md Abschnitt 6, als JSON. `Protocol.cpp` ist die
+einzige Stelle, die WebSocket-JSON in Befehle umwandelt und Zustände in JSON;
+sie prüft Typen und Längen und lehnt alles andere ab, auch unbekannte Felder.
+`Messages.cpp` macht dasselbe für Snapshots und die REST-Antworten. Getrennt,
+weil eine Datei für beides zu lang und unübersichtlich würde.
+
+Befehle (Client → Server), alle mit `type`:
+
+| type | Felder | Wer |
+|---|---|---|
+| `join` | `name` | jeder (Lobby) |
+| `resume` | `token` (Sitz-Ticket) | Spieler nach Reload |
+| `host` | `token` (Host-Token) | macht die Verbindung zum Host |
+| `submit` | `token`, `revision`, `slots` | Spieler |
+| `judge` | `token`, `revision`, `index` | Juror |
+| `swap` | `token`, `revision`, `index` | Spieler, 1× pro Runde |
+| `pause`, `unpause`, `again` | `token` | Spieler |
+| `start`, `next`, `close`, `abort`, `end`, `rematch`, `hostPause`, `hostUnpause`, `addTime`, `continueWithout` | – | Host |
+| `kick` | `index` (Sitz) | Host |
+
+Antworten (Server → Client): `welcome` (`token`, `seat`; das Ticket rotiert bei
+jedem `resume`), `state` (öffentlicher Stand plus `me` mit eigener Hand),
+`error` (`code`), sowie `host`, `expired`, `replaced`, `kicked`. Nach
+`replaced` und `kicked` schließt der Server den Socket.
 
 ## 8. Sicherheit: bewusst pragmatisch
 

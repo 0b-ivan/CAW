@@ -38,18 +38,21 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 - [x] M2-Grundlage: kryptografische 6-Zeichen-Codes, 128-Bit-Host-Tokens,
   event-loop-eigene Registry und striktes POST/GET-JSON mit CTest/Compose-Smoke
-  (derzeit **nur RAM**, nach Neustart nicht wiederhergestellt)
-- [ ] Room-Registry mit echten Game/Table/Sessions verbinden, Redis- und
-  Neustartpersistenz ergänzen; erst danach Session-Erstellung als fertig markieren
-- [ ] `net/Server`: Routen, WebSocket-Verbindungen, Senden mit Backpressure (`getBufferedAmount`, nur neuester Stand)
-- [ ] `net/Messages`: JSON ⇄ Befehle/Zustände, Typ- und Längenprüfung, unbekanntes wird abgelehnt
-- [ ] `session/SessionRegistry` + `Codes`: `POST /api/sessions` → Code (6 Zeichen, 31er-Alphabet) + Host-Token
-- [ ] `session/Session`: `join`, `resume` mit Ticket-Rotation, Übernahme durch neuen Socket, Host-Befehle, Fehlercodes
-- [ ] Revision pro Stand; veraltete `submit`/`judge` → Fehler + sofortiger Resync
-- [ ] Timer alle 250 ms → `Table::tick`
-- [ ] `store/PersistQueue` + `RedisStore`: Snapshot je Änderung (nur neuester je Session), TTL 24 h, Laden beim Start
+- [x] Room-Registry hält pro Code eine echte `Session` (Game, Sitze, Table);
+  Aktivität verlängert die Lebensdauer
+- [x] `net/Server`: WebSocket `/ws/{code}` (404 bei unbekanntem Code), Senden mit
+  Backpressure (uWebSockets verwirft über 64 KB, beim `drain` wird der neueste Stand nachgeschickt)
+- [x] `net/Protocol`: JSON ⇄ Befehle/Zustände, Typ- und Längenprüfung, unbekannte Typen und Felder werden abgelehnt
+- [x] `session/SessionRegistry` + `Codes`: `POST /api/sessions` → Code (6 Zeichen, 31er-Alphabet) + Host-Token
+- [x] `session/Session`: `join`, `resume` mit Ticket-Rotation, Übernahme durch neuen Socket, Host-Befehle, Fehlercodes
+- [x] Revision pro Stand; veraltete `submit`/`judge` → Fehler + sofortiger Resync
+- [x] Timer alle 250 ms → `Table::tick`
+- [ ] Host-Befehl für Regeln/Uhren (`settings`); bisher laufen die Standardregeln ohne Uhren
+- [ ] `store/PersistQueue` + `RedisStore`: Snapshot je Änderung (nur neuester je Session), TTL 24 h, Laden beim Start.
+  **Bis dahin löscht ein Neustart alle laufenden Partien.**
 - [ ] Graceful Shutdown bei SIGTERM
-- [ ] Bot-Programm: 8 Bots spielen eine ganze Partie; Reload-Sturm; Neustart mitten in der Runde
+- [ ] Bot-Programm im Repo: 8 Bots spielen eine ganze Partie; Reload-Sturm; Neustart mitten in der Runde
+  (ein Rundentest mit 3 Bots über echte WebSockets lief lokal; noch nicht im Repo/CI)
 
 ## M3 – Spieler- und Host-UI
 

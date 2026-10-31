@@ -44,7 +44,8 @@ nicht ein Grund, ihn zu überspringen.
   Portieren die Quelle (Datei im X4-Repo) im Commit nennen und den passenden
   Test mitportieren.
 - **Server ist autoritativ.** Clients schicken Absichten, nie Ergebnisse.
-  JSON wird nur in `server/src/net/Messages.cpp` gelesen und geschrieben.
+  JSON wird nur in `server/src/net/` gelesen und geschrieben:
+  `Protocol.cpp` (Live-Spiel über WebSocket), `Messages.cpp` (Snapshots, REST).
 - **Ein Thread besitzt alle Sessions** (der uWebSockets-Loop). Der
   Persistenz-Thread bekommt nur Kopien über die Warteschlange. Keine weiteren
   Threads, keine Locks in der Spiellogik.
