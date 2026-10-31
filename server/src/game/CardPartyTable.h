@@ -1,15 +1,17 @@
 #pragma once
 // Host-side match control around Game: the answer clock with its one-time
 // extension, the Juror clock, auto mode, pause, and the wait for a needed
-// player who dropped. Time comes in as millis(); no clock, storage or
+// player who dropped. Time comes in as explicit milliseconds; no clock, storage or
 // network in here, so it runs unchanged in host tests.
 #include <cstdint>
 
 #include "CardPartyCore.h"
 
+namespace caw { class Messages; }
+
 namespace cardparty {
 
-constexpr uint8_t kHost = 253;  // pausedBy(): the X4 itself
+constexpr uint8_t kHost = 253;  // authenticated web-session host role, including a non-playing host
 // A needed player offline this long blocks the table until the host decides.
 constexpr uint32_t kBlockAfterMs = 15000;
 // +TIME when no automatic extension is set.
@@ -25,6 +27,8 @@ struct Settings {
 };
 
 class Table final {
+  // Internal snapshot access; no public frame may serialize private state.
+  friend class caw::Messages;
  public:
   enum class Clock : uint8_t { None, Answers, Juror, Next };
   explicit Table(Game& game) : game_(game) {}

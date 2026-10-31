@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <cstring>
 
+namespace caw { class Messages; }
+
 namespace cardparty {
 constexpr uint8_t kPlayers = 8, kHandMax = 12, kPickMax = 3, kPileMax = 8;
 constexpr uint8_t kNone = 255, kRando = 254;
@@ -56,6 +58,8 @@ struct HandView {
 };
 
 class Game {
+  // Internal snapshot access; no public frame may serialize private state.
+  friend class caw::Messages;
  public:
   using Blocker = bool (*)(void*, uint16_t, uint16_t);
   void setBlocker(Blocker callback, void* context) { blocker_ = callback; blockerContext_ = context; }

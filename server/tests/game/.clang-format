@@ -1,0 +1,4 @@
+# Preserve the mechanical doctest port of the upstream test scenarios.
+BasedOnStyle: InheritParentConfig
+DisableFormat: true
+SortIncludes: Never

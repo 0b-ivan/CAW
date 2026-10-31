@@ -1,16 +1,17 @@
 #pragma once
 // Cards Against Whatever: small, allocation-free authenticated seat gateway.
 //
-// The X4 transport must pass authenticated socket identifiers and 128-bit
-// secrets sourced from ESP hardware entropy (esp_fill_random). This module
+// The server transport must pass authenticated socket identifiers and 128-bit
+// secrets sourced from operating-system entropy. This module
 // does NOT generate secrets or expose them in public game snapshots.
-// This is not encryption: clients on an unprotected WLAN can still observe
-// plain HTTP/WebSocket traffic. Prefer a protected hotspot when practical.
+// TLS is terminated by Caddy; these values stay inside internal snapshots.
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 
 #include "CardPartyCore.h"
+
+namespace caw { class Messages; }
 
 namespace cardparty {
 
@@ -24,6 +25,8 @@ struct SessionTicket {
 };
 
 class Sessions final {
+  // Internal snapshot access; no public frame may serialize private state.
+  friend class caw::Messages;
  public:
   explicit Sessions(Game& game) : game_(game) {}
 
@@ -147,7 +150,7 @@ class Sessions final {
   }
 
   // These are host-only methods. NEVER connect them directly to browser
-  // commands; the X4 physical UI invokes them after a local decision.
+  // commands; the session layer must first authenticate the host token (M2).
   bool hostStart() { return game_.start(); }
   bool hostNext() { return game_.nextRound(); }
   bool hostClose() { return game_.closeSubmissions(); }
