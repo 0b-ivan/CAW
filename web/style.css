@@ -606,3 +606,14 @@ div.choice { min-height: 48px; }
 }
 .menu-qr { width: min(60%, 240px); margin: 12px 0 4px; }
 .menu-row > span:last-child { white-space: nowrap; flex: none; }
+
+/* ---------- Info pages: licenses, privacy, imprint ---------- */
+/* Running text: the one place where the page may scroll. */
+.info { width: min(100%, 720px); margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.info-head { display: flex; align-items: baseline; gap: 16px; padding-bottom: 8px; border-bottom: var(--line); }
+.info-head h1 { font-size: 20px; }
+.info-content { display: flex; flex-direction: column; gap: 12px; }
+.info-content p { margin: 0; }
+.info-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.info .button { align-self: flex-start; }
+footer a { text-decoration: underline; }

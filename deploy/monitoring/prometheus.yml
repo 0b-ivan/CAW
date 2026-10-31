@@ -1,0 +1,11 @@
+# Scrapes the CAW server inside the Compose network. Start with:
+#   docker compose -f deploy/compose.yml --profile monitoring up -d
+global:
+  scrape_interval: 15s
+  evaluation_interval: 30s
+rule_files:
+  - alerts.yml
+scrape_configs:
+  - job_name: caw
+    static_configs:
+      - targets: ["server:8080"]

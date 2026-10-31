@@ -84,6 +84,27 @@ Neustart holen sich die Handys ihren Sitz mit ihrem Ticket zurück
 Host-Token an. Bei SIGTERM (`docker stop`) schließt der Server alle Sockets und
 schreibt ausstehende Stände, bevor er endet.
 
+## Betrieb
+
+- **Domain und TLS:** `caw.obivan.org`. In `deploy/.env`
+  `CADDY_ADDRESS=caw.obivan.org`, `PUBLIC_URL=https://caw.obivan.org`,
+  `HTTP_PORT=80`, `HTTPS_PORT=443` (Vorlage in `.env.example`). Der DNS-Eintrag
+  muss auf den Server zeigen, Ports 80 und 443 offen; Caddy holt das
+  Zertifikat selbst.
+- **Impressum:** `cp web/operator.example.json web/operator.json` und Name,
+  Anschrift, E-Mail eintragen (die Datei ist nicht im Repo). Die Seiten
+  Lizenzen und Datenschutz kommen ohne Zutun.
+- **Backups:** Der Dienst `backup` sichert täglich nach `backups` (14 Tage).
+  Zurückspielen: `bin/restore caw-<zeit>.dump` oder zur Kontrolle erst
+  `bin/restore caw-<zeit>.dump caw_check`. Dateien auflisten:
+  `docker compose -f deploy/compose.yml exec backup ls /backups`.
+- **Monitoring:** `docker compose -f deploy/compose.yml --profile monitoring up -d`
+  startet Prometheus mit den Alarmregeln aus `deploy/monitoring/` auf
+  `127.0.0.1:9090`. `/metrics` ist von außen gesperrt.
+- **Release-Image:** Ein Tag `v*` baut `ghcr.io/0b-ivan/caw-server`. Mit
+  `CAW_VERSION=v1.0.0 docker compose -f deploy/compose.yml pull server`
+  statt `--build`.
+
 ## Bauen und prüfen
 
 Unter Debian 13: `build-essential`, `cmake`, `ninja-build`, `git`,
@@ -152,6 +173,13 @@ der Host ändert das in der Lobby unter `≡` → KARTEN-PACKS. Rechteinhaber un
 Lizenz stehen in Lobby und Endstand. Bei öffentlichem Betrieb sind die
 Kartenrechte trotzdem zu prüfen (nichtkommerziell, Namensnennung).
 
+## Lizenz
+
+Der CAW-Code steht unter der [MIT-Lizenz](LICENSE). Die Kartentexte unter
+`assets/cardpacks/` behalten ihre eigene Lizenz (CC BY-NC-SA 2.0, nur
+nichtkommerziell), die Spielregeln aus der X4-Firmware stehen unter MIT
+(`server/src/game/LICENSE.upstream`).
+
 ## Herkunft und Konzept
 
 Regeln aus `0b-ivan/inx-4x-pro`:
@@ -159,8 +187,8 @@ Regeln aus `0b-ivan/inx-4x-pro`:
 unveränderte Regel-Header. Herkunft, Ausnahmen und die ursprünglichen grünen
 Testläufe stehen in [UPSTREAM.md](server/src/game/UPSTREAM.md) und
 [docs/validation/](docs/validation/). Die MIT-Lizenz des übernommenen Codes
-liegt neben den Headern. Es werden keine Kartenpacks mitgeliefert; alle
-Fixtures sind synthetisch.
+liegt neben den Headern. Mitgeliefert werden nur die sechs lizenzierten
+Cards-vs-Humanity-Sets (siehe oben); alle Test-Fixtures sind synthetisch.
 
 - [Konzept](docs/KONZEPT.md)
 - [Vorrangiges C++-Backend-Konzept](docs/KONZEPT-CPP-BACKEND.md)

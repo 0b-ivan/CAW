@@ -1,10 +1,22 @@
+# With a domain in CADDY_ADDRESS (e.g. caw.example.org) Caddy gets a certificate and
+# redirects HTTP to HTTPS on its own. ":80" serves plain HTTP for local use and CI.
 {$CADDY_ADDRESS::80} {
-  encode gzip
+  encode zstd gzip
   header {
     X-Content-Type-Options nosniff
     Referrer-Policy same-origin
-    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'"
+    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    # Browsers honour this only over HTTPS; on plain HTTP it does nothing.
+    Strict-Transport-Security "max-age=31536000"
+    -Server
   }
+  # Metrics are for monitoring inside the network, not for visitors.
+  @publicMetrics {
+    path /metrics
+    not remote_ip private_ranges
+  }
+  respond @publicMetrics 404
   @backend path /api /api/* /ws /ws/* /healthz /metrics
   handle @backend {
     reverse_proxy server:8080
@@ -22,8 +34,10 @@
     rewrite * /screen.html
     file_server
   }
+  # Plain file names without hashes: browsers check back (ETag) instead of caching blindly.
   handle {
     root * /srv/web
+    header Cache-Control "no-cache"
     file_server
   }
 }

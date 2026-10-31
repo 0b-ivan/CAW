@@ -63,6 +63,20 @@ jobs:
           codes=$(for i in $(seq 1 60); do curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/api/sessions/ZZZZZZ; done | sort | uniq -c)
           echo "$codes"
           echo "$codes" | grep -q ' 429$'
+      - name: Back up the statistics and restore them into a fresh database
+        run: |
+          compose="docker compose -f deploy/compose.yml"
+          $compose exec -T backup /bin/sh /backup.sh once
+          dump=$($compose exec -T backup ls /backups | grep '^caw-' | sort | tail -1)
+          ./bin/restore "$dump" caw_check
+          count() { $compose exec -T postgres psql -U caw -d "$1" -tAc 'SELECT count(*) FROM players'; }
+          echo "players: original $(count caw), restored $(count caw_check)"
+          test "$(count caw)" -gt 0
+          test "$(count caw)" = "$(count caw_check)"
+      - name: Monitoring configuration is valid
+        run: |
+          docker run --rm -v "$PWD/deploy/monitoring:/etc/prometheus:ro" --entrypoint promtool \
+            prom/prometheus:v3.5.0 check config /etc/prometheus/prometheus.yml
       - name: Compose diagnostics
         if: failure()
         run: docker compose -f deploy/compose.yml logs --no-color

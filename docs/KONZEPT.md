@@ -290,23 +290,38 @@ Eine Tabelle für Packs folgt erst mit hochgeladenen Packs (Abschnitt 8).
 
 ## 10. Betrieb (Docker)
 
-`docker compose up -d` startet `caddy`, `app`, `redis`, `postgres`.
+`docker compose -f deploy/compose.yml up -d` startet `caddy`, `server`,
+`redis`, `postgres` und `backup`; mit `--profile monitoring` zusätzlich
+Prometheus (nur auf `127.0.0.1:9090`).
 
-- Volumes: `pgdata`, `redisdata`, `caddy_data`. Redis mit
-  `appendonly yes`, `maxmemory` gesetzt, Policy `noeviction` (eine laufende
+- **TLS:** `CADDY_ADDRESS` auf die Domain setzen, `HTTP_PORT=80`,
+  `HTTPS_PORT=443`; Caddy holt das Zertifikat selbst und leitet HTTP um.
+  Header: CSP, Permissions-Policy, HSTS (wirkt nur über HTTPS), kein `Server`.
+- **Volumes:** `pgdata`, `redisdata`, `caddy_data`, `backups`. Redis mit
+  `appendonly yes`, `maxmemory 256mb`, Policy `noeviction` (eine laufende
   Session darf nie verdrängt werden; voll heißt: keine neue Session).
-- Backups: `pg_dump` täglich, 14 Tage vorhalten. Redis braucht kein Backup
-  über AOF hinaus: verliert man es, enden laufende Partien, sonst nichts.
-- Healthchecks: `app` `/healthz` (Redis und Postgres erreichbar,
-  Event-Loop-Verzögerung), `redis-cli ping`, `pg_isready`.
-- Konfiguration nur per Umgebungsvariablen (`.env`, nicht im Repo):
-  `PUBLIC_URL`, `DATABASE_URL`, `REDIS_URL`, `SESSION_TTL_HOURS`, `LOG_LEVEL`.
-- Logs als JSON (pino), keine Spielinhalte und keine Tickets im Log.
-- Lokal: `docker compose -f compose.dev.yml up` mit Hot Reload, Caddy optional.
+- **Backups:** Dienst `backup` schreibt täglich `pg_dump` (Custom-Format) ins
+  Volume `backups` und löscht nach 14 Tagen. `bin/restore <datei> [datenbank]`
+  spielt einen Stand zurück, auf Wunsch erst in eine Prüf-Datenbank. Die CI
+  sichert und stellt bei jedem Lauf einmal wieder her. Redis braucht kein
+  Backup über AOF hinaus: verliert man es, enden laufende Partien, sonst nichts.
+- **Monitoring:** `/metrics` ist nur aus privaten Netzen erreichbar;
+  `deploy/monitoring/alerts.yml` alarmiert bei Ausfall, Bereitschaft,
+  Latenz über Budget, blockierter Schleife, Speicher und Rate-Limit-Flut.
+- **Healthchecks:** `server` `/healthz` (Redis und Postgres erreichbar),
+  `redis-cli ping`, `pg_isready`.
+- **Konfiguration** nur per Umgebungsvariablen (`deploy/.env`, nicht im Repo):
+  `POSTGRES_PASSWORD`, `PUBLIC_URL`, `CADDY_ADDRESS`, `SESSION_TTL_HOURS`,
+  `RATE_LIMIT_PER_MINUTE`, `LOG_LEVEL`, `CAW_VERSION`. Betreiberangaben fürs
+  Impressum in `web/operator.json` (Vorlage `web/operator.example.json`).
+- **Logs** als JSON auf stdout, keine Spielinhalte, Tickets oder Tokens.
+- **Release:** Tag `v*` baut das Server-Image nach
+  `ghcr.io/0b-ivan/caw-server`; `CAW_VERSION=v1.0.0 docker compose pull`
+  holt es statt lokal zu bauen.
 
 ## 11. Offene Entscheidungen
 
-1. Domain und Server (eigener VPS, Homelab, Hetzner?).
+1. Server (eigener VPS, Homelab, Hetzner?). Die Domain steht: `caw.obivan.org`.
 2. Postgres (Vorschlag: bestes `jsonb`, Drizzle-Unterstützung) oder MySQL
    (falls ihr es ohnehin betreibt). Das Schema oben passt in beide; die
    Entscheidung muss vor Meilenstein M2 fallen. Eine eigene Dokument-DB für
