@@ -5,6 +5,7 @@
 
 namespace caw {
 struct Metrics {
+  std::uint64_t sessions = 0;
   std::uint64_t healthChecks = 0;
   std::uint64_t healthFailures = 0;
   std::string render() const;
