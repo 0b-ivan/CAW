@@ -61,6 +61,34 @@ std::uint64_t deckIdentity(const Deck& deck) {
 }
 }  // namespace
 
+std::optional<std::string> Messages::createLanguage(std::string_view body) {
+  if (body.empty() || body.size() > 1024) return std::nullopt;
+  try {
+    const json request = json::parse(body);
+    if (!request.is_object() || request.size() > 1) return std::nullopt;
+    if (request.empty()) return "de";
+    if (!request.contains("language") || !request.at("language").is_string())
+      return std::nullopt;
+    const std::string language = request.at("language").get<std::string>();
+    if (language != "de" && language != "en") return std::nullopt;
+    return language;
+  } catch (const json::exception&) {
+    return std::nullopt;
+  }
+}
+
+std::string Messages::sessionCreated(std::string_view code, std::string_view hostToken) {
+  return json{{"code", code}, {"hostToken", hostToken}}.dump();
+}
+
+std::string Messages::publicRoom(std::string_view code, std::string_view language) {
+  return json{{"code", code}, {"language", language}, {"phase", "lobby"}}.dump();
+}
+
+std::string Messages::errorResponse(std::string_view errorCode) {
+  return json{{"error", errorCode}}.dump();
+}
+
 json Messages::saveGame(const Game& game) {
   json players = json::array();
   for (const auto& player : game.players_) {
