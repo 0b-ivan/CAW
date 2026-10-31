@@ -1,9 +1,11 @@
-// Wire the M0 HTTP endpoints; game transport and sessions belong to M2.
+// Keep the main event loop small while M2 routes live in net/Server.
 #include <App.h>
 
 #include "config.h"
 #include "log.h"
 #include "net/Metrics.h"
+#include "net/Server.h"
+#include "session/SessionRegistry.h"
 #include "store/Health.h"
 
 int main() {
@@ -11,6 +13,7 @@ int main() {
     const caw::Config config = caw::readConfig();
     caw::log::setLevel(config.logLevel);
     caw::Metrics metrics;
+    caw::SessionRegistry sessions(config.sessionTtlHours);
     bool listening = false;
     uWS::App app;
     app.get("/healthz", [&](auto* response, auto*) {
@@ -22,7 +25,9 @@ int main() {
           ->writeHeader("Cache-Control", "no-store")
           ->end(ready ? "ok\n" : "unavailable\n");
     });
+    caw::Server::registerSessionRoutes(app, sessions);
     app.get("/metrics", [&](auto* response, auto*) {
+      metrics.sessions = sessions.activeCount();
       response->writeHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
           ->end(metrics.render());
     });
