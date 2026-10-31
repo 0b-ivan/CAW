@@ -11,3 +11,7 @@ target_compile_definitions(test_snapshot PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_M
 target_include_directories(test_snapshot PRIVATE fixtures)
 target_link_libraries(test_snapshot PRIVATE caw_messages caw_warnings doctest::doctest)
 add_test(NAME net.snapshot COMMAND test_snapshot)
+add_executable(test_config net/test_config.cpp)
+target_compile_definitions(test_config PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+target_link_libraries(test_config PRIVATE caw_support caw_warnings doctest::doctest)
+add_test(NAME net.config_metrics_log COMMAND test_config)

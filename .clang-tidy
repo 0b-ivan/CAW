@@ -1,0 +1,3 @@
+Checks: '-*,bugprone-branch-clone,bugprone-integer-division,bugprone-sizeof-expression,bugprone-use-after-move,modernize-use-nullptr,modernize-use-override'
+WarningsAsErrors: '*'
+HeaderFilterRegex: 'server/src/(config[.]h|log[.]h|(net|store|session)/.*)'

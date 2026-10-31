@@ -1,0 +1,67 @@
+// Invalid deployment configuration must fail without exposing credentials.
+#include <doctest/doctest.h>
+
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
+
+#include "config.h"
+#include "log.h"
+#include "net/Metrics.h"
+
+namespace {
+void defaults() {
+  unsetenv("PORT");
+  unsetenv("SESSION_TTL_HOURS");
+  unsetenv("LOG_LEVEL");
+  unsetenv("PUBLIC_URL");
+  setenv("DATABASE_URL", "postgresql://caw:test@postgres/caw", 1);
+  setenv("REDIS_URL", "tcp://redis:6379", 1);
+}
+}  // namespace
+TEST_CASE("configuration defaults and numeric boundaries") {
+  defaults();
+  const caw::Config config = caw::readConfig();
+  CHECK(config.port == 8080);
+  CHECK(config.sessionTtlHours == 24);
+  for (const char* value : {"1", "65535"}) {
+    setenv("PORT", value, 1);
+    CHECK_NOTHROW(caw::readConfig());
+  }
+  for (const char* value : {"", "0", "-1", "65536", "8080x", " 8080", "99999999999999"}) {
+    setenv("PORT", value, 1);
+    CHECK_THROWS_WITH(caw::readConfig(), "Invalid PORT");
+  }
+  defaults();
+  setenv("SESSION_TTL_HOURS", "0", 1);
+  CHECK_THROWS_WITH(caw::readConfig(), "Invalid SESSION_TTL_HOURS");
+  defaults();
+  setenv("LOG_LEVEL", "invalid", 1);
+  CHECK_THROWS_WITH(caw::readConfig(), "Invalid LOG_LEVEL");
+  defaults();
+  setenv("DATABASE_URL", "secret-password", 1);
+  CHECK_THROWS_WITH(caw::readConfig(), "Invalid DATABASE_URL");
+  defaults();
+  unsetenv("REDIS_URL");
+  CHECK_THROWS_WITH(caw::readConfig(), "Invalid REDIS_URL");
+}
+TEST_CASE("logger escapes controls and honors configured severity") {
+  std::ostringstream captured;
+  auto* previous = std::cout.rdbuf(captured.rdbuf());
+  caw::log::setLevel("warn");
+  caw::log::info("filtered");
+  caw::log::warn("quoted \" and slash \\ and newline\n");
+  std::cout.rdbuf(previous);
+  CHECK(captured.str() ==
+        "{\"level\":\"warn\",\"message\":\"quoted \\\" and slash \\\\ and newline\\u000a\"}\n");
+  caw::log::setLevel("info");
+}
+TEST_CASE("metrics count actual readiness requests") {
+  caw::Metrics metrics;
+  metrics.healthChecks = 3;
+  metrics.healthFailures = 1;
+  const auto text = metrics.render();
+  CHECK(text.find("caw_health_checks_total 3\n") != std::string::npos);
+  CHECK(text.find("caw_health_failures_total 1\n") != std::string::npos);
+  CHECK(text.find("caw_action_seconds_bucket{le=\"+Inf\"} 0\n") != std::string::npos);
+}

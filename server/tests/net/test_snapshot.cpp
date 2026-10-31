@@ -156,6 +156,14 @@ TEST_CASE("snapshots reject malformed data atomically") {
   corrupted = nlohmann::json::parse(saved);
   corrupted["seats"][1]["secret"] = corrupted["seats"][0]["secret"];
   reject(corrupted.dump());
+  for (const auto& path :
+       {nlohmann::json::json_pointer("/game/players/1/hand/0"),
+        nlohmann::json::json_pointer("/game/czar"), nlohmann::json::json_pointer("/table/clock"),
+        nlohmann::json::json_pointer("/seats/0/revision")}) {
+    corrupted = nlohmann::json::parse(saved);
+    corrupted[path] = UINT64_MAX;
+    reject(corrupted.dump());
+  }
   Game empty;
   Table table(empty);
   Sessions seats(empty);

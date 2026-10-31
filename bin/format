@@ -1,0 +1,8 @@
+#!/bin/sh
+# Format changed C++ files, including staged and newly added files.
+set -eu
+cd "$(dirname "$0")/.."
+{
+  git diff --name-only -z HEAD -- '*.cpp' '*.h'
+  git ls-files -z --others --exclude-standard -- '*.cpp' '*.h'
+} | xargs -0 sh -c 'if [ "$#" -gt 0 ]; then clang-format -i "$@"; fi' sh
