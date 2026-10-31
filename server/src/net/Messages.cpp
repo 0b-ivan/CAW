@@ -78,15 +78,16 @@ std::optional<std::string> Messages::createLanguage(std::string_view body) {
 }
 
 std::string Messages::sessionCreated(std::string_view code, std::string_view hostToken) {
-  return json{{"code", code}, {"hostToken", hostToken}}.dump();
+  return json{{"code", std::string(code)}, {"hostToken", std::string(hostToken)}}.dump();
 }
 
 std::string Messages::publicRoom(std::string_view code, std::string_view language) {
-  return json{{"code", code}, {"language", language}, {"phase", "lobby"}}.dump();
+  return json{{"code", std::string(code)}, {"language", std::string(language)},
+              {"phase", "lobby"}}.dump();
 }
 
 std::string Messages::errorResponse(std::string_view errorCode) {
-  return json{{"error", errorCode}}.dump();
+  return json{{"error", std::string(errorCode)}}.dump();
 }
 
 json Messages::saveGame(const Game& game) {
