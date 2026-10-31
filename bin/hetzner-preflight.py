@@ -86,9 +86,12 @@ def check_compose(model):
         errors.append("cloudflared darf keine Host-Ports veröffentlichen")
     if "cloudflared_token" not in model.get("secrets", {}):
         errors.append("Compose-Secret für Tunnel-Token fehlt")
-    for service in ("redis", "postgres", "prometheus"):
+    for service in ("redis", "postgres"):
         if services.get(service, {}).get("ports"):
-            errors.append(f"{service} darf keine öffentlichen Host-Ports haben")
+            errors.append(f"{service} darf keine Host-Ports haben")
+    for port in services.get("prometheus", {}).get("ports", []):
+        if port.get("host_ip") not in ("127.0.0.1", "::1"):
+            errors.append("Prometheus darf nur auf Loopback veröffentlicht werden")
     return errors
 
 
