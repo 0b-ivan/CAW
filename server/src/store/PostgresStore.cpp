@@ -87,20 +87,23 @@ bool PostgresStore::prepare() {
   return true;
 }
 
+// A Postgres restart leaves the old connection dead; one fresh attempt saves the batch.
 bool PostgresStore::record(const std::vector<HistoryEvent>& events) {
-  if (!connect()) return false;
-  try {
-    pqxx::work tx(*connection_);
-    for (const HistoryEvent& event : events) recordEvent(tx, event);
-    dropOldRows(tx);
-    tx.commit();
-  } catch (const std::exception& error) {
-    log::warn(std::string("Statistics not saved: ") + error.what());
-    connection_.reset();
-    return false;
+  for (int attempt = 0; attempt < 2; ++attempt) {
+    if (!connect()) return false;
+    try {
+      pqxx::work tx(*connection_);
+      for (const HistoryEvent& event : events) recordEvent(tx, event);
+      dropOldRows(tx);
+      tx.commit();
+      refreshFame();
+      return true;
+    } catch (const std::exception& error) {
+      log::warn(std::string("Statistics not saved: ") + error.what());
+      connection_.reset();
+    }
   }
-  refreshFame();
-  return true;
+  return false;
 }
 
 void PostgresStore::refreshFame() {
