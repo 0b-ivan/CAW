@@ -40,11 +40,11 @@ CreatedSession SessionRegistry::create(std::string language, Time now) {
     CreatedSession result{Codes::sessionCode(), Codes::hostToken()};
     if (rooms_.count(result.code) != 0) continue;
     // A new room starts with every pack in its language; the host can change that in the lobby.
-    auto session = std::make_unique<Session>(
-        result.hostToken, packs_, packs_.defaultSelection(language), Codes::seed(), millisNow(),
-        customPrefix(result.code));
-    rooms_.emplace(result.code, Room{language, result.hostToken, now + ttl_, std::move(session),
-                                     std::nullopt});
+    auto session =
+        std::make_unique<Session>(result.hostToken, packs_, packs_.defaultSelection(language),
+                                  Codes::seed(), millisNow(), customPrefix(result.code));
+    rooms_.emplace(result.code,
+                   Room{language, result.hostToken, now + ttl_, std::move(session), std::nullopt});
     return result;
   }
   throw std::runtime_error("Unable to allocate unique session code");
@@ -115,8 +115,7 @@ void SessionRegistry::expire(Time now) {
       const std::string oldId = room->second.customPack ? room->second.customPack->id : "";
       room = rooms_.erase(room);
       if (!oldId.empty()) packs_.remove(oldId);
-    }
-    else
+    } else
       ++room;
   }
 }
@@ -155,8 +154,7 @@ bool SessionRegistry::restore(const std::string& code, std::string_view snapshot
   std::string customId;
   if (record->customPack) {
     customId = record->customPack->id;
-    if (!PackLibrary::validId(customId) || !customId.starts_with(customPrefix(code)))
-      return false;
+    if (!PackLibrary::validId(customId) || !customId.starts_with(customPrefix(code))) return false;
     record->customPack->language = record->language;
     record->customPack->title = record->language == "en" ? "Custom cards" : "Eigene Karten";
     if (!packs_.add(*record->customPack)) return false;
@@ -174,8 +172,8 @@ bool SessionRegistry::restore(const std::string& code, std::string_view snapshot
   session->restoreExtras(record->identities, record->lines, record->locked);
   // Restored is not a change: it is already saved exactly like this.
   session->takeChanged();
-  rooms_.emplace(code, Room{record->language, record->hostToken, now + ttl_,
-                            std::move(session), record->customPack});
+  rooms_.emplace(code, Room{record->language, record->hostToken, now + ttl_, std::move(session),
+                            record->customPack});
   return true;
 }
 
