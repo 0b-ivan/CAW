@@ -161,8 +161,7 @@ std::optional<CardPack> Messages::readCustomCards(std::string_view body) {
       return std::nullopt;
     const json& prompts = request.at("prompts");
     const json& answers = request.at("answers");
-    if (!prompts.is_array() || !answers.is_array() || prompts.size() > 100 ||
-        answers.size() > 100)
+    if (!prompts.is_array() || !answers.is_array() || prompts.size() > 100 || answers.size() > 100)
       return std::nullopt;
     // An empty document removes the room's existing custom card pack.
     if (prompts.empty() && answers.empty()) return CardPack{};
