@@ -25,6 +25,7 @@ const app = {
   removed: false,
   replaced: false,
   joinError: '',
+  editInvite: false,
   selection: [], // hand slots in play order
   selectionKey: '',
   judgePick: null,
@@ -246,6 +247,7 @@ const actions = {
       $('invite-hint').textContent = t('inviteAddressInvalid');
       return;
     }
+    app.editInvite = false;
     update();
   },
   copyText(text) {
@@ -330,6 +332,11 @@ function bindButtons() {
   on('hold-without', () => actions.host('continueWithout'));
   on('pause-button', () => actions.player('pause'));
   on('copy-link', actions.copyLink);
+  on('lobby-url', () => {
+    app.editInvite = true;
+    update();
+    $('invite-address').focus();
+  });
   $('invite-address').addEventListener('change', (event) => {
     actions.setInviteOrigin(event.target.value);
   });
