@@ -1,12 +1,32 @@
-# Prior99 – CAH Fullformat German: Importprüfung
+# Prior99 – CAH Fullformat German
 
-Quelle: https://github.com/Prior99/cah-fullformat-german
-Geprüfter Quell-Commit: 92501b245f7002ac3d3875099d859a5579aa2161
-Stand: 2026-11-01. **Nicht für öffentliche Weiterverbreitung freigegeben.**
+Quelle: https://github.com/Prior99/cah-fullformat-german  
+Importierter Quell-Commit: \`92501b245f7002ac3d3875099d859a5579aa2161\`  
+Stand: 2026-11-01
 
-## Technische Bestandsaufnahme
+## Import in CAW
 
-| Kategorie | Schwarz | Weiß |
+Die 717 Karten liegen als **ein auswählbares Deck** unter
+\`assets/cardpacks/prior99-fullformat-german/\`:
+
+- \`cards.csv\`: 107 schwarze Karten, 610 weiße Karten
+- \`packs.json\`: Titel, Sprache, Lizenzhinweise, Urheber, Quell-Commit,
+  \`defaultSelected: false\`
+- \`ATTRIBUTION.md\`: Ursprung, Bearbeitungsschritte, Lizenzkonflikt
+
+Der CAW-Server lädt den Pack beim Start automatisch aus \`PACKS_DIR\`.
+Im Spiel kann der Host ihn ausdrücklich im Pack-Menü auswählen und mit
+anderen Packs mischen; er wird bei neuen Sessions **nicht standardmäßig**
+aktiviert. Damit werden die enthaltenen Erwachsenen-/Schwarzhumor-Karten
+nicht unbemerkt Teil des Basisspiels.
+
+Der Release-Docker-Build enthält diesen Pack, sobald der PR gemergt
+und das Server-Image neu gebaut/veröffentlicht wurde. Ein Merge oder
+Deployment ist durch diesen PR allein nicht erfolgt.
+
+## Bestandsaufnahme und Validierung
+
+| Quellkategorie | Schwarz | Weiß |
 |---|---:|---:|
 | Basis | 59 | 299 |
 | Böse | 4 | 44 |
@@ -21,65 +41,55 @@ Stand: 2026-11-01. **Nicht für öffentliche Weiterverbreitung freigegeben.**
 | Werbung | 7 | 29 |
 | **Gesamt** | **107** | **610** |
 
-Pick-Werte: 92 × Pick 1, 13 × Pick 2, 2 × Pick 3.
-37 Pick-1-Fragen enthalten keine Leerstelle; CAW ergänzt die Antwort
-wie vorgesehen am Satzende. Keine Karte überschreitet 300 UTF-8-Bytes.
-Innerhalb der Quelle wurden keine identischen Karten festgestellt.
-Gegenüber den sechs bestehenden Cards-vs-Humanity-Packs wurden
-11 identische schwarze und 2 identische weiße Karten gefunden.
-CAW entfernt identische Karten beim Mischen der Decks.
+Die Kategorien wurden im CSV zu einem Paket zusammengeführt;
+die einzelnen Kategorie-Tags sind **nicht** separat im CAW-Format
+erhalten. 92 Fragen erfordern Pick 1 (davon 37 ohne explizite
+Leerstelle), 13 Pick 2 und zwei Pick 3. Der Konverter erhält diesen
+Spielablauf. Keine Karte überschreitet 300 UTF-8-Bytes.
+Innerhalb des Prior99-Sets sind keine identischen Texte enthalten.
 
-Der Konverter erstellt ein einziges optionales Deck mit allen elf
-Kategorien. Es enthält auch ausdrücklich für Erwachsene vorgesehene,
-teils veraltete und potentiell diskriminierende Inhalte. Die
-Quell-Kategoriebezeichnungen sind keine verbindliche Altersfreigabe.
+Mit den sechs bereits vorhandenen Cards-vs-Humanity-Packs sind bei
+normalisiertem Textvergleich elf schwarze und zwei weiße Texte
+identisch. Der CAW-Deck-Builder entfernt **wortgleiche** Dopplungen
+automatisch, nicht jedoch semantisch ähnliche Karten.
 
-## Rechteprüfung: vorläufig gesperrt
+**Inhalt:** Das Set enthält teils explizite, diskriminierende,
+historisch überholte oder anderweitig beleidigende Aussagen.
+Eine redaktionelle Prüfung und ggf. Inhaltsfilterung sind offen.
+Die Kategorien „FSK 16“/„FSK 18“ sind Quelllabels und keine amtlichen
+Altersfreigaben. Deshalb gilt der gesamte Pack als Opt-in für Erwachsene.
 
-README und TeX-Dateien von Prior99 bezeichnen das Material als GPL
-(v3 oder später) und behaupten, bereits das Originalspiel sei GPL.
-Die offiziell frei erhältlichen Cards-Against-Humanity-Originalkarten
-stehen jedoch unter CC BY-NC-SA 2.0, einschließlich Namensnennung,
-Nichtkommerzialität und ShareAlike. Ein GPL-Vermerk des Forks kann
-die Rechte an der Vorlage nicht eigenmächtig neu lizenzieren.
-Die Rechte der Übersetzer und weiterer Fanbeiträge sind ebenfalls
-nicht vollständig belegt.
+## Urheberrecht – noch nicht abschließend geprüft
 
-- Original-Lizenz: https://s3.amazonaws.com/cah/CAH_MainGame.pdf
-- Lizenzbedingungen: https://creativecommons.org/licenses/by-nc-sa/2.0/
-- Prior99-README: https://github.com/Prior99/cah-fullformat-german/blob/master/README.md
+Prior99 bezeichnet seine LaTeX-Dateien als GPL-3.0-or-later und behauptet
+im README fälschlich, das ursprüngliche Cards Against Humanity sei GPL.
+Das offiziell frei erhältliche Original steht unter
+[CC BY-NC-SA 2.0](https://creativecommons.org/licenses/by-nc-sa/2.0/);
+die Bedingungen umfassen Namensnennung, Nichtkommerzialität und
+Weitergabe von Bearbeitungen unter gleichen Bedingungen.
 
-Vor öffentlichem Import, Release-Image oder Betrieb müssen Herkunft,
-erforderliche Zustimmungen, Rechteinhaber und tatsächlich anwendbare
-Lizenz geklärt und dokumentiert werden. Bis dahin **keine Prior99-
-Kartentexte in das CAW-Repository oder das öffentliche Docker-Image**.
-Die MIT-Lizenz des Anwendungscodes gilt nicht für Kartentexte.
+Die Rechte der einzelnen deutschen Übersetzer und Fanbeiträge sowie
+die Lizenzkompatibilität sind **nicht abschließend geklärt**.
+Die Angabe im Manifest nennt beide Quellenhinweise und ist
+**keine rechtliche Freigabe**. Der Nutzer hat den Import trotz dieser
+offenen Fragen ausdrücklich verlangt. Vor öffentlichem Betrieb und
+kommerzieller Nutzung muss die Rechtefrage geprüft werden.
+Die MIT-Lizenz von CAW erstreckt sich nicht auf die Kartentexte.
 
-## Lokaler Konverter nach Rechteklärung
+Referenzen:
+- https://github.com/Prior99/cah-fullformat-german/blob/master/README.md
+- https://s3.amazonaws.com/cah/CAH_MainGame.pdf
+- https://creativecommons.org/licenses/by-nc-sa/2.0/
 
-Das Werkzeug lädt selbst nichts herunter. Es akzeptiert nur einen sauberen
-Git-Checkout des oben genannten Commits. Das lokale Zielverzeichnis
-local-cardpacks/ steht in .gitignore.
+## Wiederholbarer Import
 
-    git clone https://github.com/Prior99/cah-fullformat-german.git local-cardpacks/upstream-prior99
-    git -C local-cardpacks/upstream-prior99 checkout 92501b245f7002ac3d3875099d859a5579aa2161
-    python3 bin/convert-prior99-cards.py --source local-cardpacks/upstream-prior99
+Das vorhandene Skript \`bin/convert-prior99-cards.py\` unterstützt
+eine lokale, gegen den Quell-Commit geprüfte Konvertierung.
+Ohne \`--rights-confirmed\` führt es lediglich die Bestandsprüfung aus.
+Es lädt nicht selbst Kartendaten nach; die ursprünglichen LaTeX-Dateien
+werden nicht zusätzlich in CAW gespeichert.
 
-Ohne zusätzliche Parameter wird **nur geprüft** und nichts geschrieben.
-Nach tatsächlicher Rechteklärung können Lizenz und Rechteinhaber
-explizit angegeben werden:
-
-    python3 bin/convert-prior99-cards.py \
-      --source local-cardpacks/upstream-prior99 \
-      --rights-confirmed \
-      --license 'VERIFIZIERTE_LIZENZ' \
-      --rights-holder 'VERIFIZIERTE_RECHTEINHABER'
-
-Die Ausgabe steht unter local-cardpacks/prior99-fullformat-german/
-(cards.csv und packs.json). Nach Freigabe lässt sich genau dieser
-Ordner als /app/packs/prior99-fullformat-german in den Server-Container
-mounten. Der vorhandene CAW-Loader lädt das Deck beim Start; das Host-Menü
-kann es auswählen. **Achtung:** Geladene deutschsprachige Packs können
-auch in CAWs Standardauswahl landen; dieses Erwachsenen-Deck darf
-nicht ungeprüft auf einer öffentlichen Instanz bereitgestellt werden.
-Die Konvertierung ersetzt keine rechtliche Freigabe.
+Prüfungen:
+\`python3 -m unittest discover -s tests -p 'test_vendored_prior99_pack.py'\`
+\`python3 -m unittest discover -s tests -p 'test_prior99_importer.py'\`
+und die vollständige C++-CI mit API-Pack-Check.
