@@ -44,8 +44,7 @@ TEST_CASE("custom cards use the same syntax limits as CSV packs") {
   CHECK_FALSE(caw::Messages::readCustomCards(R"({"prompts":[3],"answers":[]})"));
   CHECK_FALSE(caw::Messages::readCustomCards(R"({"prompts":["A"],"answers":[""]})"));
   CHECK_FALSE(caw::Messages::readCustomCards(R"({"prompts":["A"],"answers":["B\tC"]})"));
-  const std::string tooLong = R"({"prompts":["A"],"answers":[")" + std::string(301, 'x') +
-                              R"("]})";
+  const std::string tooLong = R"({"prompts":["A"],"answers":[")" + std::string(301, 'x') + R"("]})";
   CHECK_FALSE(caw::Messages::readCustomCards(tooLong));
   CHECK_FALSE(caw::Messages::readCustomCards("not json"));
   CHECK(caw::Messages::customCards(nullptr) == R"({"answers":[],"prompts":[]})");
