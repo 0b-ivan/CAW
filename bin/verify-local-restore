@@ -3,7 +3,13 @@
 set -Eeuo pipefail
 umask 077
 
-cd "$(dirname "$0")/.."
+# A remote operator can run this script from git show without checking
+# out newer web assets on an already-running production Caddy instance.
+if [[ -n "${CAW_REPO_ROOT:-}" ]]; then
+  cd "$CAW_REPO_ROOT"
+else
+  cd "$(dirname "$0")/.."
+fi
 if [[ ! -r deploy/.env ]]; then
   echo "FAIL: deploy/.env is not readable (run as caw-deploy)" >&2
   exit 1
