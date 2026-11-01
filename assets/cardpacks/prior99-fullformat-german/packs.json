@@ -1,0 +1,15 @@
+{
+  "_comment": "Converted from Prior99/cah-fullformat-german at commit 92501b245f7002ac3d3875099d859a5579aa2161; see ATTRIBUTION.md. Not selected automatically due to adult content.",
+  "packs": [
+    {
+      "id": "prior99-fullformat-german",
+      "file": "cards.csv",
+      "title": "NSFW",
+      "language": "de",
+      "license": "CC BY-NC-SA 2.0 (CAH); GPL-3.0-or-later (Prior99 claim)",
+      "rightsHolder": "Cards Against Humanity; Prior99 contributors",
+      "sourceUrl": "https://github.com/Prior99/cah-fullformat-german/tree/92501b245f7002ac3d3875099d859a5579aa2161",
+      "defaultSelected": false
+    }
+  ]
+}

@@ -248,6 +248,16 @@ Eine Tabelle für Packs folgt erst mit hochgeladenen Packs (Abschnitt 8).
   Änderungen. Die Lizenz- und Rechteangaben liegen direkt daneben in
   `ATTRIBUTION.md`; Prüfsummen sichern die Herkunft. Andere fremde Sets
   dürfen nicht ohne Prüfung und dokumentierte Erlaubnis hinzugefügt werden.
+  Der separate Import von 717 Prior99-Karten unter
+  `assets/cardpacks/prior99-fullformat-german/` ist ein weiterer,
+  ausdrücklich gewünschter Sonderfall. Er ist wegen teils expliziten
+  Erwachsenen-Inhalten **nur explizit auswählbar**. Herkunft und die
+  widersprüchlichen GPL-/CC-Lizenzhinweise sind in
+  [cardpacks/PRIOR99.md](cardpacks/PRIOR99.md) und der
+  benachbarten `ATTRIBUTION.md` dokumentiert. Die Rechtsprüfung ist
+  **nicht abgeschlossen**; vor öffentlichem Betrieb steht sie weiterhin
+  auf der Freigabeliste. Weitere fremde Sets benötigen ihre eigene
+  Quellen-/Rechteprüfung, selbst wenn ein lokaler Konverter existiert.
 - **Lizenztrennung:** Die Originalkarten bleiben unter CC BY-NC-SA 2.0.
   Anwendungs-Code und Kartentexte werden nicht pauschal gleich lizenziert.
   Nutzung und Weitergabe dieser Kartendaten müssen nichtkommerziell sein,

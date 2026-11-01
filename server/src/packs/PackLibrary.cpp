@@ -41,9 +41,14 @@ std::size_t loadManifest(const std::filesystem::path& manifest, PackLibrary& lib
   }
   std::size_t loaded = 0;
   for (const PackEntry& entry : *entries) {
-    CardPack pack{
-        entry.id, entry.title, entry.language, entry.license, entry.rightsHolder, entry.sourceUrl,
-        {},       {}};
+    CardPack pack;
+    pack.id = entry.id;
+    pack.title = entry.title;
+    pack.language = entry.language;
+    pack.license = entry.license;
+    pack.rightsHolder = entry.rightsHolder;
+    pack.sourceUrl = entry.sourceUrl;
+    pack.defaultSelected = entry.defaultSelected;
     const auto csv = readFile(manifest.parent_path() / entry.file);
     std::string error = "file missing";
     if (!csv || !CsvPack::read(*csv, pack, error) || !library.add(std::move(pack))) {
@@ -92,9 +97,10 @@ const CardPack* PackLibrary::find(const std::string& id) const {
 std::vector<std::string> PackLibrary::defaultSelection(const std::string& language) const {
   std::vector<std::string> ids;
   for (const auto& pack : packs_)
-    if (pack->language == language) ids.push_back(pack->id);
+    if (pack->defaultSelected && pack->language == language) ids.push_back(pack->id);
   if (ids.empty())
-    for (const auto& pack : packs_) ids.push_back(pack->id);
+    for (const auto& pack : packs_)
+      if (pack->defaultSelected) ids.push_back(pack->id);
   if (ids.size() > kMaxPacks) ids.resize(kMaxPacks);
   return normalized(ids);
 }

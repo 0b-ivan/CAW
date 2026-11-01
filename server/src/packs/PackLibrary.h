@@ -30,7 +30,8 @@ class PackLibrary final {
   const std::vector<std::unique_ptr<CardPack>>& packs() const { return packs_; }
   const CardPack* find(const std::string& id) const;
 
-  // Every pack in this language, or every pack if there is none in it.
+  // Eligible packs in this language, or other eligible packs if none match.
+  // Adult/optional packs are visible but are never selected by default.
   std::vector<std::string> defaultSelection(const std::string& language) const;
 
   // The deck for these packs, built once and then reused. Ids are taken in sorted

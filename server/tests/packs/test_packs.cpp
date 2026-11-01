@@ -97,6 +97,29 @@ TEST_CASE("the library builds one deck per choice, in a fixed order") {
         std::vector<std::string>{"only-de"});  // nothing in English
 }
 
+TEST_CASE("opt-in card packs remain available without joining the default deck") {
+  PackLibrary library;
+  auto ordinary = pack("ordinary", "de", "typ,text\nb,Frage ___.\nw,Antwort\n");
+  auto adult = pack("adult", "de", "typ,text\nb,Frage 18 ___.\nw,Antwort 18\n");
+  adult.defaultSelected = false;
+  REQUIRE(library.add(std::move(ordinary)));
+  REQUIRE(library.add(std::move(adult)));
+  CHECK(library.defaultSelection("de") == std::vector<std::string>{"ordinary"});
+  CHECK(library.defaultSelection("en") == std::vector<std::string>{"ordinary"});
+  REQUIRE(library.deck({"adult"}) != nullptr);
+
+  const auto manifest = caw::Messages::readPackManifest(R"({"packs":[
+    {"id":"adult","file":"adult.csv","title":"Adults","language":"de",
+     "license":"TEST","rightsHolder":"TEST","sourceUrl":"https://example.org",
+     "defaultSelected":false}]})");
+  REQUIRE(manifest);
+  CHECK_FALSE(manifest->at(0).defaultSelected);
+  CHECK_FALSE(caw::Messages::readPackManifest(R"({"packs":[
+    {"id":"adult","file":"adult.csv","title":"Adults","language":"de",
+     "license":"TEST","rightsHolder":"TEST","sourceUrl":"https://example.org",
+     "defaultSelected":"false"}]})"));
+}
+
 TEST_CASE("at most eight packs play together, like on the X4") {
   PackLibrary library;
   std::vector<std::string> ids;
