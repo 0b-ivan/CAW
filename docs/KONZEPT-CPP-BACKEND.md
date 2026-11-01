@@ -466,13 +466,15 @@ nur während nachgewiesenen Spiel-Leerlaufs die Version.
 
 Vor jeder Änderung an Git-Checkout, \`deploy/.env\` oder laufenden
 Containern muss der Deploy-Prozess über den **internen** \`/metrics\`-Endpunkt
-beide Werte prüfen: \`caw_sessions == 0\` und \`caw_sockets == 0\`. Es zählt
-bewusst jede noch gespeicherte Session, auch eine gerade nicht verbundene:
-Ein abgebrochenes Spiel darf nicht nur wegen momentan fehlender Verbindungen
-unterbrochen werden. Ein fehlender, unlesbarer oder mehrdeutiger Messwert
-blockiert die Auslieferung. Nach Image-Pull und unmittelbar vor der Umschaltung
-wird erneut geprüft. Eine belegte Instanz quittiert den Versuch als
-**zurückgestellt** und bleibt unverändert.
+\`caw_sockets == 0\` und \`caw_active_games == 0\` nachweisen. Als aktives
+Spiel gelten Playing, Judging und Reveal, auch ohne verbundene Spieler.
+Eine leere Lobby oder ein beendetes Spiel ohne Verbindung blockiert nicht.
+Bis zur erstmaligen Auslieferung dieses neuen Metrikwertes wird konservativ
+\`caw_sessions == 0\` statt \`caw_active_games == 0\` verlangt, um alte
+Server nicht ungeschützt zu aktualisieren. Ein fehlender, unlesbarer oder
+mehrdeutiger Messwert blockiert die Auslieferung. Nach Image-Pull und
+unmittelbar vor der Umschaltung wird erneut geprüft. Eine belegte Instanz
+quittiert den Versuch als **zurückgestellt** und bleibt unverändert.
 
 Ein planmäßiger GitHub-Actions-Lauf prüft ungefähr alle 30 Minuten, ob für
 das aktuelle, vollständig CI-geprüfte \`main\`-Commit noch ein Release
