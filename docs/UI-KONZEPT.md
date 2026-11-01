@@ -50,7 +50,7 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
 | Frage Big Screen | `clamp(40px, 5vw, 96px)` |
 | Tippziel | min. 48 px (Liste 56 px) |
 | Abstände | 8 / 14 / 16 / 20 px |
-| Layout-Breite Spieler/Host | `min(100%, 420px)`, auch am Laptop zentriert; Big Screen bleibt volle Fläche |
+| Layout-Breite Spieler/Host | Handy bis 720 px; Desktop ab 900 px zweispaltiges Spielfeld bis 1040 px; Big Screen volle Fläche |
 | Fokus | 2 px weiße Outline, 3 px Abstand |
 
 Eine CSS-Datei für alle Ansichten, Ansicht-spezifisch nur Layout und Größen.
@@ -272,8 +272,8 @@ Fußzeile Rechteinhaber und Lizenz der Packs.
 | Breite | Verhalten |
 |---|---|
 | 320–400 px | Kopfzeile ohne Umbruch, kleinere Labels, Frage max. 30 % Höhe |
-| 401–719 px | kompakte Handy-Ansicht, ab 420 px keine weitere Skalierung der Spielkarten |
-| ab 720 px (Laptop) | zentrierte 420-px-Spielspalte statt aufgezogener Karten; Host kann am Laptop spielen |
+| 401–899 px | kompakte Handy-/Tablet-Ansicht, Antwort-Hand zwei Spalten |
+| ab 900 px (Laptop) | eigene Desktop-Komposition: Frage links, Karten und Aktionen rechts; Host-Lobby mit Einladung links und Spielerliste rechts |
 | Big Screen | eigene Ansicht, volle Fläche, Text eingepasst |
 
 Getestet mit Playwright bei 320×568, 390×844, 1280×800 und Big Screen
@@ -355,14 +355,15 @@ Spielregel und kein Client-/Server-Protokoll.
   `[ START ]`-Aktion. Spieler: derselbe klare Teilnehmerblock ohne die
   privaten Host-Werkzeuge, mit `WARTE AUF HOST`. Beide Zustände sind
   Teil der visuellen Abnahme; die Gast-Lobby darf kein Host-Token zeigen.
-- **Desktopdarstellung:** Spieler- und Hostansichten sind **auch im
-  Desktopbrowser eine mobile Spielspalte mit maximal 420 CSS-Pixeln**. Die
-  vom Nutzer gelieferten Desktop-Screenshots mit 720-px-Karten sind kein
-  gewünschtes alternatives Desktop-Design, sondern der zu behebende
-  Maßstabsfehler. Der gesonderte Big Screen bleibt bildschirmfüllend.
-  Karten behalten ihre lesbare Schrift und werden auf dem Desktop nicht
-  proportional vergrößert. Im Playwright-Test wird die Spaltenbreite
-  bei 1280 px ausdrücklich geprüft.
+- **Desktopdarstellung:** Am MacBook wird die Spielansicht als eigenes,
+  räumlich gegliedertes Desktop-Layout gestaltet, nicht wie eine vergrößerte
+  Handyansicht und nicht als schmale 420-px-Handyspalte. Auf breiten Displays
+  steht die kompakte gestapelte Frage links; Hand, Seitennavigation und
+  Hauptaktion stehen rechts. Die Host-Lobby stellt QR-/Einladungsbereich
+  und Teilnehmerliste nebeneinander dar, ohne den QR-Code zu überdimensionieren.
+  Handy und Tablet behalten ihre vertikale Komposition. Der echte Big Screen
+  (TV) bleibt vollflächig. Getestet werden Desktop 1280×800 und mobile 320×568
+  sowie 390×844; kein horizontaler oder vertikaler Dokument-Scroll.
 - **Performance/Accessibility:** Karten sind CSS, keine Bild-Assets oder
   zusätzlichen Abhängigkeiten. Keine Daueranimationen; `prefers-reduced-motion`
   und die Mindest-Tippflächen bleiben erhalten. Testmatrix 320×568,
