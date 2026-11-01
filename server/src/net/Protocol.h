@@ -67,6 +67,7 @@ struct StateFrame {
   std::uint8_t requestedRounds = 0;    // the host's choice; `rounds` is the fair count once started
   std::vector<const CardPack*> packs;  // the packs in play, for credits on every screen
   const char* words[cardparty::kPlayers] = {};    // per seat: the word after the name, or null
+  bool hostSeats[cardparty::kPlayers] = {};  // public role flags, no host token
   const std::vector<MatchLine>* lines = nullptr;  // sent with the final standings only
   bool locked = false;
 };
