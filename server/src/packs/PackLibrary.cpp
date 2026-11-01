@@ -41,9 +41,14 @@ std::size_t loadManifest(const std::filesystem::path& manifest, PackLibrary& lib
   }
   std::size_t loaded = 0;
   for (const PackEntry& entry : *entries) {
-    CardPack pack{
-        entry.id, entry.title, entry.language, entry.license, entry.rightsHolder, entry.sourceUrl,
-        {},       {}, entry.defaultSelected};
+    CardPack pack;
+    pack.id = entry.id;
+    pack.title = entry.title;
+    pack.language = entry.language;
+    pack.license = entry.license;
+    pack.rightsHolder = entry.rightsHolder;
+    pack.sourceUrl = entry.sourceUrl;
+    pack.defaultSelected = entry.defaultSelected;
     const auto csv = readFile(manifest.parent_path() / entry.file);
     std::string error = "file missing";
     if (!csv || !CsvPack::read(*csv, pack, error) || !library.add(std::move(pack))) {
