@@ -78,6 +78,7 @@ int main() {
     server.registerRoutes(app);
     app.get("/metrics", [&](auto* response, auto*) {
       metrics.sessions = sessions.activeCount();
+      metrics.activeGames = sessions.inProgressCount();
       response->writeHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
           ->end(metrics.render());
     });
