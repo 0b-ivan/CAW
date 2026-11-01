@@ -335,3 +335,23 @@ Postgres **und Redis-AOF** mit Restore-Test sowie die externe
 HTTPS-/WSS-Abnahme bleiben Pflicht. Ein lokaler Postgres-Dump vor
 Deploy ersetzt kein Offsite-Backup. Die Pipeline bestätigt diese
 rechtlichen Freigaben nicht selbst.
+
+## 8. Release-Kandidat bauen und GHCR-Zugriff prüfen – ohne Deployment
+
+Der zusätzliche Workflow \`.github/workflows/release-candidate.yml\` beweist,
+dass ein SHA-getaggtes CAW-Server-Image wirklich in GHCR veröffentlicht
+werden kann. Er läuft beim erstmaligen Einchecken der Workflow-Datei auf
+\`main\` und danach nur noch über \`workflow_dispatch\`. Vor dem Publish
+prüft \`bin/verify-main-ci\` die erfolgreiche komplette Push-CI des
+**exakten aktuellen \`main\`-Commits**. Das fertige Image erhält den Tag
+\`ghcr.io/0b-ivan/caw-server:sha-<40-stelliger Git-SHA>\`. Besteht der
+Tag bereits, veröffentlicht der Job ihn nicht erneut.
+
+Er setzt weder \`CAW_PRODUCTION_APPROVED\` noch \`CAW_AUTO_DEPLOY\`, verwendet
+**keine** SSH-Secrets und berührt weder Hetzner, PostgreSQL, Redis noch den
+Cloudflare-Tunnel. Ein grüner Image-Publish ist ein vorbereitender Techniktest
+und ausdrücklich **kein** Rollout oder Freigabeersatz.
+
+Vor dem ersten echten Release weiterhin Betreiberangaben/Kartenrechte sowie
+externe Backup-Wiederherstellung klären. Die lokal erfolgreich getesteten
+PostgreSQL-Dumps und Redis-RDB-Snapshots schützen nicht vor Hostverlust.
