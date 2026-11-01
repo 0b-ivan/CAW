@@ -145,7 +145,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] CI-Build, `ctest`, Browser- und Lasttests für PR #12 grün bestätigen
 - [x] Zweiter Durchgang nach realen Screenshots: zentrierte Fragekarten,
   Juror-Indikatoren, einspaltige Handy-Lobby und volle Hauptaktionen
-- [x] Alle zehn Karten ohne Pagination als durchgehendes scrollbareres Raster;
+- [x] Alle zugeteilten Handkarten ohne Pagination als durchgehendes scrollbareres Raster;
   Scrollposition und Auswahl bleiben beim Antippen bestehen
 - [x] Playwright-Tests für die letzte Karte, die interne Scrollfläche und
   den fest sichtbaren Abgabe-Button bei 320×568, 390×844 und 1280×800
@@ -155,3 +155,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Playwright prüft nebeneinander liegende Desktop-Elemente bei 1280×800
 - [ ] Visueller Desktop-Vergleich auf dem MacBook nach aktueller CSS-Revision
 - [ ] Browser-Screenshots bei 320/390 px sowie 16:9/4:3 visuell gegen Mockups abnehmen
+
+- [x] Handkartenzahl standardmäßig 7, Host-Änderung 3–10 nur in der Lobby
+- [x] Protokoll, Redis-Snapshots (mit Legacy-10er-Sessions), Sprachtexte und Tests erweitert
+- [ ] CI einschließlich `ctest`, Browser und Lasttests mit Hand-Einstellung grün bestätigen
