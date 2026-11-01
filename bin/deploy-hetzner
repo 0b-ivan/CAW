@@ -127,4 +127,10 @@ if [[ "$metrics_status" != 404 ]]; then
   exit 1
 fi
 
+# Allow the CI runner to undo this release if the final WSS handshake
+# fails after the local/HTTP checks. No credentials are stored here.
+previous_tag="$(sed -n 's/^CAW_VERSION=//p' "$saved_env" | tail -1)"
+previous_tag="${previous_tag:-__unset__}"
+printf '%s\n%s\n%s\n' "$sha" "$previous_sha" "$previous_tag" > .git/caw-previous-deploy
+chmod 600 .git/caw-previous-deploy
 echo "PASS: deployed ${sha} to CAW; database volumes and host Tunnel unchanged"
