@@ -178,6 +178,10 @@ GESPERRT · FRAG DEN HOST“.
 
 ### 4.5 Antworten
 
+Die Antworttexte auf den Handkarten tragen ebenfalls den schwarzen
+Prägeband-Look, während die Karten selbst papierhell bleiben; ausgewählte
+Karten behalten ihre kontrastreiche Zustandsmarkierung.
+
 Die Hand enthält standardmäßig **7 Karten** (Host-Einstellung **3–10** im Menü SPIELREGELN, ausschließlich in der Lobby). Spieler sehen immer alle gerade zugeteilten Karten; bei Draw 2 kann die Hand kurzfristig um bis zu zwei Karten wachsen. Geändert wird nur vor dem Start einer neuen Partie; bereits gespeicherte und laufende Partien behalten ihren Wert.
 
 Frage oben in eigenem Scroll-Bereich (max. 30 % Höhe), darunter die Hand
