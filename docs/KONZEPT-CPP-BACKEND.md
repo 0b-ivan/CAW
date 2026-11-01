@@ -272,7 +272,6 @@ Umgebungsvariablen wie bisher: `PUBLIC_URL`, `DATABASE_URL`, `REDIS_URL`,
 - M3/M4: statisches Frontend auf Basis der Firmware-Seite.
 - Lasttest: kleines C++- oder Python-Bot-Programm, das echte Partien spielt.
 
-## 14. Eigene Karten im Browser (nach M8)
 
 Der Host kann in der Lobby über **HOST → EIGENE KARTEN** schwarze Fragekarten
 und weiße Antwortkarten erstellen, ändern und löschen. Die Texte erscheinen
