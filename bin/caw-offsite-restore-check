@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Restore the last CAW offsite snapshot into isolated Postgres and Redis.
+# Never connects to or writes to the running CAW database containers.
+set -Eeuo pipefail
+umask 077
+
+cd "$(dirname "$0")/.."
+config="$HOME/.config/caw/offsite.env"
+if [[ ! -r "$config" ]]; then
+  echo "FAIL: CAW offsite configuration is missing" >&2
+  exit 1
+fi
+set -a
+source "$config"
+set +a
+: "$RESTIC_REPOSITORY"
+: "$RESTIC_PASSWORD_FILE"
+if [[ "$RESTIC_REPOSITORY" != sftp:* || ! -r "$RESTIC_PASSWORD_FILE" ]]; then
+  echo "FAIL: secure restic configuration is missing" >&2
+  exit 1
+fi
+
+stage="$(mktemp -d)"
+postgres_container="caw-offsite-restore-$$"
+postgres_started=0
+cleanup() {
+  result=$?
+  trap - EXIT
+  if ((postgres_started)); then
+    docker rm -f "$postgres_container" >/dev/null 2>&1 || true
+  fi
+  rm -rf "$stage"
+  exit "$result"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# This deliberately fetches and decrypts all files from the remote Storage Box.
+restic restore latest --tag caw --host caw-hetzner --target "$stage/restored"
+pg_dump="$(find "$stage/restored" -type f -name caw.dump -print -quit)"
+manifest="$(find "$stage/restored" -type f -name appendonly.aof.manifest -print -quit)"
+if [[ -z "$pg_dump" || -z "$manifest" ]]; then
+  echo "FAIL: offsite snapshot is missing Postgres or Redis files" >&2
+  exit 1
+fi
+
+# Postgres is a private, throwaway instance with no host port or network.
+docker run --rm --detach --name "$postgres_container" --network none \
+  -e POSTGRES_HOST_AUTH_METHOD=trust \
+  --mount "type=bind,src=$(dirname "$pg_dump"),dst=/restore,readonly" \
+  postgres:17-alpine >/dev/null
+postgres_started=1
+ready=0
+for _ in $(seq 1 30); do
+  if docker exec "$postgres_container" pg_isready -U postgres >/dev/null 2>&1; then
+    ready=1
+    break
+  fi
+  sleep 1
+done
+if (( ! ready )); then
+  echo "FAIL: isolated Postgres restore instance did not start" >&2
+  exit 1
+fi
+docker exec "$postgres_container" createdb -U postgres caw_restore
+docker exec --user 0 "$postgres_container" pg_restore -U postgres \
+  --dbname caw_restore --exit-on-error --no-owner --no-privileges \
+  "/restore/$(basename "$pg_dump")"
+tables="$(docker exec "$postgres_container" psql -U postgres -d caw_restore -Atqc \
+  "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")"
+if [[ "$tables" != "$(printf 'players\nwinning_lines')" ]]; then
+  echo "FAIL: restored PostgreSQL schema does not match CAW" >&2
+  exit 1
+fi
+
+# Redis replays the retrieved multi-part AOF entirely offline. The isolated
+# container has no network, and no production volume is mounted.
+aof_dir="$(basename "$(dirname "$manifest")")"
+redis_dir="$(dirname "$(dirname "$manifest")")"
+if [[ ! "$aof_dir" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+  echo "FAIL: invalid restored Redis AOF directory" >&2
+  exit 1
+fi
+docker run --rm --network none \
+  --mount "type=bind,src=$redis_dir,dst=/data" \
+  -e CAW_RESTORE_APPENDDIR="$aof_dir" \
+  redis:7-alpine sh -ec '
+    redis-server --port 0 --unixsocket /tmp/caw-restore.sock \
+      --daemonize yes --appendonly yes --dir /data \
+      --appenddirname "$CAW_RESTORE_APPENDDIR" --save "" >/dev/null
+    redis-cli -s /tmp/caw-restore.sock ping | grep -qx PONG
+    redis-cli -s /tmp/caw-restore.sock shutdown nosave
+  '
+
+echo "PASS: Storage Box snapshot restored into isolated PostgreSQL and Redis"
