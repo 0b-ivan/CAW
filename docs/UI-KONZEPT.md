@@ -313,9 +313,12 @@ davon gewünscht wird, kommt es zuerst ins Konzept.
 
 - **Host-Lobby bei 320×568:** QR, Code und alle Einladungsaktionen
   einschließlich `BIG SCREEN` sind direkt bedienbar, ohne einen zweiten
-  verschachtelten Scrollbereich für die Einladungsaktionen. Nur die
-  Teilnehmerliste darf bei vielen Spielern intern scrollen; die
-  Start-Aktion bleibt fixiert. Die Buttons bleiben mindestens 48 px hoch.
+  verschachtelten Scrollbereich für die Einladungsaktionen. Kopieren,
+  Teilen (falls verfügbar) und Big Screen stehen auf schmalen Geräten in
+  **einer gemeinsamen Reihe**, damit unter dem QR noch echte Spielerzeilen
+  sichtbar bleiben. Nur die Teilnehmerliste darf bei vielen Spielern
+  intern scrollen; die Start-Aktion bleibt fixiert. Alle Buttons bleiben
+  mindestens 48 px hoch.
 - **Einladungslinks im Heimnetz:** Wird die Host-Seite über
   `localhost`, `127.0.0.1` oder `[::1]` geöffnet, gibt es keine
   automatisch ermittelbare Adresse, die andere Geräte erreichen können.
