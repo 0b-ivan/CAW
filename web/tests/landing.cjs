@@ -52,12 +52,18 @@ async function checkLanding(browser, width, height) {
     // The four-step opening guide is visible on every screen size, but
     // its text scrolls only inside the native modal, never the page.
     await page.getByRole('button', { name: '[ ANLEITUNG ]' }).click();
-    const guide = page.getByRole('dialog', { name: 'SO ÖFFNEST DU CAW' });
+    const guide = page.getByRole('dialog', { name: 'CAW · ANLEITUNG' });
     await guide.waitFor({ state: 'visible' });
-    assert.equal(await guide.locator('li').count(), 4);
+    assert.equal(await guide.locator('.guide-steps li').count(), 3);
+    assert.equal(await guide.locator('.guide-rules li').count(), 6);
     assert.match(await guide.textContent(), /QR-Code/);
-    assert.match(await guide.textContent(), /localhost/);
     assert.match(await guide.textContent(), /BIG SCREEN/);
+    assert.match(await guide.textContent(), /SPIELREGELN/);
+    assert.match(await guide.textContent(), /Juror/);
+    assert.match(await guide.textContent(), /7 Handkarten/);
+    assert.match(await guide.textContent(), /Rando/);
+    assert.doesNotMatch(await guide.textContent(), /localhost|LAN-IP|WLAN|Tunnel|192\.168/i,
+      'the online-play guide should not include server setup instructions');
     const guideBounds = await guide.boundingBox();
     assert.ok(guideBounds.y >= 0 && guideBounds.y + guideBounds.height <= height + 1,
       'the guide dialog must fit inside the viewport');
@@ -79,9 +85,15 @@ async function checkLanding(browser, width, height) {
     await page.getByRole('button', { name: 'EN', exact: true }).click();
     await page.getByText('[ NEW SESSION ]', { exact: true }).waitFor();
     await page.getByRole('button', { name: '[ HOW TO START ]' }).click();
-    const englishGuide = page.getByRole('dialog', { name: 'HOW TO OPEN CAW' });
+    const englishGuide = page.getByRole('dialog', { name: 'CAW · GUIDE' });
     await englishGuide.waitFor({ state: 'visible' });
-    assert.match(await englishGuide.textContent(), /Cloudflare Tunnel/);
+    assert.equal(await englishGuide.locator('.guide-steps li').count(), 3);
+    assert.equal(await englishGuide.locator('.guide-rules li').count(), 6);
+    assert.match(await englishGuide.textContent(), /GAME RULES/);
+    assert.match(await englishGuide.textContent(), /judge/);
+    assert.match(await englishGuide.textContent(), /7 cards/);
+    assert.match(await englishGuide.textContent(), /Rando/);
+    assert.doesNotMatch(await englishGuide.textContent(), /localhost|LAN IP|WI-FI|Tunnel|192\.168/i);
     await page.getByRole('button', { name: '[ CLOSE ]' }).click();
     await englishGuide.waitFor({ state: 'hidden' });
     assert.equal(await page.locator('html').getAttribute('lang'), 'en');
