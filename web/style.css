@@ -1318,40 +1318,104 @@ footer a { text-decoration: underline; }
   opacity: 0; cursor: pointer; }
 .editor-upload:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
 
-/* Real embossed label tape: separate highlights on glossy plastic and raised
-   letters. Only inserted answers use this; hand and juror cards stay plain.
-   box-decoration-break duplicates the cut tape edges on wrapped lines. */
+/* The monochrome game stays flat; only inserted answers mimic real DYMO plastic.
+   System fonts avoid downloads. Fixed variants keep scuffs stable between renders. */
 mark.answer-tape,
 #reveal-sentence mark.answer-tape,
 .screen-plays li mark.answer-tape,
 #screen-reveal .screen-prompt mark.answer-tape {
-  padding: .10em .28em .16em;
-  border: 1px solid #272727;
-  border-radius: 2px;
-  background-color: #0b0b0b;
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  max-width: 100%;
+  margin: .05em .07em .09em;
+  padding: .10em .34em .16em;
+  border: 1px solid #333;
+  border-radius: 1px 3px 2px 1px;
+  background-color: #080808;
   background-image:
-    linear-gradient(112deg, transparent 12%, #ffffff15 18%, transparent 25%,
-      transparent 74%, #ffffff20 84%, transparent 93%),
-    linear-gradient(180deg, #292929 0%, #141414 11%, #080808 39%,
-      #0b0b0b 70%, #1d1d1d 95%, #070707 100%);
+    linear-gradient(175deg, #454545 0%, #1b1b1b 9%, #090909 24%,
+      #050505 56%, #141414 82%, #080808 100%),
+    repeating-linear-gradient(97deg, transparent 0 11px,
+      #ffffff09 12px 13px, transparent 15px 29px);
   color: #b6b6b2;
-  font-weight: 400;
-  letter-spacing: .09em;
-  line-height: 1.65;
-  -webkit-text-stroke: .35px #ededeb;
-  text-shadow:
-    -.65px -.65px 0 #fafaf9,
-    .6px 1px 0 #5d5d5d,
-    1.2px 1.5px 1px #060606;
+  font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Helvetica Neue", Arial, sans-serif;
+  font-size: .91em;
+  font-weight: 600;
+  letter-spacing: .105em;
+  line-height: 1.27;
+  white-space: nowrap;
+  text-align: left;
+  text-transform: none;
+  text-shadow: none;
   box-shadow:
-    inset 0 1px 0 #777777,
-    inset 0 -2px 2px #000000,
-    inset 1px 0 1px #525252,
-    1px 2px 0 #3a3a3a,
-    2px 4px 4px #00000055;
+    inset 0 1px 1px #a4a4a45c,
+    inset 0 -2px 2px #000,
+    inset 1px 0 1px #ffffff28,
+    1px 2px 0 #353535,
+    2px 4px 5px #0008;
+  transform: rotate(-.65deg) skewY(-.18deg);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   hyphens: none;
 }
 
+/* Two translucent layers simulate scratches, hard reflections, and a crease.
+   Neither layer covers the embossed letters or intercepts touch input. */
+mark.answer-tape::before,
+mark.answer-tape::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+mark.answer-tape::before {
+  background:
+    linear-gradient(105deg, transparent 8%, #ffffff04 13%, #ffffff2e 17%,
+      #ffffff08 21%, transparent 29%, transparent 70%, #ffffff12 76%,
+      #ffffff34 80%, #ffffff06 85%, transparent 94%),
+    repeating-linear-gradient(175deg, transparent 0 13px,
+      #ffffff0c 14px, transparent 15px 29px);
+  opacity: .9;
+}
+mark.answer-tape::after {
+  background:
+    linear-gradient(97deg, transparent 33%, #0008 38%, #ffffff38 40%,
+      #ffffff0d 42%, transparent 46%),
+    linear-gradient(171deg, transparent 18%, #ffffff19 20%,
+      #0005 22%, transparent 25%);
+  clip-path: polygon(0 2%, 17% 0, 34% 4%, 42% 0, 53% 3%,
+    79% 1%, 100% 5%, 100% 96%, 83% 100%, 57% 96%,
+    40% 100%, 26% 96%, 0 99%);
+  opacity: .9;
+}
+.answer-tape__letters {
+  position: relative;
+  z-index: 1;
+  color: #b9b9b4;
+  -webkit-text-stroke: .3px #efefec;
+  text-shadow:
+    -.75px -.9px 0 #fafaf7,
+    .75px 1px 0 #626260,
+    1.5px 1.8px 1px #070707;
+}
+
+/* No randomness: stable, subtly different cuts for each answer and row. */
+mark.answer-tape--1 { transform: rotate(.55deg) skewY(.22deg); border-radius: 3px 1px 1px 2px; }
+mark.answer-tape--2 { transform: rotate(-.25deg) skewY(-.32deg); border-radius: 1px 2px 3px 1px; }
+mark.answer-tape--3 { transform: rotate(.85deg) skewY(.14deg); border-radius: 2px 1px 3px 1px; }
+mark.answer-tape--1::after { transform: scaleX(-1); opacity: .68; }
+mark.answer-tape--2::before { transform: scaleX(-1); opacity: .75; }
+mark.answer-tape--3::after { transform: translateX(5%); opacity: .8; }
+
+/* The unbroken measuring copy wraps naturally so JS can detect real line rows.
+   Long indivisible words retain native safe wrapping instead of clipping. */
+mark.answer-tape--measuring {
+  display: inline;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+mark.answer-tape--strip { white-space: nowrap; }
