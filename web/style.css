@@ -152,6 +152,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outli
 }
 .landing-content .create-section { border-top: 0; }
 .create-section button { width: 100%; }
+.create-actions { display: flex; align-items: stretch; gap: 8px; }
+.create-actions #new-session { flex: 1 1 auto; min-width: 0; width: auto; }
+.create-actions #open-guide {
+  flex: none;
+  width: auto;
+  padding-inline: 9px;
+  font-size: clamp(12px, 3.4vw, 15px);
+}
 label { display: block; margin-bottom: 9px; }
 .join-row { display: flex; gap: 8px; }
 .join-row input {
@@ -175,6 +183,32 @@ footer {
 nav { display: flex; align-items: center; gap: 6px; }
 nav button { min-width: 48px; }
 
+/* The guide is an accessible modal, not a new page that takes space from
+   the phone's start actions. Text can scroll inside without page scrolling. */
+.guide-dialog {
+  width: min(540px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--line);
+  line-height: 1.45;
+}
+.guide-dialog::backdrop { background: rgba(0, 0, 0, .86); }
+.guide-dialog h2 { margin: 0 0 12px; font-size: 19px; line-height: 1.25; }
+.guide-dialog ol { margin: 0 0 16px; padding-left: 24px; }
+.guide-dialog li { padding: 0 0 12px 4px; margin-bottom: 10px; border-bottom: var(--line); }
+.guide-dialog #close-guide {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+}
+
 /* A single fullscreen brand intro, not a loading spinner or a looping animation. */
 .boot-screen {
   position: fixed;
@@ -195,7 +229,7 @@ nav button { min-width: 48px; }
 }
 .boot-logo .cut-deck {
   transform: translateX(99px);
-  transition: transform 520ms cubic-bezier(.2,.7,.25,1);
+  transition: transform 230ms cubic-bezier(.2,.7,.25,1);
 }
 .boot-screen.is-shifted .boot-logo .cut-deck { transform: translateX(0); }
 .boot-slash {
@@ -203,21 +237,21 @@ nav button { min-width: 48px; }
   height: 78px;
   transform: skew(-13deg) scaleY(0);
   transform-origin: center;
-  transition: transform 320ms ease-out, opacity 160ms;
+  transition: transform 180ms ease-out, opacity 120ms;
 }
 .boot-screen.has-slash .boot-slash { opacity: 1; transform: skew(-13deg) scaleY(1); }
 .boot-wordmark {
   width: 165px;
   opacity: 0;
   transform: translateX(14px);
-  transition: opacity 340ms ease, transform 340ms ease;
+  transition: opacity 180ms ease, transform 180ms ease;
 }
 .boot-wordmark strong { font-size: 49px; }
 .boot-wordmark > span { font-size: 11px; }
 .boot-screen.has-wordmark .boot-wordmark { opacity: 1; transform: translateX(0); }
-.boot-screen.is-shuffling .cut-card--c { animation: shuffle-c 900ms ease-in-out 1; }
-.boot-screen.is-shuffling .cut-card--a { animation: shuffle-a 900ms ease-in-out 1; }
-.boot-screen.is-shuffling .cut-card--w { animation: shuffle-w 900ms ease-in-out 1; }
+.boot-screen.is-shuffling .cut-card--c { animation: shuffle-c 420ms ease-in-out 1; }
+.boot-screen.is-shuffling .cut-card--a { animation: shuffle-a 420ms ease-in-out 1; }
+.boot-screen.is-shuffling .cut-card--w { animation: shuffle-w 420ms ease-in-out 1; }
 @keyframes shuffle-c {
   0%, 100% { transform: translateX(0) rotate(-7deg); }
   30% { transform: translateX(calc(2 * var(--card-step))) translateY(-17px) rotate(12deg); }
@@ -255,13 +289,13 @@ nav button { min-width: 48px; }
   letter-spacing: -.1em;
   overflow: hidden;
   border-radius: 0;
-  transition: left 800ms cubic-bezier(.55,0,.22,1),
-    top 800ms cubic-bezier(.55,0,.22,1),
-    width 800ms cubic-bezier(.55,0,.22,1),
-    height 800ms cubic-bezier(.55,0,.22,1),
-    font-size 800ms cubic-bezier(.55,0,.22,1);
+  transition: left 360ms cubic-bezier(.55,0,.22,1),
+    top 360ms cubic-bezier(.55,0,.22,1),
+    width 360ms cubic-bezier(.55,0,.22,1),
+    height 360ms cubic-bezier(.55,0,.22,1),
+    font-size 360ms cubic-bezier(.55,0,.22,1);
 }
-.boot-screen.is-completing { opacity: 0; transition: opacity 260ms linear; }
+.boot-screen.is-completing { opacity: 0; transition: opacity 140ms linear; }
 .boot-screen.is-completing .skip-intro { pointer-events: none; }
 
 /* Keep all landing controls visible without a vertical scroll at target sizes. */
