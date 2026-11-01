@@ -146,4 +146,8 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Zweiter Durchgang nach realen Screenshots: zentrierte Fragekarten,
   sechs/vier Karten pro Seite, Juror-Indikatoren, einspaltige Lobby und volle Hauptaktionen
 - [x] Zusätzliche Browser-Tests für Kartenseiten, persistente Auswahl und getrennte Rollen
+- [x] Desktop-Anordnung am MacBook: Frage links, Karten rechts,
+  Host-Einladung neben Spielerliste; eigenes responsives Layout ab 900 px
+- [x] Playwright prüft nebeneinander liegende Desktop-Elemente bei 1280×800
+- [ ] Visueller Desktop-Vergleich auf dem MacBook nach aktueller CSS-Revision
 - [ ] Browser-Screenshots bei 320/390 px sowie 16:9/4:3 visuell gegen Mockups abnehmen
