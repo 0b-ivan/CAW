@@ -157,11 +157,13 @@ std::optional<CardPack> Messages::readCustomCards(std::string_view body) {
   try {
     const json request = json::parse(body);
     if (!request.is_object() || request.size() != 2 || !request.contains("prompts") ||
-        !request.contains("answers")) return std::nullopt;
+        !request.contains("answers"))
+      return std::nullopt;
     const json& prompts = request.at("prompts");
     const json& answers = request.at("answers");
     if (!prompts.is_array() || !answers.is_array() || prompts.size() > 100 ||
-        answers.size() > 100 || (prompts.empty() && answers.empty())) return std::nullopt;
+        answers.size() > 100 || (prompts.empty() && answers.empty()))
+      return std::nullopt;
     std::string csv = "typ,text\n";
     const auto append = [&csv](const json& cards, char type) {
       for (const json& item : cards) {
@@ -218,10 +220,11 @@ std::string Messages::saveRoom(const RoomRecord& room) {
     custom = json::parse(customCards(&*room.customPack));
     custom["id"] = room.customPack->id;
   }
-  const std::string head = json{
-      {"schema", 5},          {"language", room.language}, {"hostToken", room.hostToken},
-      {"packs", room.packs},  {"identities", identities},  {"lines", lines},
-      {"locked", room.locked}, {"custom", custom}}.dump();
+  const std::string head =
+      json{{"schema", 5},           {"language", room.language}, {"hostToken", room.hostToken},
+           {"packs", room.packs},   {"identities", identities},  {"lines", lines},
+           {"locked", room.locked}, {"custom", custom}}
+          .dump();
   // room.state is already JSON text (saveState); spliced in rather than parsed again.
   return head.substr(0, head.size() - 1) + ",\"state\":" + room.state + "}";
 }
@@ -244,8 +247,8 @@ std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
     room.locked = record.at("locked").get<bool>();
     if (record.at("schema") == 5 && !record.at("custom").is_null()) {
       json content = record.at("custom");
-      if (!content.is_object() || !content.contains("id") ||
-          !content.at("id").is_string()) return std::nullopt;
+      if (!content.is_object() || !content.contains("id") || !content.at("id").is_string())
+        return std::nullopt;
       const std::string id = content.at("id").get<std::string>();
       content.erase("id");
       auto custom = readCustomCards(content.dump());
