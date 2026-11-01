@@ -58,6 +58,7 @@ class ConverterTests(unittest.TestCase):
             manifest = json.loads((destination / "packs.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["packs"][0]["rightsHolder"], "Synthetic Test")
             self.assertEqual(manifest["packs"][0]["license"], "TEST-LICENSE")
+            self.assertIs(manifest["packs"][0]["defaultSelected"], False)
             self.assertIn("typ,text", (destination / "cards.csv").read_text(encoding="utf-8"))
 
 
