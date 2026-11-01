@@ -366,3 +366,23 @@ TEST_CASE("upstream test_cardparty") {
   disconnectAndBounds();
   hostControls();
 }
+
+TEST_CASE("the hand can change from three to ten cards only in the lobby") {
+  Fixture fixture;
+  Game game;
+  REQUIRE(game.configure(fixture.deck, Rules{}, 7));
+  CHECK(game.rules().hand == 7);
+  CHECK_FALSE(game.setHand(2));
+  CHECK_FALSE(game.setHand(11));
+  for (std::uint8_t hand = 3; hand <= 10; ++hand) {
+    REQUIRE(game.setHand(hand));
+    CHECK(game.rules().hand == hand);
+  }
+  REQUIRE(game.setHand(7));
+  REQUIRE(game.join("Ada") != kNone);
+  REQUIRE(game.join("Bert") != kNone);
+  REQUIRE(game.join("Cyra") != kNone);
+  REQUIRE(game.start());
+  CHECK_FALSE(game.setHand(5));
+  CHECK(game.rules().hand == 7);
+}
