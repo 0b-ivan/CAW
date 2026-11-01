@@ -38,6 +38,26 @@ async function checkFit(page, label, mainAction) {
       const box = await control.boundingBox();
       if (box) assert.ok(box.height >= 47.5, `${label} ${width}x${height}: a control is ${box.height}px tall`);
     }
+    // Desktop uses side-by-side panels instead of stretching the phone mockup.
+    if (width === 1280 && label === 'answer') {
+      const prompt = await page.locator('#view-answer .prompt-stack').boundingBox();
+      const hand = await page.locator('#hand').boundingBox();
+      assert.ok(prompt && hand && prompt.x + prompt.width < hand.x,
+        'desktop question must be left of the answer cards');
+      assert.ok(prompt.width <= 360, 'desktop question card must not grow with the viewport');
+    }
+    if (width === 1280 && label === 'judge') {
+      const prompt = await page.locator('#view-judge .prompt-stack').boundingBox();
+      const choices = await page.locator('#judge-list').boundingBox();
+      assert.ok(prompt && choices && prompt.x + prompt.width < choices.x,
+        'desktop juror question must be left of the anonymous choices');
+    }
+    if (width === 1280 && label === 'lobby-host-full') {
+      const invite = await page.locator('#lobby-share').boundingBox();
+      const players = await page.locator('#lobby-players').boundingBox();
+      assert.ok(invite && players && invite.x + invite.width < players.x,
+        'desktop lobby must show QR invite beside the players, not above them');
+    }
     if (process.env.CAW_SCREENSHOT_DIR) {
       fs.mkdirSync(process.env.CAW_SCREENSHOT_DIR, { recursive: true });
       await page.screenshot({ path: `${process.env.CAW_SCREENSHOT_DIR}/${label}-${width}.png` });
