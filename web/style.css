@@ -1318,23 +1318,38 @@ footer a { text-decoration: underline; }
   opacity: 0; cursor: pointer; }
 .editor-upload:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
 
-/* Physical embossing tape for answer text, not for the surrounding paper cards.
-   Clone the band on each wrapped line so long answers stay readable on phones.
-   A paired light/dark text shadow suggests raised plastic letters without assets. */
+/* Real embossed label tape: separate highlights on glossy plastic and raised
+   letters. Only inserted answers use this; hand and juror cards stay plain.
+   box-decoration-break duplicates the cut tape edges on wrapped lines. */
 mark.answer-tape,
 #reveal-sentence mark.answer-tape,
 .screen-plays li mark.answer-tape,
 #screen-reveal .screen-prompt mark.answer-tape {
-  padding: .08em .24em .12em;
-  border: 1px solid #424242;
+  padding: .10em .28em .16em;
+  border: 1px solid #272727;
   border-radius: 2px;
-  background: #0b0b0b;
-  color: #f4f4f0;
-  font-weight: 650;
-  letter-spacing: .055em;
-  line-height: 1.55;
-  text-shadow: -.8px -.8px 0 #787878, .8px .9px 0 #202020;
-  box-shadow: inset 0 1px 0 #727272, inset 0 -1px 0 #000, 1px 2px 1px #929292;
+  background-color: #0b0b0b;
+  background-image:
+    linear-gradient(112deg, transparent 12%, #ffffff15 18%, transparent 25%,
+      transparent 74%, #ffffff20 84%, transparent 93%),
+    linear-gradient(180deg, #292929 0%, #141414 11%, #080808 39%,
+      #0b0b0b 70%, #1d1d1d 95%, #070707 100%);
+  color: #e6e6e2;
+  font-weight: 500;
+  letter-spacing: .09em;
+  line-height: 1.65;
+  text-shadow:
+    -.8px -.8px 0 #ffffff,
+    -1.4px -1.2px 1px #7e7e7e,
+    .9px 1px 0 #919191,
+    1.6px 1.8px 1px #343434,
+    2px 2.5px 2px #050505;
+  box-shadow:
+    inset 0 1px 0 #777777,
+    inset 0 -2px 2px #000000,
+    inset 1px 0 1px #525252,
+    1px 2px 0 #3a3a3a,
+    2px 4px 4px #00000055;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
   overflow-wrap: anywhere;
