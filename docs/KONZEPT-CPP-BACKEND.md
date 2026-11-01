@@ -504,3 +504,23 @@ CI-geprüften Git-Commit und startet es als temporäre Datei unter
 vor dem Aktualisieren getrackter Dateien. Passwörter bleiben ausschließlich
 auf dem kurzlebigen Standard-Eingabekanal und in der bestehenden
 geschützten GitHub-Environment.
+
+### Einmalige Migration einer verlassenen Altsession (01.11.2026)
+
+Der erste reale Rollout hat über die lokale Redis-Phasenprüfung **genau eine**
+als Playing/Judging/Reveal markierte Session bei **null** WebSocket-
+Verbindungen nachgewiesen; alle weiteren gespeicherten Räume sind Lobby
+oder Finished. Der Betreiber hat ausdrücklich bestätigt, dass keine
+Partie mehr läuft. Für den bestehenden, bekannten Hetzner-Checkout
+`cc02372*` ist deshalb **einmalig** die Migration mit genau **einer**
+verlassenen Altsession und null Sockets gestattet. Die Session bleibt
+in Redis vollständig erhalten, damit sie nach dem Update noch immer
+wiederhergestellt werden kann.
+
+Die Ausnahme ist auf diesen bisherigen Checkout, den expliziten
+Betreiberentscheid, höchstens eine nicht beendete Session und zwei
+erneute socketfreie Messungen beschränkt. Weitere laufende Matches,
+offene Verbindungen, fehlerhafte oder fehlende Daten blockieren weiterhin.
+Nach dem ersten erfolgreichen Checkout-Wechsel kann die Ausnahme bei
+späteren Releases nicht erneut greifen. Das ist ausdrücklich keine
+Änderung der allgemeinen Schutzregel für neue Spiele.

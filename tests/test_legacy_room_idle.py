@@ -18,7 +18,7 @@ REDIS_CONTAINER = "a" * 64
 
 
 class LegacyRoomIdleTests(unittest.TestCase):
-    def check(self, phases, expected=None, broken=False):
+    def check(self, phases, expected=None, broken=False, override=False):
         keys = list(phases)
         if expected is None:
             expected = len(keys)
@@ -32,7 +32,10 @@ class LegacyRoomIdleTests(unittest.TestCase):
 
         output = io.StringIO()
         errors = io.StringIO()
-        with mock.patch.object(sys, "argv", ["legacy", REDIS_CONTAINER, str(expected)]):
+        args = ["legacy", REDIS_CONTAINER, str(expected)]
+        if override:
+            args.append("--one-abandoned")
+        with mock.patch.object(sys, "argv", args):
             with mock.patch.object(legacy, "redis_cli", side_effect=fake_redis):
                 with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
                     result = legacy.main()
@@ -58,6 +61,23 @@ class LegacyRoomIdleTests(unittest.TestCase):
         invalid, _, error = self.check({"session:ABCDEF": 0}, broken=True)
         self.assertEqual(invalid, 1)
         self.assertNotIn("private-secret", error)
+
+
+    def test_operator_exception_is_limited_to_one_legacy_match(self):
+        result, output, _ = self.check({"session:ABCDEF": 1}, override=True)
+        self.assertEqual(result, 0)
+        self.assertIn("snapshot preserved", output)
+
+        result, _, error = self.check(
+            {"session:ABCDEF": 1, "session:BCDEFG": 2}, override=True,
+        )
+        self.assertEqual(result, 75)
+        self.assertIn("DEFER:", error)
+
+        deploy = (ROOT / "bin" / "deploy-hetzner").read_text()
+        self.assertIn('if [[ "$previous_sha" == cc02372* ]]', deploy)
+        self.assertIn("--one-abandoned", deploy)
+        self.assertIn("if (( sockets != 0 )); then", deploy)
 
     def test_no_sessions_is_idle(self):
         result, output, _ = self.check({})
