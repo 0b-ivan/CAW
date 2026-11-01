@@ -1019,8 +1019,8 @@ footer a { text-decoration: underline; }
   .landing-header .brand-wordmark > span { font-size: 9px; width: 105px; }
   .prompt-stack { width: min(83%, 320px); margin: 3px 0 8px; }
   .prompt-stack .prompt { min-height: 112px; padding: 12px 13px; }
-  .prompt-stack .sentence { font-size: 17px; }
-  .card { padding: 8px; font-size: 13px; min-height: clamp(76px, 11dvh, 103px); }
+  .prompt-stack .sentence { font-size: clamp(17px, 5vw, 20px); }
+  .card { padding: 8px; font-size: clamp(13px, 3.8vw, 15px); min-height: clamp(76px, 11dvh, 103px); }
   .card[aria-pressed="true"] { padding: 7px; }
   .hand { gap: 7px; }
   .share { grid-template-columns: minmax(90px, 36%) minmax(0, 1fr); gap: 8px; }
