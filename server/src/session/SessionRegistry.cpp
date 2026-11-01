@@ -147,7 +147,7 @@ std::string SessionRegistry::snapshot(const std::string& code) {
 }
 
 bool SessionRegistry::restore(const std::string& code, std::string_view snapshot, Time now) {
-  const auto record = Messages::loadRoom(snapshot);
+  auto record = Messages::loadRoom(snapshot);
   if (!Codes::validSessionCode(code) || !record || !Codes::validHostToken(record->hostToken) ||
       (record->language != "de" && record->language != "en") || rooms_.count(code) != 0)
     return false;
