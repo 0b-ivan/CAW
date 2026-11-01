@@ -144,7 +144,8 @@ TEST_CASE("the configured hand size survives a Redis snapshot roundtrip") {
 TEST_CASE("legacy Redis snapshots without the new field preserve ten cards") {
   Match match;
   REQUIRE(match.seats.hostStart());
-  const auto saved = nlohmann::json::parse(Messages::saveState(match.game, match.table, match.seats, 1000));
+  const std::string snapshot = Messages::saveState(match.game, match.table, match.seats, 1000);
+  const auto saved = nlohmann::json::parse(snapshot);
   auto legacy = saved;
   legacy["table"]["settings"].erase("hand");
 
@@ -156,7 +157,8 @@ TEST_CASE("legacy Redis snapshots without the new field preserve ten cards") {
   // A new snapshot cannot claim a different hand count from the game itself.
   auto invalid = saved;
   invalid["table"]["settings"]["hand"] = 7;
-  CHECK_FALSE(Messages::loadState(invalid.dump(), restored.game, restored.table, restored.seats, 1000));
+  const bool loaded = Messages::loadState(invalid.dump(), restored.game, restored.table, restored.seats, 1000);
+  CHECK_FALSE(loaded);
 }
 
 TEST_CASE("snapshots reject malformed data atomically") {
