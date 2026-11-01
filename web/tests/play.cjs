@@ -100,24 +100,32 @@ async function checkTape(page, selector) {
   await tape.waitFor({ state: 'visible' });
   const material = await tape.evaluate((element) => {
     const style = getComputedStyle(element);
+    const letters = element.querySelector('.answer-tape__letters');
+    const raised = letters && getComputedStyle(letters);
     return {
       background: style.backgroundColor,
       sheen: style.backgroundImage,
-      color: style.color,
-      relief: style.textShadow,
-      raisedEdge: style.getPropertyValue('-webkit-text-stroke-width'),
+      font: style.fontFamily,
       edge: style.boxShadow,
       band: style.getPropertyValue('-webkit-box-decoration-break') ||
         style.getPropertyValue('box-decoration-break'),
+      reflection: getComputedStyle(element, '::before').backgroundImage,
+      crease: getComputedStyle(element, '::after').backgroundImage,
+      letterColor: raised?.color,
+      relief: raised?.textShadow,
+      raisedEdge: raised?.getPropertyValue('-webkit-text-stroke-width'),
     };
   });
-  assert.equal(material.background, 'rgb(11, 11, 11)', `${selector}: black plastic band`);
-  assert.equal(material.color, 'rgb(182, 182, 178)', `${selector}: raised silver letters`);
-  assert.match(material.sheen, /linear-gradient/, `${selector}: glossy plastic surface`);
-  assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: layered embossing`);
-  assert.equal(material.raisedEdge, '0.35px', `${selector}: metallic letter edges`);
+  assert.equal(material.background, 'rgb(8, 8, 8)', `${selector}: black plastic band`);
+  assert.match(material.sheen, /linear-gradient/, `${selector}: molded plastic surface`);
+  assert.match(material.reflection, /linear-gradient/, `${selector}: scuffed reflections`);
+  assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
+  assert.match(material.font, /Arial Rounded MT Bold/, `${selector}: embossing font, not UI monospace`);
+  assert.equal(material.letterColor, 'rgb(185, 185, 180)', `${selector}: embossed silver lettering`);
+  assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: three-dimensional letters`);
+  assert.equal(material.raisedEdge, '0.3px', `${selector}: pressed letter edges`);
   assert.notEqual(material.edge, 'none', `${selector}: cut tape edges cast shadows`);
-  assert.equal(material.band, 'clone', `${selector}: clean tape on wrapped lines`);
+  assert.equal(material.band, 'clone', `${selector}: clean fallback wrapping`);
 }
 
 const visible = (page, view) => page.locator(`#view-${view}`).isVisible();
@@ -602,6 +610,12 @@ async function checkLongCards(browser) {
     'long hand cards remain plain and readable');
   for (const [width, height] of SIZES) {
     await page.setViewportSize({ width, height });
+    await page.waitForTimeout(50); // Let the resize reflow the physical tape rows.
+    assert.ok(await page.locator('#answer-prompt mark.answer-tape--strip').count() >= 2,
+      `${width}x${height}: long inserted answers need separate strips per line`);
+    const renderedText = await page.locator('#answer-prompt').textContent();
+    assert.match(renderedText, /Testantwort mit einem sehr langen Kartentext/,
+      'splitting labels must preserve the original answer wording');
     const clipped = await page.locator('#hand .card').evaluateAll((cards) =>
       cards.filter((card) => card.scrollHeight > card.clientHeight + 1).length);
     assert.equal(clipped, 0, `${width}x${height}: ${clipped} cards cut their text`);
