@@ -37,6 +37,8 @@ class SessionRegistry final {
   bool authenticatedHost(std::string_view code, std::string_view hostToken,
                          Time now = Clock::now()) const;
   std::size_t activeCount(Time now = Clock::now()) const;
+  // Matches not yet finished, including disconnected clients.
+  std::size_t inProgressCount(Time now = Clock::now()) const;
   void expire(Time now = Clock::now());
   // The room-only pack is private and may be replaced only in the lobby.
   const CardPack* customCards(std::string_view code) const;
