@@ -173,8 +173,8 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## UI-Polish: kurzes Intro und Öffnen-Anleitung (PR #12)
 
-- [x] Boot-Intro von ca. 4,25 s auf ca. 1,53 s gekürzt; Skip, Replay und Reduced Motion bleiben erhalten
-- [x] `[ ANLEITUNG ]` direkt auf der Startseite mit 4 Schritten zu Host, Beitritt, LAN-/Tunnel-Adresse und Big Screen
-- [x] DE/EN-Hilfedialog mit Escape, Schließen-Button und eigener Scrollfläche
-- [x] Playwright-Checks für Dialog, Übersetzungen, Intro-Dauer und 320/390/1280 px ergänzt
+- [x] Boot-Intro auf ca. 1,7 s gekürzt, indem Shuffle und Zoom entfallen; ruhiges Bewegungstempo, Skip und Reduced Motion bleiben erhalten
+- [x] `[ ANLEITUNG ]` direkt auf der Startseite: drei Schritte zum Online-Spielen (Host, Beitritt, Big Screen) ohne Netzwerk-/Servereinrichtung
+- [x] DE/EN-Hilfedialog mit zwei Bereichen: SO STARTEST DU und SPIELREGELN (Juror, Pick/Draw, Punkte, Hand, Host-Einstellungen), Escape, Schließen und eigener Scrollfläche
+- [x] Playwright-Checks für DE/EN-Spielregeln, fehlende Infrastruktur-Hinweise, Dialog, ruhige Intro-Dauer und 320/390/1280 px ergänzt
 - [ ] Finale CI einschließlich Browser-Screenshots für diese Revision bestätigen
