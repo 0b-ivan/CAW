@@ -331,11 +331,15 @@ Spielregel und kein Client-/Server-Protokoll.
   weiße Kontur und die sichtbare Pick-Position. Die Auswahl bleibt zusätzlich
   über `aria-pressed` lesbar, nicht nur über Farbe oder Schatten. Auf Laptop
   bleibt das Spielfeld zentriert statt auf vier Spalten zu wachsen.
+  `ABWERFEN` liegt als Nebenaktion über der Hand, der aktuelle Pick-Zähler
+  bei der Seitennavigation; `ABGEBEN` bekommt die volle Breite der unteren
+  Aktionsleiste. Die Hauptaktion bleibt bei 320×568 sichtbar.
 - **Juror:** Antwortoptionen erscheinen als einzelne, gut lesbare
   Kartenstreifen mit einem **sichtbaren Radio-Indikator**. Die ausgewählte
   Option wird invers und erhält einen deutlich gefüllten Indikator; das
   `aria-pressed`-Attribut bleibt maßgeblich. Die Frage steht weiterhin
-  nur einmal oben und zeigt die gewählte Kombination. Keine fremden Hände
+  nur einmal oben und zeigt die gewählte Kombination. Die Hauptaktion
+  `BESTÄTIGEN` füllt die untere Aktionsleiste aus. Keine fremden Hände
   oder Zuordnungen.
 - **Auflösung:** Der Siegersatz erhält die Materialität einer großen
   hellen Karte; Name und Punktestand bleiben typografisch darunter.
