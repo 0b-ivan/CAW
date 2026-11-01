@@ -310,7 +310,7 @@ async function run(browser) {
   await screen.locator('#screen-qr svg').waitFor();
 
   const players = [];
-  for (const name of ['Ada', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
+  for (const name of ['BrowserAda', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
   await checkFit(host, 'lobby-host-full', '#start-button');
   await host.setViewportSize({ width: 320, height: 568 });
@@ -500,23 +500,38 @@ async function run(browser) {
   await players[1].locator('#lobby-count', { hasText: 'PLAYERS' }).waitFor();
   assert.equal(await host.locator('html').getAttribute('lang'), 'de');
 
-  // The Wall of Fame: with Postgres (CI) the match is in it; without, it says so.
-  let fameRows = 0;
-  for (let attempt = 0; attempt < 20 && fameRows === 0; attempt++) {
-    await players[0].locator('#menu-button').click();
-    await players[0].locator('.menu-row', { hasText: 'RUHMESHALLE' }).click();
-    // Rows, or the explicit "no entries" note; "LADE …" is neither and must not count.
-    await players[0].locator('#menu-body .fame-row, #menu-body .menu-note:has-text("NOCH KEINE")')
-      .first().waitFor();
-    fameRows = await players[0].locator('#menu-body .fame-row').count();
-    if (fameRows === 0 && process.env.CAW_EXPECT_FAME) {
-      await players[0].locator('#menu-close').click();
-      await players[0].waitForTimeout(500);
-    } else break;
-  }
+  // The bot smoke runs first and fills the first Fame page. Wait for the actual
+  // browser match to persist, then find its distinct player on any Fame page.
+  let ownFame;
   if (process.env.CAW_EXPECT_FAME) {
-    assert.ok(fameRows > 0, 'the finished match is in the Wall of Fame');
-    await players[0].locator('#menu-body .fame-row', { hasText: 'Ada·' }).first().waitFor();
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const fame = await players[0].evaluate(async () =>
+        (await (await fetch('/api/fame', { cache: 'no-store' })).json()).players);
+      ownFame = fame.find((player) => player.name === 'BrowserAda' && player.games >= 1);
+      if (ownFame) break;
+      await players[0].waitForTimeout(500);
+    }
+    assert.ok(ownFame, 'the browser match was persisted to the Wall of Fame');
+    assert.equal(ownFame.rounds, 0, 'private custom-card rounds are not public history');
+  }
+
+  await openMenuPage(players[0], 'RUHMESHALLE');
+  // "LADE …" is not a loaded page, even when the database is empty.
+  await players[0].locator('#menu-body .fame-row, #menu-body .menu-note:has-text("NOCH KEINE")')
+    .first().waitFor();
+  if (process.env.CAW_EXPECT_FAME) {
+    let found = false;
+    for (let page = 0; page < 20; page++) {
+      if (await players[0].locator('#menu-body .fame-row',
+        { hasText: `BrowserAda·${ownFame.word}` }).count()) {
+        found = true;
+        break;
+      }
+      const next = players[0].getByRole('button', { name: 'Nächste Seite' });
+      if (!(await next.count()) || (await next.isDisabled())) break;
+      await next.click();
+    }
+    assert.ok(found, 'the browser player is reachable through Fame pagination');
     await checkFit(players[0], 'menu-fame', '#menu-close');
   }
   await players[0].locator('#menu-close').click();

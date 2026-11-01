@@ -186,6 +186,31 @@ das Skript stoppt absichtlich Postgres und Redis.
   von Postgres-Dumps und Redis-AOF mit regelmäßiger Restore-Probe
   eingerichtet werden. Hetzner-Snapshots sind nur eine Ergänzung.
   Der Ziel-Speicher und Zugangsdaten fehlen noch.
+- **Lokaler Restore-Test ohne Storage Box:** `bin/verify-local-restore`
+  liest den neuesten Dump aus dem CAW-Backup-Volume, startet ein
+  netzwerkisoliertes, kurzlebiges `postgres:17-alpine`, stellt die Tabellen
+  `players` und `winning_lines` wieder her und entfernt die Testumgebung.
+  Als `caw-deploy` auf Hetzner ausführen, **ohne** das aktuelle
+  Production-Checkout oder die von Caddy live eingebundenen Web-Dateien
+  zu verändern:
+
+  ```sh
+  sudo -u caw-deploy -H bash -c '
+    set -Eeuo pipefail
+    cd /opt/caw
+    git fetch --quiet origin main
+    git show origin/main:bin/verify-local-restore |
+      CAW_REPO_ROOT=/opt/caw bash
+  '
+  ```
+
+  Alternativ nach einem regulären Deployment `bin/verify-local-restore`
+  direkt ausführen. Das vorhandene Skript `bin/restore` **nicht ohne explizite Zieldatenbank**
+  ausführen: Sein Standardziel ist die **produktive** Datenbank `caw`.
+  Der isolierte Test benötigt keine Netzverbindung und verändert keine
+  produktiven Datenbanken oder Container.
+  **Ein lokaler Restore ist kein Offsite-Backup:** Bei vollständigem
+  Server- oder Volume-Verlust können Daten trotzdem verloren gehen.
 - Ein Update muss im CAW-Compose-Projekt stattfinden, nicht mit einem
   Host-weiten Docker-Cleanup. Vorher Datenbank/Redis sichern.
 - Monitoring über das bestehende Monitoring des Hosts oder optional
@@ -201,14 +226,23 @@ Cloudflare-Token automatisiert angelegt.
 
 ## 7. Automatische Updates aus GitHub Actions (ohne Freigabe zunächst inaktiv)
 
-Der Workflow `.github/workflows/deploy-hetzner.yml` reagiert nur auf die
-**erfolgreiche Push-CI von `main`** (nicht auf erfolgreiche PR-CI).
-Er baut und veröffentlicht den getesteten Git-Stand als
-`ghcr.io/0b-ivan/caw-server:sha-<commit>`. Anschließend aktualisiert
-er ausschließlich das vorhandene Compose-Projekt `caw` über SSH.
+Der Workflow `.github/workflows/deploy-hetzner.yml` startet bei
+**Pushes auf `main`** und kann manuell gestartet werden. Ein Job darf
+allerdings **erst nach erfolgreicher `main`-Push-CI für genau denselben
+Commit** das Image bauen und deployen. Dafür fragt er die GitHub-Actions-
+Run-API ab (bis zu 15 Minuten); eine PR-CI genügt nicht. Schlägt die
+Push-CI fehl, läuft die Abfrage ab oder ist der Commit nicht mehr auf
+`main`, bleibt Hetzner unverändert. Diese Form umgeht die beobachteten
+`BuildFailed`/`startup_failure`-Starts des `workflow_run`-Triggers.
+Die Ausführung ist bis zur ausdrücklich gesetzten Produktionsfreigabe
+weiterhin vollständig gesperrt.
+
+Nach bestätigter Push-CI baut er
+`ghcr.io/0b-ivan/caw-server:sha-<commit>` und aktualisiert
+ausschließlich das vorhandene Compose-Projekt `caw` über SSH.
 Ein manueller Start ist über **Actions → Deploy CAW to Hetzner → Run
-workflow** möglich, aber auch dann muss `main` für genau diesen Commit
-eine erfolgreiche CI besitzen.
+workflow** möglich, muss aber dieselbe erfolgreiche `main`-Push-CI
+nachweisen.
 
 **Einmalig auf dem Hetzner-Host:**
 
