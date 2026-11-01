@@ -248,7 +248,8 @@ async function start() {
   applyStaticTexts();
   $('fullscreen').addEventListener('click', () => document.documentElement.requestFullscreen?.());
   document.addEventListener('mousemove', wake);
-  addEventListener('resize', fitAll);
+  // Refit after sentence.js has rebuilt tape lines for the new viewport.
+  addEventListener('resize', () => requestAnimationFrame(fitAll));
   wake();
   if (!CODE.test(code)) {
     screen.missing = true;
