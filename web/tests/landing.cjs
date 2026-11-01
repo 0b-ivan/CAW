@@ -104,9 +104,26 @@ async function checkLanding(browser, width, height) {
       const beganAt = Date.now();
       await page.getByRole('button', { name: 'CAW-Intro erneut abspielen' }).click();
       await page.locator('#boot-screen').waitFor({ state: 'visible' });
+      const motion = await page.locator('#boot-screen').evaluate((element) => {
+        const duration = (selector) => getComputedStyle(element.querySelector(selector))
+          .transitionDuration.split(',')[0].trim();
+        return {
+          deck: duration('.boot-logo .cut-deck'),
+          slash: duration('.boot-slash'),
+          wordmark: duration('.boot-wordmark'),
+          shuffled: element.classList.contains('is-shuffling'),
+        };
+      });
+      assert.deepEqual(motion, {
+        deck: '0.52s', slash: '0.32s', wordmark: '0.34s', shuffled: false,
+      }, 'keep the original motion speed; remove stages instead');
       await page.locator('#boot-screen.has-wordmark').waitFor({ state: 'visible', timeout: 2000 });
-      await page.locator('#boot-screen').waitFor({ state: 'hidden', timeout: 2600 });
-      assert.ok(Date.now() - beganAt < 2400, 'the full intro should be under 2.4 seconds');
+      assert.equal(await page.locator('#boot-screen .zoom-card').count(), 0,
+        'the full-screen card zoom has been removed');
+      await page.locator('#boot-screen').waitFor({ state: 'hidden', timeout: 3000 });
+      const elapsed = Date.now() - beganAt;
+      assert.ok(elapsed >= 1500 && elapsed < 2800,
+        'the shorter intro should use calm transitions, not accelerated motion');
       await assertFitsViewport(page);
     }
 
