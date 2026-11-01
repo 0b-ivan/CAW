@@ -1,11 +1,12 @@
 name: Hetzner SSH read-only preflight
 
-# A one-time test on a dedicated feature branch, plus an optional manual
-# diagnostic after the workflow is merged to main. Never deploys anything.
+# Run once on its merge to main, and allow safe manual diagnostics later.
+# Production environment secrets are intentionally usable only from main.
+# Never deploys anything.
 on:
   push:
     branches:
-      - test/hetzner-ssh-preflight-20261101
+      - main
   workflow_dispatch:
 
 permissions:
@@ -13,7 +14,7 @@ permissions:
 
 jobs:
   ssh-preflight:
-    if: github.repository == '0b-ivan/CAW'
+    if: github.repository == '0b-ivan/CAW' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     environment: production
