@@ -113,3 +113,49 @@ TEST_CASE("room records keep language, host token and state together") {
   CHECK_FALSE(caw::Messages::loadRoom(R"({"schema":2})"));
   CHECK_FALSE(caw::Messages::loadRoom("[]"));
 }
+
+TEST_CASE("a room's own card pack survives Redis restore but stays isolated") {
+  caw::PackLibrary packs;
+  REQUIRE(packs.add(caw::syntheticPack()));
+  SessionRegistry first(24, packs);
+  const auto room = first.create("de");
+  const auto other = first.create("de");
+  auto cards = caw::Messages::readCustomCards(
+      R"({"prompts":["Meine Testfrage ___."],"answers":["Meine Testantwort"]})");
+  REQUIRE(cards);
+  REQUIRE(first.updateCustomCards(room.code, *cards));
+  REQUIRE(first.customCards(room.code));
+  const std::string previousId = first.customCards(room.code)->id;
+  REQUIRE(packs.find(previousId) != nullptr);
+
+  auto strangerChoice = first.find(other.code)->packs();
+  strangerChoice.push_back(previousId);
+  CHECK_FALSE(first.find(other.code)->activatePacks(strangerChoice, caw::millisNow()));
+
+  cards->answers = {"Neue Testantwort"};
+  REQUIRE(first.updateCustomCards(room.code, *cards));
+  CHECK(packs.find(previousId) == nullptr);
+  REQUIRE(first.customCards(room.code));
+  CHECK(first.customCards(room.code)->answers[0] == "Neue Testantwort");
+  const std::string saved = first.snapshot(room.code);
+
+  caw::PackLibrary restoredPacks;
+  REQUIRE(restoredPacks.add(caw::syntheticPack()));
+  SessionRegistry restored(24, restoredPacks);
+  REQUIRE(restored.restore(room.code, saved));
+  REQUIRE(restored.customCards(room.code));
+  CHECK(restored.customCards(room.code)->answers[0] == "Neue Testantwort");
+  CHECK(restored.find(room.code)->packs() == first.find(room.code)->packs());
+  CHECK_FALSE(restored.customCards(other.code));
+}
+
+TEST_CASE("schema 4 room snapshots remain restorable without custom cards") {
+  caw::RoomRecord room{"de", "0123456789abcdef0123456789abcdef", {"test"},
+                       R"({"state":1})", {}, {}, false};
+  auto legacy = nlohmann::json::parse(caw::Messages::saveRoom(room));
+  legacy["schema"] = 4;
+  legacy.erase("custom");
+  const auto decoded = caw::Messages::loadRoom(legacy.dump());
+  REQUIRE(decoded);
+  CHECK_FALSE(decoded->customPack);
+}
