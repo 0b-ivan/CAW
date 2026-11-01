@@ -57,8 +57,41 @@ if ! git merge-base --is-ancestor "$previous_sha" "$sha"; then
   exit 1
 fi
 
+# A live room (including a temporarily disconnected one) must finish before
+# this single-instance server can be replaced without disturbing its players.
+requireIdle() {
+  local server_container metrics sessions sockets
+  server_container="$(compose ps -q server)"
+  if [[ -z "$server_container" ]]; then
+    echo "FAIL: CAW server container not found" >&2
+    return 1
+  fi
+  metrics="$(docker exec "$server_container" curl -fsS --max-time 5 \
+    http://127.0.0.1:8080/metrics)"
+  sessions="$(awk '$1 == "caw_sessions" {print $2}' <<< "$metrics")"
+  sockets="$(awk '$1 == "caw_sockets" {print $2}' <<< "$metrics")"
+  if [[ ! "$sessions" =~ ^[0-9]+$ || ! "$sockets" =~ ^[0-9]+$ ]]; then
+    echo "FAIL: cannot establish an unambiguous CAW idle state" >&2
+    return 1
+  fi
+  if (( sessions != 0 || sockets != 0 )); then
+    echo "DEFER: CAW is busy ($sessions rooms, $sockets sockets); no rollout" >&2
+    return 75
+  fi
+}
+
+# A repeat schedule must not recreate an already deployed release.
+if [[ "$previous_sha" == "$sha" ]] &&
+   grep -qx "CAW_VERSION=$tag" deploy/.env; then
+  echo "SKIP: CAW already runs $tag"
+  exit 0
+fi
+
 # Validate the existing host configuration before making any changes.
 python3 bin/hetzner-preflight.py
+
+# The first check happens before making any host-side changes.
+requireIdle
 
 docker_config="$(mktemp -d)"
 saved_env="$(mktemp deploy/.env.rollback.XXXXXX)"
@@ -92,10 +125,18 @@ printf '%s\n' "$registry_token" |
   docker login ghcr.io --username "$actor" --password-stdin >/dev/null
 unset registry_token
 
+# Pulling an image does not affect running rooms. Check again after the
+# pull before modifying the checkout or restarting either service.
+docker pull "ghcr.io/0b-ivan/caw-server:$tag" >/dev/null
+requireIdle
+sleep 3
+requireIdle
+
 # This dumps Postgres to the pre-existing CAW backup volume. Redis continues
 # with its existing AOF; encrypted offsite backups remain a separate gate.
 compose exec -T backup /bin/sh /backup.sh once
 
+# No checked-out files or runtime configuration change before the idle checks.
 changed=1
 git merge --ff-only --quiet "$sha"
 
@@ -112,7 +153,7 @@ chmod 600 "$temporary_env"
 mv "$temporary_env" deploy/.env
 
 python3 bin/hetzner-preflight.py
-compose pull server
+# The matching immutable image is already downloaded before changing files.
 # Do not recreate Redis, Postgres, backups or any other host services.
 compose up --no-deps --no-build --detach --wait --wait-timeout 180 server caddy
 
