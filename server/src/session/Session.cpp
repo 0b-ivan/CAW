@@ -301,6 +301,10 @@ bool Session::takeChanged() {
 
 bool Session::inLobby() const { return game_.phase() == Phase::Lobby; }
 
+bool Session::inProgress() const {
+  return game_.phase() != Phase::Lobby && game_.phase() != Phase::Finished;
+}
+
 bool Session::activatePacks(const std::vector<std::string>& ids, std::uint32_t now) {
   if (!selectPacks(ids)) return false;
   publishAll(now);
