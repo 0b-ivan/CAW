@@ -49,6 +49,20 @@ async function checkLanding(browser, width, height) {
 
     await page.getByRole('button', { name: 'DE', exact: true }).click();
     await page.getByText('[ NEUE SESSION ]', { exact: true }).waitFor();
+    // The four-step opening guide is visible on every screen size, but
+    // its text scrolls only inside the native modal, never the page.
+    await page.getByRole('button', { name: '[ ANLEITUNG ]' }).click();
+    const guide = page.getByRole('dialog', { name: 'SO ÖFFNEST DU CAW' });
+    await guide.waitFor({ state: 'visible' });
+    assert.equal(await guide.locator('li').count(), 4);
+    assert.match(await guide.textContent(), /QR-Code/);
+    assert.match(await guide.textContent(), /localhost/);
+    assert.match(await guide.textContent(), /BIG SCREEN/);
+    const guideBounds = await guide.boundingBox();
+    assert.ok(guideBounds.y >= 0 && guideBounds.y + guideBounds.height <= height + 1,
+      'the guide dialog must fit inside the viewport');
+    await page.keyboard.press('Escape');
+    await guide.waitFor({ state: 'hidden' });
     assert.equal(await page.getByText('[ NEUE SESSION ]', { exact: true }).isDisabled(), false);
     await page.getByLabel('Session-Code (6 Zeichen)').fill('k7m2qx');
     assert.equal(await page.locator('#code').inputValue(), 'K7M2QX');
@@ -64,6 +78,12 @@ async function checkLanding(browser, width, height) {
 
     await page.getByRole('button', { name: 'EN', exact: true }).click();
     await page.getByText('[ NEW SESSION ]', { exact: true }).waitFor();
+    await page.getByRole('button', { name: '[ HOW TO START ]' }).click();
+    const englishGuide = page.getByRole('dialog', { name: 'HOW TO OPEN CAW' });
+    await englishGuide.waitFor({ state: 'visible' });
+    assert.match(await englishGuide.textContent(), /Cloudflare Tunnel/);
+    await page.getByRole('button', { name: '[ CLOSE ]' }).click();
+    await englishGuide.waitFor({ state: 'hidden' });
     assert.equal(await page.locator('html').getAttribute('lang'), 'en');
     await assertFitsViewport(page);
 
@@ -81,10 +101,12 @@ async function checkLanding(browser, width, height) {
       'Intro must not replay on reload within the same browser session');
 
     if (width === 1280) {
+      const beganAt = Date.now();
       await page.getByRole('button', { name: 'CAW-Intro erneut abspielen' }).click();
       await page.locator('#boot-screen').waitFor({ state: 'visible' });
-      await page.locator('#boot-screen.has-wordmark').waitFor({ state: 'visible', timeout: 5000 });
-      await page.locator('#boot-screen').waitFor({ state: 'hidden', timeout: 5000 });
+      await page.locator('#boot-screen.has-wordmark').waitFor({ state: 'visible', timeout: 2000 });
+      await page.locator('#boot-screen').waitFor({ state: 'hidden', timeout: 2600 });
+      assert.ok(Date.now() - beganAt < 2400, 'the full intro should be under 2.4 seconds');
       await assertFitsViewport(page);
     }
 
