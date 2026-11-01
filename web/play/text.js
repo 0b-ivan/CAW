@@ -24,8 +24,7 @@ const texts = {
     offlineMark: ' · OFFLINE', youMark: ' · DU', hostMark: ' · HOST',
 
     pick: 'PICK {0}', handLabel: 'Deine Karten',
-    handTitle: 'DEINE KARTEN ({0})', handPage: 'SEITE {0}/{1}',
-    previousCards: 'Vorherige Karten', nextCards: 'Nächste Karten',
+    handTitle: 'DEINE KARTEN ({0})',
     promptLabel: 'Frage, scrollbar',
     selected: '{0}/{1} GEWÄHLT', swap: '[ ABWERFEN ]', swapped: '[ GETAUSCHT ]',
     submit: '[ ABGEBEN ]', slot: '<{0}/{1}>', slotLabel: 'Position {0} von {1}: {2}',
@@ -113,8 +112,7 @@ const texts = {
     offlineMark: ' · OFFLINE', youMark: ' · YOU', hostMark: ' · HOST',
 
     pick: 'PICK {0}', handLabel: 'Your cards',
-    handTitle: 'YOUR CARDS ({0})', handPage: 'PAGE {0}/{1}',
-    previousCards: 'Previous cards', nextCards: 'Next cards',
+    handTitle: 'YOUR CARDS ({0})',
     promptLabel: 'Prompt, scrollable',
     selected: '{0}/{1} SELECTED', swap: '[ DISCARD ]', swapped: '[ SWAPPED ]',
     submit: '[ SUBMIT ]', slot: '<{0}/{1}>', slotLabel: 'Position {0} of {1}: {2}',
