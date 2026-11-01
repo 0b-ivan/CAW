@@ -272,36 +272,6 @@ Umgebungsvariablen wie bisher: `PUBLIC_URL`, `DATABASE_URL`, `REDIS_URL`,
 - M3/M4: statisches Frontend auf Basis der Firmware-Seite.
 - Lasttest: kleines C++- oder Python-Bot-Programm, das echte Partien spielt.
 
-
-Der Host kann in der Lobby über **HOST → EIGENE KARTEN** schwarze Fragekarten
-und weiße Antwortkarten erstellen, ändern und löschen. Die Texte erscheinen
-als zusätzliches Pack im aktuellen Spiel; keine fremden Karten werden in das
-Repository geschrieben. Prompt-Lücken sind `___` (eine bis drei Lücken;
-keine Lücke entspricht Pick 1); Pick 3 zieht zwei Zusatzkarten. Pro Session
-sind maximal 100 Fragen und 100 Antworten mit je höchstens 300 UTF-8-Bytes
-zulässig. Die bestehende CSV-Kartenvalidierung ist auch für den Editor
-verbindlich.
-
-- `GET/PUT /api/sessions/{code}/cards`: ausschließlich mit privatem
-  `Authorization: Bearer <host-token>`; PUT nur in der Lobby. PUT nimmt ein
-  vollständiges Dokument aus `prompts: string[]` und `answers: string[]`
-  entgegen, lehnt ungültige Daten vollständig ab und aktiviert das Pack.
-  Zwei leere Arrays entfernen das bisherige eigene Pack, sofern mindestens
-  ein anderes spielbares Pack aktiv bleibt.
-- Das Pack ist **sessionspezifisch**, nie in der globalen Packliste und nie
-  für andere Sessions auswählbar. Es liegt mitsamt Kartentexten ausschließlich
-  im privaten Redis-Room-Snapshot (Schema 5) und wird vor der Engine beim
-  Restore wiederhergestellt. Snapshot-Schema 4 bleibt lesbar.
-- Der Editor kann die Karten zusätzlich als JSON exportieren bzw. importieren.
-  Export/Import finden lokal im Browser statt; für dauerhafte Nutzung über
-  die 24-Stunden-Session-Grenze hinaus ist die eigene JSON-Datei nötig.
-- Der Server akzeptiert niemals Host-Tokens im Query-String und protokolliert
-  keine Kartentexte. Während laufender Runden sind Kartenänderungen gesperrt.
-- Maximal acht gemischte Packs bleiben bestehen. Beim Aktivieren eines eigenen
-  Packs muss ein Platz frei sein; anderenfalls informiert die UI den Host.
-  Das Format und die UI müssen ohne Framework, Build-Schritt oder Datenbank
-  auf dem synchronen Spiel-Thread auskommen.
-
 ## 13. Bestehender Hetzner-Server mit vorhandenem Cloudflare Tunnel
 
 CAW läuft neben den bereits vorhandenen Anwendungen auf dem bestehenden
@@ -357,3 +327,36 @@ vollständigem Hostausfall. Verschlüsselte Offsite-Backups für Postgres und
 Redis-AOF sowie eine Restore-Probe bleiben vor der Produktionsfreigabe
 erforderlich. Ebenso rechtliche Prüfung der Karten und echte Betreiber-
 angaben. Der Release-Tag `v1.0.0` wird nicht vor Live-Abnahme erzeugt.
+
+## 14. Eigene Karten im Browser (nach M8)
+
+Der Host kann in der Lobby über **HOST → EIGENE KARTEN** schwarze Fragekarten
+und weiße Antwortkarten erstellen, ändern und löschen. Die Texte erscheinen
+als zusätzliches Pack im aktuellen Spiel; keine fremden Karten werden in das
+Repository geschrieben. Prompt-Lücken sind `___` (eine bis drei Lücken;
+keine Lücke entspricht Pick 1); Pick 3 zieht zwei Zusatzkarten. Pro Session
+sind maximal 100 Fragen und 100 Antworten mit je höchstens 300 UTF-8-Bytes
+zulässig. Die bestehende CSV-Kartenvalidierung ist auch für den Editor
+verbindlich.
+
+- `GET/PUT /api/sessions/{code}/cards`: ausschließlich mit privatem
+  `Authorization: Bearer <host-token>`; PUT nur in der Lobby. PUT nimmt ein
+  vollständiges Dokument aus `prompts: string[]` und `answers: string[]`
+  entgegen, lehnt ungültige Daten vollständig ab und aktiviert das Pack.
+  Zwei leere Arrays entfernen das bisherige eigene Pack, sofern mindestens
+  ein anderes spielbares Pack aktiv bleibt.
+- Das Pack ist **sessionspezifisch**, nie in der globalen Packliste und nie
+  für andere Sessions auswählbar. Es liegt mitsamt Kartentexten ausschließlich
+  im privaten Redis-Room-Snapshot (Schema 5) und wird vor der Engine beim
+  Restore wiederhergestellt. Wenn ein eigenes Pack aktiv ist, bleiben
+  Rundensieger-Sätze in der Session und gehen **nicht** in die globale
+  Ruhmeshalle; ansonsten könnten private Texte über Postgres öffentlich werden. Snapshot-Schema 4 bleibt lesbar.
+- Der Editor kann die Karten zusätzlich als JSON exportieren bzw. importieren.
+  Export/Import finden lokal im Browser statt; für dauerhafte Nutzung über
+  die 24-Stunden-Session-Grenze hinaus ist die eigene JSON-Datei nötig.
+- Der Server akzeptiert niemals Host-Tokens im Query-String und protokolliert
+  keine Kartentexte. Während laufender Runden sind Kartenänderungen gesperrt.
+- Maximal acht gemischte Packs bleiben bestehen. Beim Aktivieren eines eigenen
+  Packs muss ein Platz frei sein; anderenfalls informiert die UI den Host.
+  Das Format und die UI müssen ohne Framework, Build-Schritt oder Datenbank
+  auf dem synchronen Spiel-Thread auskommen.
