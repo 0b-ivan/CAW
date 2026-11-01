@@ -87,6 +87,8 @@ bool SessionRegistry::updateCustomCards(std::string_view code, CardPack pack) {
     letter = static_cast<char>(std::tolower(static_cast<unsigned char>(letter)));
   const std::string id = customPrefix(code) + suffix;
   pack.id = id;
+  pack.language = room.language;
+  pack.title = room.language == "en" ? "Custom cards" : "Eigene Karten";
   if (!packs_.add(std::move(pack))) return false;
   selected.push_back(id);
   if (!session->activatePacks(selected, millisNow())) {
@@ -153,8 +155,11 @@ bool SessionRegistry::restore(const std::string& code, std::string_view snapshot
   std::string customId;
   if (record->customPack) {
     customId = record->customPack->id;
-    if (!PackLibrary::validId(customId) || !customId.starts_with(customPrefix(code)) ||
-        !packs_.add(*record->customPack)) return false;
+    if (!PackLibrary::validId(customId) || !customId.starts_with(customPrefix(code)))
+      return false;
+    record->customPack->language = record->language;
+    record->customPack->title = record->language == "en" ? "Custom cards" : "Eigene Karten";
+    if (!packs_.add(*record->customPack)) return false;
   }
   if (packs_.deck(record->packs) == nullptr) {
     if (!customId.empty()) packs_.remove(customId);
