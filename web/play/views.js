@@ -3,6 +3,7 @@
 import { t } from './text.js';
 import { fillSentence } from './sentence.js';
 import { qrSvg } from './qr.js';
+import { hostCrown, markHost } from './crown.js';
 
 const NO_SEAT = 255;
 const $ = (id) => document.getElementById(id);
@@ -67,6 +68,16 @@ export function render(app, actions) {
 function renderMast(app, view) {
   const status = app.connected ? 'connected' : app.everConnected ? 'offline' : 'connecting';
   $('connection').textContent = view === 'missing' ? '' : t(status);
+  // A non-playing host has no player row to wear the crown.
+  const badge = $('host-badge');
+  badge.hidden = !app.isHost || isSeated(app);
+  if (!badge.hidden) {
+    if (!badge.firstChild) {
+      const title = document.createElement('span');
+      badge.append(hostCrown(), title);
+    }
+    badge.lastChild.textContent = t('hostRole');
+  }
   const frame = app.frame;
   const seatedRunning = isSeated(app) && isRunning(frame) && !frame.pausedBy && !frame.blockedOn;
   $('pause-button').hidden = !seatedRunning || view === 'hold';
@@ -108,7 +119,8 @@ function rosterItems(app) {
     let label = nameWithWord(player);
     if (player.seat === app.frame.me.seat) label += t('youMark');
     if (!player.connected) label += t('offlineMark');
-    return listItem(label);
+    const item = listItem(label);
+    return player.isHost ? markHost(item, label, t('hostRole')) : item;
   });
 }
 
