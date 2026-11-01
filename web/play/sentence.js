@@ -40,6 +40,7 @@ export function fillSentence(element, prompt, answers) {
       continue;
     }
     const mark = document.createElement('mark');
+    mark.className = 'answer-tape';
     mark.textContent = part.text;
     element.append(mark);
   }
