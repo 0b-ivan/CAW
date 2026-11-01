@@ -247,11 +247,9 @@ function playItem(app, actions, play, index, canJudge) {
   const sentence = document.createElement('span');
   sentence.className = 'choice-content';
   sentence.append(number);
+  // Options remain plain text; only the sentence preview above uses embossed tape.
   play.cards.forEach((card, i) => {
-    const mark = document.createElement('mark');
-    mark.className = 'answer-tape';
-    mark.textContent = card;
-    sentence.append(i === 0 ? ' ' : ' / ', mark);
+    sentence.append(i === 0 ? ' ' : ' / ', card);
   });
   body.append(sentence);
   if (canJudge) {
