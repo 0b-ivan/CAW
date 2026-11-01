@@ -28,8 +28,9 @@ export function renderMenu(app, actions) {
   const playerPage = app.menu.page === 'proposal';
   const allowedHost = app.isHost && app.frame;
   const allowedPlayer = isSeated(app) && app.frame?.phase === 'lobby';
-  const page = (hostPage && !allowedHost) || (playerPage && !allowedPlayer)
-    ? 'main' : app.menu.page;
+  const reviewingOutsideLobby = app.menu.page === 'proposals' && app.frame?.phase !== 'lobby';
+  const page = (hostPage && !allowedHost) || (playerPage && !allowedPlayer) ||
+    reviewingOutsideLobby ? 'main' : app.menu.page;
   const pages = {
     main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage, packs: packsPage, cards: (app, actions) => editorPage(app, actions, () => backRow(actions)),
     proposal: (app, actions) => suggestPage(app, actions, () => backRow(actions)),

@@ -56,7 +56,7 @@ export function reviewPage(app, actions, back) {
   reload.className = 'editor-save';
   reload.disabled = app.proposalLoading || app.proposalReviewing;
   rows.push(reload, note(app.proposalStatus));
-  if (app.proposalLoading && !app.proposals) {
+  if (!app.proposals) {
     rows.push(note(t('proposalLoading')));
     return rows;
   }

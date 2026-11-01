@@ -271,7 +271,7 @@ const actions = {
   async submitProposal() {
     if (app.proposalSending || app.frame?.phase !== 'lobby') return;
     const text = app.proposalDraft.text.trim();
-    if (!text || new TextEncoder().encode(text).length > 300 || /[\\r\\n]/.test(text)) {
+    if (!text || new TextEncoder().encode(text).length > 300 || /[\r\n]/.test(text)) {
       app.proposalDraft.status = t('proposalInvalid');
       update();
       return;
