@@ -75,7 +75,7 @@ Big-Screen-Inhalte je Phase:
 Alles hier existiert bereits und ist dort getestet; die Web-App portiert es,
 statt es neu zu erfinden.
 
-- 3–8 Spieler, Hand 10 Karten, Juror rotiert, Pick 1/2/3, Draw 2 bei Pick 3.
+- 3–8 Spieler, **Standardhand 7 Karten** (Host kann in der Lobby 3–10 wählen), Juror rotiert, Pick 1/2/3, Draw 2 bei Pick 3. Nach der Runde wird auf die konfigurierte Handgröße aufgefüllt; Draw 2 kann sie vorübergehend um zwei übersteigen. Bereits begonnene Partien behalten ihre Handgröße.
 - Antworten anonym bis zur Auflösung, Rando Cardrissian optional.
 - Rundenzahl wird auf ein Vielfaches der Spielerzahl gerundet.
 - Echter Ziehstapel, keine Frage wiederholt sich pro Session.
