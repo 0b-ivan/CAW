@@ -293,6 +293,21 @@ Zeremonie ohne Krone: Sieger-Typografie, Balken-Endstand, darunter alle 6 s
 der nächste Siegersatz der Partie, „x VON y WOLLEN NOCHMAL“ und in der
 Fußzeile Rechteinhaber und Lizenz der Packs.
 
+## 5a. Eigene Karten – Host-Editor (nach M8)
+
+Im Host-Menü der Lobby führt **EIGENE KARTEN** zu einer intern scrollbareren
+Menüseite mit Fragen und Antworten. Für jede Karte gibt es ein Textfeld und
+`[ ENTFERNEN ]`, hinzu kommen `[ FRAGE HINZUFÜGEN ]` beziehungsweise
+`[ ANTWORT HINZUFÜGEN ]`. Eine Erklärung für `___` steht vor den Fragen.
+`[ SPEICHERN & AKTIVIEREN ]` überträgt das gesamte Set nur mit Host-Token
+an den Server und stellt es in die laufende Deckauswahl. Der Editor erlaubt
+Import und Export als JSON-Datei, damit eigene Karten nicht an die Lebensdauer
+der Session gebunden sind. Alle Fehler erscheinen als Text, nie nur als Farbe.
+
+Schwarz/Weiß, Monospace, 48-px-Tippziele, Fokusmarkierung und keine scrollende
+Seite bleiben verbindlich. Sämtliche editorbezogenen UI-Texte gibt es auf
+Deutsch und Englisch. Eine laufende Partie sperrt das Speichern.
+
 ## 6. Responsiv
 
 | Breite | Verhalten |

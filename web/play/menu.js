@@ -4,6 +4,7 @@ import { t, currentLanguage } from './text.js';
 import { isRunning, isSeated } from './views.js';
 import { shareableSessionUrl } from './invite.js';
 import { qrSvg } from './qr.js';
+import { editorPage } from './editor.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -22,14 +23,14 @@ export function renderMenu(app, actions) {
   menu.hidden = !app.menu.open;
   $('menu-button').setAttribute('aria-expanded', String(app.menu.open));
   if (!app.menu.open) return;
-  const hostPage = ['rules', 'players', 'packs'].includes(app.menu.page);
+  const hostPage = ['rules', 'players', 'packs', 'cards'].includes(app.menu.page);
   const page = hostPage && !(app.isHost && app.frame) ? 'main' : app.menu.page;
   const pages = {
-    main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage, packs: packsPage, fame: famePage,
+    main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage, packs: packsPage, cards: (app, actions) => editorPage(app, actions, () => backRow(actions)), fame: famePage,
   };
   const titles = {
     main: t('sessionCode', app.code), rules: t('rules'), players: t('playersMenu'),
-    screen: t('bigScreen'), packs: t('packsMenu'), fame: t('fame'),
+    screen: t('bigScreen'), packs: t('packsMenu'), cards: t('customCards'), fame: t('fame'),
   };
   $('menu-title').textContent = titles[page];
   $('menu-body').replaceChildren(...pages[page](app, actions));
@@ -67,7 +68,10 @@ function hostGroup(app, actions) {
   rows.push(row(t(frame.locked ? 'unlockLobby' : 'lockLobby'), frame.locked ? t('lobbyLocked') : '',
     () => actions.host(frame.locked ? 'unlock' : 'lock')));
   rows.push(row(t('rules'), '›', () => actions.openMenuPage('rules')));
-  if (phase === 'lobby') rows.push(row(t('packsMenu'), String(frame.packs.length), () => actions.openMenuPage('packs')));
+  if (phase === 'lobby') {
+    rows.push(row(t('packsMenu'), String(frame.packs.length), () => actions.openMenuPage('packs')));
+    rows.push(row(t('customCards'), '›', () => actions.openMenuPage('cards')));
+  }
   rows.push(row(t('playersMenu'), String(frame.players.length), () => actions.openMenuPage('players')));
   if (isRunning(frame)) rows.push(confirmRow(app, actions, 'end', t('endGame'), () => actions.host('end')));
   if (phase === 'finished') rows.push(row(t('rematchRow'), '', () => actions.host('rematch')));
@@ -167,15 +171,22 @@ function packsPage(app, actions) {
     return [...rows, note(t('packsLoading'))];
   }
   const chosen = app.frame.packs.map((pack) => pack.id);
+  if (chosen.some((id) => id.startsWith('custom-')) && !app.editor && !app.editorLoading)
+    actions.loadCards();
   const locked = app.frame.phase !== 'lobby';
   rows.push(note(t(locked ? 'packsLobbyOnly' : 'packsHint')));
-  for (const pack of app.catalog) {
+  const available = [...app.catalog];
+  const own = app.editor?.id && !available.some((pack) => pack.id === app.editor.id)
+    ? { id: app.editor.id, title: t('customCards'), prompts: app.editor.prompts.length, answers: app.editor.answers.length }
+    : null;
+  if (own) available.push(own);
+  for (const pack of available) {
     const on = chosen.includes(pack.id);
     const next = on ? chosen.filter((id) => id !== pack.id) : [...chosen, pack.id];
     const line = row(pack.title, t('packCards', pack.prompts, pack.answers), () => actions.choosePacks(next));
     line.setAttribute('aria-pressed', String(on));
     // A choice without answer cards could not deal a hand; the server would refuse it too.
-    const answers = app.catalog.filter((p) => next.includes(p.id)).reduce((sum, p) => sum + p.answers, 0);
+    const answers = available.filter((p) => next.includes(p.id)).reduce((sum, p) => sum + p.answers, 0);
     line.disabled = locked || next.length === 0 || next.length > 8 || answers === 0;
     rows.push(line);
   }
