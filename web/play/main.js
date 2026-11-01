@@ -333,9 +333,9 @@ function bindButtons() {
   on('pause-button', () => actions.player('pause'));
   on('copy-link', actions.copyLink);
   on('lobby-url', () => {
-    app.editInvite = true;
+    app.editInvite = !app.editInvite;
     update();
-    $('invite-address').focus();
+    if (app.editInvite) $('invite-address').focus();
   });
   $('invite-address').addEventListener('change', (event) => {
     actions.setInviteOrigin(event.target.value);
