@@ -5,6 +5,9 @@ const landing = document.querySelector('#landing');
 const boot = document.querySelector('#boot-screen');
 const replayButton = document.querySelector('#replay-intro');
 const skipButton = document.querySelector('#skip-intro');
+const guide = document.querySelector('#guide-dialog');
+const openGuideButton = document.querySelector('#open-guide');
+const closeGuideButton = document.querySelector('#close-guide');
 const introKey = 'caw.intro.seen';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -107,8 +110,8 @@ function zoomMiddleCard() {
     zoomCard.style.height = `${boot.clientHeight}px`;
     zoomCard.style.fontSize = `${Math.min(boot.clientWidth, boot.clientHeight) * 0.75}px`;
   });
-  later(820, () => boot.classList.add('is-completing'));
-  later(1120, () => finishIntro());
+  later(370, () => boot.classList.add('is-completing'));
+  later(520, () => finishIntro());
 }
 
 function startIntro() {
@@ -124,11 +127,12 @@ function startIntro() {
   skipButton.focus();
 
   // Each step is independent of the server: no game state or timers are blocked.
-  later(80, () => boot.classList.add('is-shuffling'));
-  later(1030, () => boot.classList.add('is-shifted'));
-  later(1640, () => boot.classList.add('has-slash'));
-  later(2080, () => boot.classList.add('has-wordmark'));
-  later(3130, zoomMiddleCard);
+  // The entire brand sequence finishes in about 1.5 seconds, not 4.2.
+  later(40, () => boot.classList.add('is-shuffling'));
+  later(380, () => boot.classList.add('is-shifted'));
+  later(620, () => boot.classList.add('has-slash'));
+  later(770, () => boot.classList.add('has-wordmark'));
+  later(1010, zoomMiddleCard);
 }
 
 function showStatus(key) {
@@ -178,6 +182,8 @@ document.querySelector('#code').addEventListener('input', (event) => {
   event.target.value = event.target.value.toUpperCase();
 });
 skipButton.addEventListener('click', () => finishIntro(true));
+openGuideButton.addEventListener('click', () => guide.showModal());
+closeGuideButton.addEventListener('click', () => guide.close());
 replayButton.addEventListener('click', startIntro);
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !boot.hidden) finishIntro(true);
