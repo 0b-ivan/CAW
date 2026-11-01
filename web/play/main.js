@@ -33,6 +33,9 @@ const app = {
   menu: { open: false, page: 'main' },
   armed: null, // the row waiting for its second tap
   catalog: null, // every pack the server offers, loaded when the host opens PACKS
+  editor: null, // room-only custom cards, editable only in the lobby
+  editorLoading: false,
+  editorSaving: false,
   fame: null, // the Wall of Fame, loaded when the menu page opens
   famePage: 0,
   flashedRound: 0,
@@ -178,6 +181,86 @@ const actions = {
   },
   choosePacks(ids) {
     sendHost({ type: 'packs', packs: ids });
+  },
+  refresh() {
+    update();
+  },
+  loadCards() {
+    const token = secrets.hostToken(code);
+    if (!token || app.editorLoading) return;
+    app.editorLoading = true;
+    fetch('/api/sessions/' + code + '/cards', {
+      headers: { Authorization: 'Bearer ' + token }, cache: 'no-store',
+    }).then((response) => {
+      if (!response.ok) throw new Error('Custom cards unavailable');
+      return response.json();
+    }).then((cards) => {
+      app.editor = { ...cards, dirty: false, status: '' };
+    }).catch(() => {
+      app.editor = { prompts: [], answers: [], dirty: false, status: t('customLoadFailed') };
+    }).finally(() => {
+      app.editorLoading = false;
+      update();
+    });
+  },
+  async saveCards() {
+    if (!app.editor || app.editorSaving || app.frame.phase !== 'lobby') return;
+    const trim = (cards) => cards.map((text) => text.trim()).filter(Boolean);
+    const cards = { prompts: trim(app.editor.prompts), answers: trim(app.editor.answers) };
+    const valid = [...cards.prompts, ...cards.answers].every((text) =>
+      new TextEncoder().encode(text).length <= 300);
+    if (!valid || (cards.prompts.length + cards.answers.length === 0 && !app.editor.id)) {
+      app.editor.status = t('customInvalid');
+      update();
+      return;
+    }
+    app.editorSaving = true;
+    try {
+      const response = await fetch('/api/sessions/' + code + '/cards', {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + secrets.hostToken(code), 'Content-Type': 'application/json' },
+        body: JSON.stringify(cards),
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      const saved = await response.json();
+      app.editor = { ...saved, dirty: false,
+        status: saved.id ? t('customSaved') : t('customCleared') };
+      app.catalog = null;
+    } catch (error) {
+      app.editor.status = error.message === '409' ? t('customUnavailable') : t('customSaveFailed');
+    } finally {
+      app.editorSaving = false;
+      update();
+    }
+  },
+  exportCards() {
+    if (!app.editor) return;
+    const content = JSON.stringify({
+      prompts: app.editor.prompts,
+      answers: app.editor.answers,
+    }, null, 2);
+    const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'caw-eigene-karten.json';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
+  async importCards(file) {
+    try {
+      if (file.size > 128 * 1024) throw new Error('oversized');
+      const parsed = JSON.parse(await file.text());
+      if (!parsed || !Array.isArray(parsed.prompts) || !Array.isArray(parsed.answers) ||
+          parsed.prompts.length > 100 || parsed.answers.length > 100 ||
+          ![...parsed.prompts, ...parsed.answers].every((text) => typeof text === 'string')) {
+        throw new Error('invalid');
+      }
+      app.editor = { prompts: parsed.prompts, answers: parsed.answers,
+        dirty: true, status: t('customImported') };
+    } catch {
+      app.editor.status = t('customImportFailed');
+    }
+    update();
   },
   loadFame() {
     fetch('/api/fame', { cache: 'no-store' })

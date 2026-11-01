@@ -1,6 +1,7 @@
 // Follows the X4 firmware's CardPartyBrowserServer: same seat, ticket and host rules.
 #include "Session.h"
 
+#include <algorithm>
 #include <stdexcept>
 #include <utility>
 
@@ -31,8 +32,9 @@ bool isPlayerMove(Command::Type type) {
 }  // namespace
 
 Session::Session(std::string hostToken, PackLibrary& library, std::vector<std::string> packs,
-                 std::uint32_t seed, std::uint32_t now)
+                 std::uint32_t seed, std::uint32_t now, std::string customPrefix)
     : hostToken_(std::move(hostToken)),
+      customPrefix_(std::move(customPrefix)),
       library_(library),
       packIds_(PackLibrary::normalized(packs)) {
   const Deck* deck = library_.deck(packIds_);
@@ -209,6 +211,9 @@ bool Session::applySettings(const Settings& settings, std::uint32_t now) {
 // Packs change only in the lobby, so no hand or played card points at a vanished card.
 bool Session::selectPacks(const std::vector<std::string>& ids) {
   if (game_.phase() != Phase::Lobby) return false;
+  for (const std::string& id : ids)
+    if (id.starts_with("custom-") && (customPrefix_.empty() || !id.starts_with(customPrefix_)))
+      return false;
   const Deck* deck = library_.deck(ids);
   if (deck == nullptr) return false;
   deck_ = *deck;
@@ -294,6 +299,14 @@ bool Session::takeChanged() {
   return changed;
 }
 
+bool Session::inLobby() const { return game_.phase() == Phase::Lobby; }
+
+bool Session::activatePacks(const std::vector<std::string>& ids, std::uint32_t now) {
+  if (!selectPacks(ids)) return false;
+  publishAll(now);
+  return true;
+}
+
 bool Session::isHostToken(std::string_view token) const {
   return Codes::sameToken(hostToken_, token);
 }
@@ -342,6 +355,11 @@ void Session::roundWon(const PublicView& view) {
                                sizeof(sentence));
   const bool seated = view.winner < kPlayers;
   matchLines_.push_back({seated ? playerName(view.winner) : "Rando", sentence});
+  // A private deck might appear in any composed winner: never publish it to the public fame.
+  if (!customPrefix_.empty() &&
+      std::any_of(packIds_.begin(), packIds_.end(),
+                  [this](const std::string& id) { return id.starts_with(customPrefix_); }))
+    return;
   if (!seated || identities_[view.winner].playerId.empty()) return;
   const Identity& winner = identities_[view.winner];
   history_.push_back({HistoryEvent::Kind::RoundWon, winner.playerId, playerName(view.winner),

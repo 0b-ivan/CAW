@@ -24,6 +24,7 @@ struct RoomRecord {
   std::vector<Identity> identities;
   std::vector<MatchLine> lines;
   bool locked = false;
+  std::optional<CardPack> customPack = std::nullopt;  // only this room may use these texts
 };
 
 class Messages {
@@ -41,6 +42,10 @@ class Messages {
   // {"packs":[{id,file,title,language,license,rightsHolder,sourceUrl}]}; nothing if any
   // entry lacks a field. License and rights holder are required, never guessed.
   static std::optional<std::vector<PackEntry>> readPackManifest(std::string_view text);
+  // Accepts strict JSON arrays of user-authored cards using CSV validation limits.
+  static std::optional<CardPack> readCustomCards(std::string_view body);
+  // Only card text, never host credentials. Empty arrays if no custom pack exists.
+  static std::string customCards(const CardPack* pack);
   // Contains the host token and private hands: only for Redis.
   static std::string saveRoom(const RoomRecord& room);
   // Nothing if the text is not a complete, current room record.

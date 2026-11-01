@@ -103,6 +103,58 @@ void Server::registerSessionRoutes(uWS::App& app) {
   app.get("/api/packs", [this](auto* response, auto*) {
     jsonReply(response, "200 OK", Messages::packCatalog(packs_.packs()));
   });
+  // Card text is private to a room. Never place the host token in a URL.
+  app.get("/api/sessions/:code/cards", [this](auto* response, auto* request) {
+    if (!admitted(roomLimit_, response, request)) return;
+    const std::string code(request->getParameter(0));
+    const std::string_view authorization = request->getHeader("authorization");
+    if (!authorization.starts_with("Bearer ") ||
+        !sessions_.authenticatedHost(code, authorization.substr(7))) {
+      jsonReply(response, "403 Forbidden", Messages::errorResponse("not_host"));
+      return;
+    }
+    jsonReply(response, "200 OK", Messages::customCards(sessions_.customCards(code)));
+  });
+  app.put("/api/sessions/:code/cards", [this](auto* response, auto* request) {
+    if (!admitted(roomLimit_, response, request)) return;
+    const std::string code(request->getParameter(0));
+    const std::string_view authorization = request->getHeader("authorization");
+    if (!authorization.starts_with("Bearer ") ||
+        !sessions_.authenticatedHost(code, authorization.substr(7))) {
+      jsonReply(response, "403 Forbidden", Messages::errorResponse("not_host"));
+      return;
+    }
+    auto body = std::make_shared<RequestBody>();
+    response->onAborted([body]() { body->content.clear(); });
+    response->onData([this, response, body, code](std::string_view chunk, bool final) {
+      constexpr std::size_t kMaxBytes = 128 * 1024;
+      if (!body->tooLarge) {
+        if (chunk.size() > kMaxBytes - body->content.size())
+          body->tooLarge = true;
+        else
+          body->content.append(chunk);
+      }
+      if (!final) return;
+      if (body->tooLarge) {
+        jsonReply(response, "413 Payload Too Large", Messages::errorResponse("body_too_large"));
+        return;
+      }
+      auto pack = Messages::readCustomCards(body->content);
+      if (!pack) {
+        jsonReply(response, "400 Bad Request", Messages::errorResponse("invalid_cards"));
+        return;
+      }
+      if (!sessions_.updateCustomCards(code, std::move(*pack))) {
+        jsonReply(response, "409 Conflict", Messages::errorResponse("cards_unavailable"));
+        return;
+      }
+      Session* session = sessions_.find(code);
+      if (session != nullptr) deliver(code, *session);
+      // An editor save is rare: persist its complete card document immediately.
+      persist(code);
+      jsonReply(response, "200 OK", Messages::customCards(sessions_.customCards(code)));
+    });
+  });
   auto createHandler = [this](auto* response, auto* request) {
     if (admitted(createLimit_, response, request)) createRoom(response, sessions_, persist_);
   };

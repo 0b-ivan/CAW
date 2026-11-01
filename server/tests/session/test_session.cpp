@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "TestPacks.h"
+#include "net/Messages.h"
 #include "session/Session.h"
 
 using caw::Command;
@@ -22,6 +23,11 @@ const std::string kHostToken = "0123456789abcdef0123456789abcdef";
 // Collects every frame per connection, the way the WebSocket transport would deliver them.
 struct Table {
   Session session{kHostToken, testPacks(), kTestPacks, 42, 1000};
+  Table() = default;
+  Table(caw::PackLibrary& library, const std::vector<std::string>& selected,
+        const std::string& prefix)
+      : session(kHostToken, library, selected, 42, 1000, prefix) {}
+
   std::map<ConnectionId, std::vector<json>> inbox;
   std::map<ConnectionId, bool> closed;
   std::map<ConnectionId, std::string> tickets;
@@ -527,6 +533,28 @@ TEST_CASE("rounds and matches become history, with the winning sentences of the 
   table.host(9, Command::Type::Rematch);
   table.host(9, Command::Type::Start);
   CHECK(table.lastState(1).at("lines").empty());
+}
+
+TEST_CASE("private custom decks remain in the room but not public winning history") {
+  caw::PackLibrary library;
+  REQUIRE(library.add(caw::syntheticPack()));
+  auto own = caw::Messages::readCustomCards(
+      R"({"prompts":["Meine private Frage ___."],"answers":["Meine Antwort"]})");
+  REQUIRE(own);
+  own->id = "custom-abc234-xyz2";
+  REQUIRE(library.add(*own));
+
+  Table table(library, {"test", own->id}, "custom-abc234-");
+  table.startThree();
+  const ConnectionId judge = table.juror();
+  REQUIRE(judge != 0);
+  for (ConnectionId player : {1u, 2u, 3u})
+    if (player != judge) table.submit(player);
+  table.judge(judge, 0);
+  const json reveal = table.lastState(1);
+  CHECK(reveal.at("phase") == "reveal");
+  CHECK(table.session.matchLines().size() == 1);
+  CHECK(table.session.takeHistory().empty());  // no private winning sentences in global fame
 }
 
 TEST_CASE("a locked lobby turns new players away, seated ones keep playing") {

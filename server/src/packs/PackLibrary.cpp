@@ -94,6 +94,20 @@ const CardPack* PackLibrary::find(const std::string& id) const {
   return nullptr;
 }
 
+void PackLibrary::remove(const std::string& id) {
+  // Every cached combination owns pointers into its source packs.
+  const std::string needle = "," + id + ",";
+  for (auto it = decks_.begin(); it != decks_.end();) {
+    if (("," + it->first + ",").find(needle) != std::string::npos)
+      it = decks_.erase(it);
+    else
+      ++it;
+  }
+  packs_.erase(std::remove_if(packs_.begin(), packs_.end(),
+                              [&](const auto& pack) { return pack->id == id; }),
+               packs_.end());
+}
+
 std::vector<std::string> PackLibrary::defaultSelection(const std::string& language) const {
   std::vector<std::string> ids;
   for (const auto& pack : packs_)

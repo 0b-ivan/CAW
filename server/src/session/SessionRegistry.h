@@ -38,6 +38,9 @@ class SessionRegistry final {
                          Time now = Clock::now()) const;
   std::size_t activeCount(Time now = Clock::now()) const;
   void expire(Time now = Clock::now());
+  // The room-only pack is private and may be replaced only in the lobby.
+  const CardPack* customCards(std::string_view code) const;
+  bool updateCustomCards(std::string_view code, CardPack pack);
 
   // The running match of a room, or nullptr. Every lookup counts as activity.
   Session* find(std::string_view code, Time now = Clock::now());
@@ -55,6 +58,7 @@ class SessionRegistry final {
     std::string hostToken;
     Time expiresAt;
     std::unique_ptr<Session> session;
+    std::optional<CardPack> customPack = std::nullopt;
   };
 
   std::chrono::hours ttl_;
