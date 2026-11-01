@@ -25,6 +25,7 @@ struct RoomRecord {
   std::vector<MatchLine> lines;
   bool locked = false;
   std::optional<CardPack> customPack = std::nullopt;  // only this room may use these texts
+  std::vector<CardProposal> proposals = {};
 };
 
 class Messages {
@@ -46,6 +47,9 @@ class Messages {
   static std::optional<CardPack> readCustomCards(std::string_view body);
   // Only card text, never host credentials. Empty arrays if no custom pack exists.
   static std::string customCards(const CardPack* pack);
+  static std::optional<CardProposal> readProposal(std::string_view body);
+  static std::optional<ProposalDecision> readProposalDecision(std::string_view body);
+  static std::string proposalQueue(const std::vector<CardProposal>& proposals);
   // Contains the host token and private hands: only for Redis.
   static std::string saveRoom(const RoomRecord& room);
   // Nothing if the text is not a complete, current room record.

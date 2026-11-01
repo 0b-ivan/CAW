@@ -361,6 +361,39 @@ verbindlich.
   Das Format und die UI müssen ohne Framework, Build-Schritt oder Datenbank
   auf dem synchronen Spiel-Thread auskommen.
 
+## 14a. Gemeinsamer Karteneditor (nach M9)
+
+Angemeldete Spieler können in der Lobby einzelne Frage- oder Antwortkarten
+**vorschlagen**. Der Host sieht eine private Warteschlange und entscheidet
+ausdrücklich mit ANNEHMEN oder ABLEHNEN. Vorschläge sind bis zur Annahme
+niemals Teil eines Kartendecks; die Spielregeln und der bestehende Host-Editor
+bleiben unverändert. Kein Upload in die globale Pack-Bibliothek.
+
+- `POST /api/sessions/{code}/proposals`: nur mit dem **aktuellen**
+  Sitz-Ticket im `Authorization: Bearer`-Header und nur in der Lobby.
+  Striktes JSON `{"type":"prompt"|"answer","text":"..."}`; für die
+  Karte gelten dieselben UTF-8-, 300-Byte-, Steuerzeichen- und Lückenregeln
+  wie im Host-Editor. Ein Host-Token ersetzt kein Sitz-Ticket.
+- `GET /api/sessions/{code}/proposals` und
+  `POST /api/sessions/{code}/proposals/review`: nur mit Host-Token.
+  Review: `{"id":"...","approve":true|false}`. Bei Annahme fügt der
+  Server die Karte dem sessionspezifischen Pack hinzu und aktiviert es wie
+  beim Host-Editor; jede Deck- oder Größenverletzung lehnt **die gesamte**
+  Aktion ohne Löschen des Vorschlags ab.
+- Pro Raum maximal 24 offene Vorschläge, maximal 3 pro Sitz. Annahme oder
+  Ablehnung löscht genau den behandelten Eintrag. Ein neuer Host-Editor-Save
+  löscht die Warteschlange **nicht**. Die Liste ist ausschließlich für
+  den Host sichtbar und wird nicht in Public-State/Big-Screen/Fame eingebaut.
+- Die Warteschlange und ihre Autoren liegen nur im privaten Redis-Room-
+  Snapshot (Schema 6; Schema 4/5 weiterhin lesbar). Tickets werden niemals
+  mit den Vorschlägen an Clients zurückgegeben; ausschließlich Texte und
+  vorgeschlagene Anzeigenamen gehen an den Host. Nach einem Kick ist das
+  bisherige Ticket ungültig, auch für Vorschläge.
+- REST-Anfragen bleiben im Single-Thread-Event-Loop, mit vorhandenen
+  IP-Rate-Limits und maximal 1024 Byte Body. Der Host aktualisiert die
+  Vorschlagsliste auf seiner Menüseite gezielt per Button; kein Polling
+  auf allen Handys und keine neuen Dienste.
+
 ## 15. Deployment nach erfolgreichem main-CI-Lauf (geplant)
 
 Die GitHub-Actions-CI bleibt alleiniger Qualitäts-Gate. Ein separater

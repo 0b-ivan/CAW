@@ -209,6 +209,54 @@ std::string Messages::customCards(const CardPack* pack) {
   return response.dump();
 }
 
+std::optional<CardProposal> Messages::readProposal(std::string_view body) {
+  try {
+    const json request = json::parse(body);
+    if (!request.is_object() || request.size() != 2 || !request.contains("type") ||
+        !request.contains("text") || !request.at("type").is_string() ||
+        !request.at("text").is_string())
+      return std::nullopt;
+    CardProposal proposal;
+    proposal.type = request.at("type").get<std::string>();
+    proposal.text = request.at("text").get<std::string>();
+    if (proposal.type != "prompt" && proposal.type != "answer") return std::nullopt;
+    json cards = {{"prompts", json::array()}, {"answers", json::array()}};
+    cards[proposal.type == "prompt" ? "prompts" : "answers"].push_back(proposal.text);
+    const auto valid = readCustomCards(cards.dump());
+    if (!valid) return std::nullopt;
+    proposal.text =
+        proposal.type == "prompt" ? valid->prompts.front().text : valid->answers.front();
+    return proposal;
+  } catch (const json::exception&) {
+    return std::nullopt;
+  }
+}
+
+std::optional<ProposalDecision> Messages::readProposalDecision(std::string_view body) {
+  try {
+    const json request = json::parse(body);
+    if (!request.is_object() || request.size() != 2 || !request.contains("id") ||
+        !request.contains("approve") || !request.at("id").is_string() ||
+        !request.at("approve").is_boolean())
+      return std::nullopt;
+    ProposalDecision decision;
+    decision.id = request.at("id").get<std::string>();
+    decision.approve = request.at("approve").get<bool>();
+    if (decision.id.size() != 6) return std::nullopt;
+    return decision;
+  } catch (const json::exception&) {
+    return std::nullopt;
+  }
+}
+
+std::string Messages::proposalQueue(const std::vector<CardProposal>& proposals) {
+  json items = json::array();
+  for (const CardProposal& item : proposals)
+    items.push_back(
+        {{"id", item.id}, {"author", item.author}, {"type", item.type}, {"text", item.text}});
+  return json{{"proposals", items}}.dump();
+}
+
 std::string Messages::saveRoom(const RoomRecord& room) {
   json identities = json::array();
   for (const Identity& identity : room.identities)
@@ -221,10 +269,17 @@ std::string Messages::saveRoom(const RoomRecord& room) {
     custom = json::parse(customCards(&*room.customPack));
     custom["id"] = room.customPack->id;
   }
+  json proposals = json::array();
+  for (const CardProposal& item : room.proposals)
+    proposals.push_back({{"id", item.id},
+                         {"author", item.author},
+                         {"type", item.type},
+                         {"text", item.text},
+                         {"seat", item.seat}});
   const std::string head =
-      json{{"schema", 5},           {"language", room.language}, {"hostToken", room.hostToken},
+      json{{"schema", 6},           {"language", room.language}, {"hostToken", room.hostToken},
            {"packs", room.packs},   {"identities", identities},  {"lines", lines},
-           {"locked", room.locked}, {"custom", custom}}
+           {"locked", room.locked}, {"custom", custom},          {"proposals", proposals}}
           .dump();
   // room.state is already JSON text (saveState); spliced in rather than parsed again.
   return head.substr(0, head.size() - 1) + ",\"state\":" + room.state + "}";
@@ -236,7 +291,8 @@ std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
     // Older schemas lack packs or player identities; such rooms are not restored.
     if (!record.is_object() ||
         !((record.size() == 8 && record.at("schema") == 4) ||
-          (record.size() == 9 && record.at("schema") == 5)) ||
+          (record.size() == 9 && record.at("schema") == 5) ||
+          (record.size() == 10 && record.at("schema") == 6)) ||
         !record.at("language").is_string() || !record.at("hostToken").is_string() ||
         !record.at("packs").is_array() || !record.at("state").is_object())
       return std::nullopt;
@@ -246,7 +302,7 @@ std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
     room.packs = record.at("packs").get<std::vector<std::string>>();
     room.state = record.at("state").dump();
     room.locked = record.at("locked").get<bool>();
-    if (record.at("schema") == 5 && !record.at("custom").is_null()) {
+    if (record.at("schema") >= 5 && !record.at("custom").is_null()) {
       json content = record.at("custom");
       if (!content.is_object() || !content.contains("id") || !content.at("id").is_string())
         return std::nullopt;
@@ -256,6 +312,27 @@ std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
       if (!custom || (custom->prompts.empty() && custom->answers.empty())) return std::nullopt;
       custom->id = id;
       room.customPack = std::move(*custom);
+    }
+    if (record.at("schema") == 6) {
+      const json& proposals = record.at("proposals");
+      if (!proposals.is_array() || proposals.size() > 24) return std::nullopt;
+      for (const json& item : proposals) {
+        if (!item.is_object() || item.size() != 5 || !item.at("id").is_string() ||
+            !item.at("author").is_string() || !item.at("type").is_string() ||
+            !item.at("text").is_string() || !item.at("seat").is_number_unsigned())
+          return std::nullopt;
+        CardProposal proposal;
+        proposal.id = item.at("id").get<std::string>();
+        proposal.author = item.at("author").get<std::string>();
+        proposal.type = item.at("type").get<std::string>();
+        proposal.text = item.at("text").get<std::string>();
+        proposal.seat = item.at("seat").get<std::uint8_t>();
+        if (proposal.id.size() != 6 || proposal.author.empty() || proposal.author.size() > 23 ||
+            proposal.seat >= cardparty::kPlayers ||
+            !readProposal(json{{"type", proposal.type}, {"text", proposal.text}}.dump()))
+          return std::nullopt;
+        room.proposals.push_back(std::move(proposal));
+      }
     }
     for (const json& identity : record.at("identities"))
       room.identities.push_back(

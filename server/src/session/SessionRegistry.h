@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "packs/PackLibrary.h"
+#include "session/RoomExtras.h"
 #include "session/Session.h"
 
 namespace caw {
@@ -41,6 +42,9 @@ class SessionRegistry final {
   // The room-only pack is private and may be replaced only in the lobby.
   const CardPack* customCards(std::string_view code) const;
   bool updateCustomCards(std::string_view code, CardPack pack);
+  const std::vector<CardProposal>& proposals(std::string_view code) const;
+  bool submitProposal(std::string_view code, std::string_view ticket, CardProposal proposal);
+  bool reviewProposal(std::string_view code, std::string_view id, bool approve);
 
   // The running match of a room, or nullptr. Every lookup counts as activity.
   Session* find(std::string_view code, Time now = Clock::now());
@@ -59,6 +63,7 @@ class SessionRegistry final {
     Time expiresAt;
     std::unique_ptr<Session> session;
     std::optional<CardPack> customPack = std::nullopt;
+    std::vector<CardProposal> proposals = {};
   };
 
   std::chrono::hours ttl_;

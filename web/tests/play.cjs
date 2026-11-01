@@ -405,6 +405,48 @@ async function run(browser) {
     'the custom card editor reloads its saved room cards');
   await host.locator('#menu-close').click();
 
+  // Guests propose cards, but only the host can inspect and approve them.
+  await openMenuPage(players[0], 'KARTE VORSCHLAGEN');
+  await players[0].locator('#proposal-type').selectOption('prompt');
+  await players[0].locator('#proposal-text').fill('Spielervorschlag ___?');
+  await checkFit(players[0], 'menu-propose', '#menu-close');
+  await players[0].getByRole('button', { name: '[ VORSCHLAGEN ]' }).click();
+  await players[0].locator('#menu-body', { hasText: 'DEM HOST VORGESCHLAGEN.' }).waitFor();
+  await players[0].locator('#menu-close').click();
+  await openMenuPage(players[1], 'KARTE VORSCHLAGEN');
+  await players[1].locator('#proposal-type').selectOption('answer');
+  await players[1].locator('#proposal-text').fill('Synthetischer Antwortvorschlag');
+  await players[1].getByRole('button', { name: '[ VORSCHLAGEN ]' }).click();
+  await players[1].locator('#menu-close').click();
+  assert.equal(await players[0].evaluate(async (room) =>
+    (await fetch('/api/sessions/' + room + '/proposals')).status, code), 403,
+  'the pending proposal list is host-only');
+  assert.equal(await players[0].evaluate(async (room) =>
+    (await fetch('/api/sessions/' + room + '/proposals/review', {
+      method: 'POST', headers: {
+        Authorization: 'Bearer ' + localStorage.getItem('caw.ticket.' + room),
+        'Content-Type': 'application/json',
+      }, body: JSON.stringify({ id: 'ABC234', approve: true }),
+    })).status, code), 403, 'players cannot approve even with a valid ticket');
+  await openMenuPage(host, 'KARTENVORSCHLÄGE');
+  await host.locator('.proposal-content', { hasText: 'Spielervorschlag ___?' }).waitFor();
+  await host.locator('.proposal-content', { hasText: 'Synthetischer Antwortvorschlag' }).waitFor();
+  await checkFit(host, 'menu-review', '#menu-close');
+  const acceptProposal = host.locator('.editor-card', { hasText: 'Spielervorschlag ___?' });
+  await acceptProposal.getByRole('button', { name: '[ ANNEHMEN ]' }).click();
+  await host.locator('#menu-body', { hasText: 'KARTE ÜBERNOMMEN.' }).waitFor();
+  const rejectProposal = host.locator('.editor-card', { hasText: 'Synthetischer Antwortvorschlag' });
+  await rejectProposal.getByRole('button', { name: '[ ABLEHNEN ]' }).click();
+  await host.locator('#menu-body', { hasText: 'KEINE OFFENEN VORSCHLÄGE.' }).waitFor();
+  await host.locator('#menu-close').click();
+  await openMenuPage(host, 'EIGENE KARTEN');
+  await host.locator('#card-prompts-1').waitFor();
+  assert.equal(await host.locator('#card-prompts-1').inputValue(), 'Spielervorschlag ___?',
+    'the approved card is in the private host pack');
+  assert.equal(await host.locator('#card-answers-0').inputValue(), 'Eigene Testantwort',
+    'the rejected card never reached the deck');
+  await host.locator('#menu-close').click();
+
   await host.locator('#start-button').click();
   for (let round = 1; round <= 3; round++) await playRound(host, players, round, screen);
 

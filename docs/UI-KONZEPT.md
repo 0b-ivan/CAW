@@ -308,6 +308,21 @@ Schwarz/Weiß, Monospace, 48-px-Tippziele, Fokusmarkierung und keine scrollende
 Seite bleiben verbindlich. Sämtliche editorbezogenen UI-Texte gibt es auf
 Deutsch und Englisch. Eine laufende Partie sperrt das Speichern.
 
+## 5b. Karten vorschlagen und freigeben (nach M9)
+
+Angemeldete Spieler sehen in der Lobby im Spielmenü **KARTE VORSCHLAGEN**.
+Dort wählen sie FRAGE oder ANTWORT, geben einen Text in ein mehrzeiliges
+Feld ein und senden mit `[ VORSCHLAGEN ]`. Ein Hinweis erklärt `___`
+und dass der Host vor der Verwendung zustimmen muss.
+
+Der Host öffnet im Lobby-Menü **KARTENVORSCHLÄGE**: eine intern
+scrollbare Liste mit Autor, Kartentyp, Text sowie `[ ANNEHMEN ]` und
+`[ ABLEHNEN ]`. `[ AKTUALISIEREN ]` lädt die Warteschlange erneut.
+Ungültige Eingaben, volle Warteschlange und fehlender Deckplatz erscheinen
+als ausgeschriebene Meldungen, nicht als Farbe. Während einer Partie sind
+diese Menüpunkte ausgeblendet. Alle Texte Deutsch/Englisch; unveränderte
+monochrome Gestaltung und Mindest-Tippziele von 48 px.
+
 ## 6. Responsiv
 
 | Breite | Verhalten |

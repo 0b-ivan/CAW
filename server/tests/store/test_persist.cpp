@@ -164,7 +164,93 @@ TEST_CASE("schema 4 room snapshots remain restorable without custom cards") {
   auto legacy = nlohmann::json::parse(caw::Messages::saveRoom(room));
   legacy["schema"] = 4;
   legacy.erase("custom");
+  legacy.erase("proposals");
   const auto decoded = caw::Messages::loadRoom(legacy.dump());
   REQUIRE(decoded);
   CHECK_FALSE(decoded->customPack);
+}
+
+TEST_CASE("pending proposals survive Redis restore and remain private") {
+  caw::PackLibrary packs;
+  REQUIRE(packs.add(caw::syntheticPack()));
+  SessionRegistry first(24, packs);
+  const auto room = first.create("de");
+  const auto other = first.create("de");
+  caw::Session* session = first.find(room.code);
+  REQUIRE(session);
+  caw::Command join;
+  join.type = caw::Command::Type::Join;
+  join.name = "Ada";
+  session->handle(11, join, caw::millisNow());
+  std::string ticket;
+  for (const caw::Outgoing& outgoing : session->takeOutgoing()) {
+    const auto frame = nlohmann::json::parse(outgoing.text);
+    if (frame.at("type") == "welcome") ticket = frame.at("token").get<std::string>();
+  }
+  REQUIRE(ticket.size() == 32);
+  const auto proposal =
+      caw::Messages::readProposal(R"({"type":"prompt","text":"Private Testfrage ___?"})");
+  REQUIRE(proposal);
+  CHECK_FALSE(first.submitProposal(other.code, ticket, *proposal));
+  CHECK_FALSE(first.submitProposal(room.code, room.hostToken, *proposal));
+  REQUIRE(first.submitProposal(room.code, ticket, *proposal));
+  REQUIRE(first.proposals(room.code).size() == 1);
+  CHECK(first.proposals(other.code).empty());
+  const std::string id = first.proposals(room.code).front().id;
+  CHECK(first.proposals(room.code).front().author == "Ada");
+
+  const std::string saved = first.snapshot(room.code);
+  CHECK(saved.find("Private Testfrage") != std::string::npos);
+  auto old = nlohmann::json::parse(saved);
+  old["schema"] = 5;
+  old.erase("proposals");
+  const auto schema5 = caw::Messages::loadRoom(old.dump());
+  REQUIRE(schema5);
+  CHECK(schema5->proposals.empty());
+  auto broken = nlohmann::json::parse(saved);
+  broken["proposals"][0]["text"] = "___ ___ ___ ___";
+  CHECK_FALSE(caw::Messages::loadRoom(broken.dump()));
+
+  caw::PackLibrary restoredPacks;
+  REQUIRE(restoredPacks.add(caw::syntheticPack()));
+  SessionRegistry restored(24, restoredPacks);
+  REQUIRE(restored.restore(room.code, saved));
+  REQUIRE(restored.proposals(room.code).size() == 1);
+  CHECK(restored.proposals(room.code).front().id == id);
+  CHECK_FALSE(restored.find(room.code)->playerForTicket(ticket));
+  REQUIRE(restored.reviewProposal(room.code, id, true));
+  CHECK(restored.proposals(room.code).empty());
+  REQUIRE(restored.customCards(room.code));
+  CHECK(restored.customCards(room.code)->prompts.front().text == "Private Testfrage ___?");
+  CHECK_FALSE(restored.reviewProposal(room.code, id, true));
+}
+
+TEST_CASE("moderation rejects oversized queues, stale tickets and running games") {
+  caw::PackLibrary packs;
+  REQUIRE(packs.add(caw::syntheticPack()));
+  SessionRegistry registry(24, packs);
+  const auto room = registry.create("de");
+  auto* session = registry.find(room.code);
+  REQUIRE(session);
+  caw::Command join;
+  join.type = caw::Command::Type::Join;
+  join.name = "Ada";
+  session->handle(17, join, caw::millisNow());
+  std::string ticket;
+  for (const caw::Outgoing& outgoing : session->takeOutgoing()) {
+    const auto frame = nlohmann::json::parse(outgoing.text);
+    if (frame.at("type") == "welcome") ticket = frame.at("token").get<std::string>();
+  }
+  REQUIRE(ticket.size() == 32);
+  const auto proposal = caw::Messages::readProposal(R"({"type":"answer","text":"Testantwort"})");
+  REQUIRE(proposal);
+  for (int i = 0; i < 3; ++i) CHECK(registry.submitProposal(room.code, ticket, *proposal));
+  CHECK_FALSE(registry.submitProposal(room.code, ticket, *proposal));
+  CHECK(registry.proposals(room.code).size() == 3);
+  const std::string id = registry.proposals(room.code).front().id;
+  REQUIRE(registry.reviewProposal(room.code, id, false));
+  CHECK(registry.proposals(room.code).size() == 2);
+  CHECK_FALSE(registry.reviewProposal(room.code, id, false));
+  CHECK(registry.submitProposal(room.code, ticket, *proposal));
+  CHECK(registry.proposals(room.code).size() == 3);
 }

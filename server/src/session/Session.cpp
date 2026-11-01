@@ -299,6 +299,23 @@ bool Session::takeChanged() {
   return changed;
 }
 
+std::optional<std::uint8_t> Session::playerForTicket(std::string_view token) const {
+  unsigned char secret[kTicketBytes] = {};
+  if (!Codes::fromHex(token, secret, kTicketBytes)) return std::nullopt;
+  for (std::uint8_t seat = 0; seat < kPlayers; ++seat) {
+    if (tickets_[seat].seat != seat) continue;
+    unsigned char difference = 0;
+    for (std::size_t i = 0; i < kTicketBytes; ++i)
+      difference |= static_cast<unsigned char>(tickets_[seat].secret[i] ^ secret[i]);
+    if (difference == 0) return seat;
+  }
+  return std::nullopt;
+}
+
+std::string Session::nameForSeat(std::uint8_t seat) const {
+  return seat < kPlayers ? playerName(seat) : "";
+}
+
 bool Session::inLobby() const { return game_.phase() == Phase::Lobby; }
 
 bool Session::activatePacks(const std::vector<std::string>& ids, std::uint32_t now) {
