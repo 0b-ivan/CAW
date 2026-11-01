@@ -96,11 +96,20 @@ Die Startseite soll ohne vertikales oder horizontales Scrollen in 320×568,
 Code-Eingabe, Sprachwahl und Status müssen ohne Scrollen sichtbar bleiben.
 Neben `[ NEUE SESSION ]` steht die Schaltfläche `[ ANLEITUNG ]`.
 Sie öffnet einen per Tastatur und Touch bedienbaren, intern scrollbaren
-Hilfedialog (de/en) mit vier kurzen Schritten: Host öffnet CAW und legt eine
-Session an; Mitspieler öffnen QR/Link oder geben den Code ein; bei WLAN/LAN
-wird die erreichbare Server-IP statt `localhost` verwendet
-(Cloudflare-Tunnel: öffentliche HTTPS-Adresse); ein optionaler Big Screen
-zeigt den gemeinsamen Spielstand. Schließen per Button oder Escape.
+Hilfedialog (de/en), gegliedert in zwei Bereiche:
+- **SO GEHT'S LOS:** Host erstellt eine Session auf der öffentlichen CAW-Seite;
+  Mitspieler öffnen den Einladungslink, scannen den QR-Code oder geben
+  den sechsstelligen Code ein; optional wird BIG SCREEN auf einem anderen
+  Bildschirm geöffnet. Der Host kann ab drei Spielern starten.
+- **SPIELREGELN:** 3–8 Spieler, sieben Handkarten als Standard (3–10 vor
+  Spielstart einstellbar), rotierender Juror, Pick 1–3 und gelegentlich
+  Draw 2, anonyme Abgabe, Juror bestimmt Rundensieger mit einem Punkt,
+  Handauffüllung, einmaliger Kartentausch pro Runde, Spielende und
+  Endstand. Optionale Rando-/Zeitregeln werden kurz erläutert.
+
+Die Anleitung setzt **öffentliches Hosting** voraus. Hinweise zu
+`localhost`, LAN-IP, WLAN, Tunnel-Konfiguration oder lokalen Servern
+gehören **nicht** in den Spielhilfe-Dialog. Schließen per Button oder Escape.
 Erst wenn Textzoom/Extremgrößen den Platz überschreiten, ist vertikales
 Scrollen als barrierefreie Ausnahme erlaubt. Keine festen Höhen, die Inhalte
 abschneiden.
