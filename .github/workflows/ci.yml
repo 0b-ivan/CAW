@@ -29,6 +29,7 @@ jobs:
         run: |
           python3 -m unittest discover -s tests -p 'test_hetzner_preflight.py'
           python3 -m unittest discover -s tests -p 'test_hetzner_deploy.py'
+          python3 -m unittest discover -s tests -p 'test_offsite_backup.py'
           docker compose -f deploy/compose.yml -f deploy/compose.hetzner.yml config --format json | python3 -c '
           import json, sys
           model = json.load(sys.stdin)
