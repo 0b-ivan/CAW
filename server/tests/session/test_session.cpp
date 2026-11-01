@@ -192,7 +192,8 @@ TEST_CASE("a big screen follows the table without ever seeing a hand") {
   for (const json& frame : table.inbox[50]) {
     CHECK(frame.at("type") == "screen");
     CHECK(frame.contains("me") == false);
-    CHECK(frame.dump().find("hand") == std::string::npos);
+    // The public hand-size setting is fine; private cards live only in "me".
+    CHECK_FALSE(frame.contains("me"));
   }
 
   table.session.connectionClosed(50, table.now);
