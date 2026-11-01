@@ -469,9 +469,15 @@ Containern muss der Deploy-Prozess über den **internen** \`/metrics\`-Endpunkt
 \`caw_sockets == 0\` und \`caw_active_games == 0\` nachweisen. Als aktives
 Spiel gelten Playing, Judging und Reveal, auch ohne verbundene Spieler.
 Eine leere Lobby oder ein beendetes Spiel ohne Verbindung blockiert nicht.
-Bis zur erstmaligen Auslieferung dieses neuen Metrikwertes wird konservativ
-\`caw_sessions == 0\` statt \`caw_active_games == 0\` verlangt, um alte
-Server nicht ungeschützt zu aktualisieren. Ein fehlender, unlesbarer oder
+Auf dem alten Server ohne \`caw_active_games\` wird vor dem ersten
+Update die Phase **sämtlicher** noch gültiger Redis-Room-Snapshots gelesen.
+Nur Phase Lobby (0) oder Finished (4) sowie \`caw_sockets == 0\` erlauben
+den Wechsel. Playing (1), Judging (2) oder Reveal (3) blockieren den Rollout
+selbst ohne verbundene Clients. Anzahl der Redis-Keys und \`caw_sessions\`
+müssen übereinstimmen; bei Fehlern oder fehlenden Snapshots wird aus
+Sicherheitsgründen nicht deployt. Die JSON-Snapshots enthalten private
+Host-Tokens und Hände, die daher ausschließlich lokal gelesen und niemals
+in Actions-Logs geschrieben werden. Ein fehlender, unlesbarer oder
 mehrdeutiger Messwert blockiert die Auslieferung. Nach Image-Pull und
 unmittelbar vor der Umschaltung wird erneut geprüft. Eine belegte Instanz
 quittiert den Versuch als **zurückgestellt** und bleibt unverändert.
