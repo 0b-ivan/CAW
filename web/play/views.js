@@ -229,12 +229,15 @@ function playItem(app, actions, play, index, canJudge) {
   number.className = 'choice-number';
   number.textContent = `[${index + 1}]`;
   // Only the answers: repeating a long prompt in every play would double the list.
-  body.append(number);
+  const sentence = document.createElement('span');
+  sentence.className = 'choice-content';
+  sentence.append(number);
   play.cards.forEach((card, i) => {
     const mark = document.createElement('mark');
     mark.textContent = card;
-    body.append(i === 0 ? ' ' : ' / ', mark);
+    sentence.append(i === 0 ? ' ' : ' / ', mark);
   });
+  body.append(sentence);
   if (canJudge) {
     const indicator = document.createElement('span');
     indicator.className = 'choice-indicator';
