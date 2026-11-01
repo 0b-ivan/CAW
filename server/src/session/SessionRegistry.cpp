@@ -80,6 +80,14 @@ bool SessionRegistry::updateCustomCards(std::string_view code, CardPack pack) {
     const std::string& oldId = room.customPack->id;
     selected.erase(std::remove(selected.begin(), selected.end(), oldId), selected.end());
   }
+  if (pack.prompts.empty() && pack.answers.empty()) {
+    if (!room.customPack) return true;
+    // A playable room must retain at least one other deck.
+    if (selected.empty() || !session->activatePacks(selected, millisNow())) return false;
+    packs_.remove(room.customPack->id);
+    room.customPack.reset();
+    return true;
+  }
   if (selected.size() >= PackLibrary::kMaxPacks) return false;
   // Immutable version per edit: no live deck ever points to replaced card text.
   std::string suffix = Codes::sessionCode();
