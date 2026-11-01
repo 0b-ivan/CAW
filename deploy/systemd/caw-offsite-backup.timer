@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily encrypted CAW offsite backup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=30m
+Persistent=true
+Unit=caw-offsite-backup.service
+
+[Install]
+WantedBy=timers.target
