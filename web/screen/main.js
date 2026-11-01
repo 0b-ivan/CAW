@@ -111,6 +111,7 @@ function renderAnswers(frame) {
 }
 
 function renderJudging(frame) {
+  fillSentence($('screen-judge-prompt'), frame.prompt, []);
   const list = $('screen-plays');
   list.classList.toggle('two-columns', frame.plays.length > 4);
   list.replaceChildren(...frame.plays.map((play, index) => {
