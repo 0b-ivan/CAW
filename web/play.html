@@ -76,11 +76,19 @@
       </section>
 
       <section id="view-answer" class="view" hidden>
-        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
-          <p class="eyebrow" id="answer-eyebrow"></p>
-          <h1 id="answer-prompt" class="sentence"></h1>
+        <p class="eyebrow prompt-title" id="answer-eyebrow"></p>
+        <div class="prompt-stack">
+          <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+            <h1 id="answer-prompt" class="sentence"></h1>
+          </div>
         </div>
+        <p class="eyebrow hand-title" id="hand-title"></p>
         <div id="hand" class="hand" role="group" data-label="handLabel"></div>
+        <div id="hand-pager" class="hand-pager">
+          <button id="hand-previous" type="button" aria-label="Vorherige Karten">[ ‹ ]</button>
+          <span id="hand-page" role="status"></span>
+          <button id="hand-next" type="button" aria-label="Nächste Karten">[ › ]</button>
+        </div>
         <div class="bar">
           <button id="swap-button" class="mini" type="button" data-text="swap"></button>
           <span id="answer-count"></span>
@@ -89,9 +97,11 @@
       </section>
 
       <section id="view-waiting" class="view" hidden>
-        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
-          <p class="eyebrow" id="waiting-eyebrow"></p>
-          <h1 id="waiting-prompt" class="sentence"></h1>
+        <p class="eyebrow prompt-title" id="waiting-eyebrow"></p>
+        <div class="prompt-stack">
+          <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+            <h1 id="waiting-prompt" class="sentence"></h1>
+          </div>
         </div>
         <p class="big-status" id="waiting-title"></p>
         <p class="progress" id="waiting-progress" aria-hidden="true"></p>
@@ -100,9 +110,11 @@
       </section>
 
       <section id="view-judge" class="view" hidden>
-        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
-          <p class="eyebrow" id="judge-eyebrow"></p>
-          <h1 id="judge-prompt" class="sentence"></h1>
+        <p class="eyebrow prompt-title" id="judge-eyebrow"></p>
+        <div class="prompt-stack">
+          <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+            <h1 id="judge-prompt" class="sentence"></h1>
+          </div>
         </div>
         <ol id="judge-list" class="choices" data-label="playsLabel"></ol>
         <div class="bar"><span id="judge-status"></span>
