@@ -553,7 +553,7 @@ TEST_CASE("private custom decks remain in the room but not public winning histor
   table.judge(judge, 0);
   const json reveal = table.lastState(1);
   CHECK(reveal.at("phase") == "reveal");
-  CHECK(reveal.at("lines").size() == 1);
+  CHECK(table.session.matchLines().size() == 1);
   CHECK(table.session.takeHistory().empty());  // no private winning sentences in global fame
 }
 
