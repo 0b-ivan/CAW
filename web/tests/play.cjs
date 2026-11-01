@@ -128,6 +128,15 @@ async function checkTape(page, selector) {
   assert.equal(material.band, 'clone', `${selector}: clean fallback wrapping`);
 }
 
+// A plastic surface may be narrow enough while its text still spills out.
+async function checkTapeNotClipped(page, selector) {
+  const overflow = await page.locator(selector).evaluateAll((elements) =>
+    elements.filter((element) =>
+      getComputedStyle(element).display !== 'inline' &&
+      element.scrollWidth > element.clientWidth + 1).length);
+  assert.equal(overflow, 0, `${selector}: no letters escape the plastic strip`);
+}
+
 const visible = (page, view) => page.locator(`#view-${view}`).isVisible();
 
 // Waits for a view; on timeout says which view is shown instead and what the notice line says.
@@ -305,6 +314,7 @@ async function playRound(host, players, round, screen) {
     .evaluate((card) => getComputedStyle(card).backgroundColor);
   assert.equal(revealPaper, 'rgb(244, 244, 240)', 'the reveal is a single large paper card');
   await checkTape(host, '#reveal-sentence mark.answer-tape');
+  await checkTapeNotClipped(host, '#reveal-sentence mark.answer-tape');
   await checkTape(screen, '#screen-sentence mark.answer-tape');
   if (round === 1) {
     await checkScreen(screen, 'reveal', 'reveal');
@@ -614,6 +624,7 @@ async function checkLongCards(browser) {
     await page.waitForTimeout(50); // Let the resize reflow the physical tape rows.
     assert.ok(await page.locator('#answer-prompt mark.answer-tape--strip').count() >= 2,
       `${width}x${height}: long inserted answers need separate strips per line`);
+    await checkTapeNotClipped(page, '#answer-prompt mark.answer-tape');
     const renderedText = await page.locator('#answer-prompt').textContent();
     assert.match(renderedText, /Testantwort mit einem sehr langen Kartentext/,
       'splitting labels must preserve the original answer wording');
