@@ -211,8 +211,8 @@ bool Session::applySettings(const Settings& settings, std::uint32_t now) {
 bool Session::selectPacks(const std::vector<std::string>& ids) {
   if (game_.phase() != Phase::Lobby) return false;
   for (const std::string& id : ids)
-    if (id.starts_with("custom-") &&
-        (customPrefix_.empty() || !id.starts_with(customPrefix_))) return false;
+    if (id.starts_with("custom-") && (customPrefix_.empty() || !id.starts_with(customPrefix_)))
+      return false;
   const Deck* deck = library_.deck(ids);
   if (deck == nullptr) return false;
   deck_ = *deck;
