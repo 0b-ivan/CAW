@@ -1044,3 +1044,164 @@ footer a { text-decoration: underline; }
     transition: none;
   }
 }
+
+/* ---------- Desktop composition: game board, not an enlarged phone ---------- */
+/* Keep actual card text at readable sizes while using the extra space to
+   separate the question from the hand. The TV uses .screen, not .shell. */
+@media (min-width: 900px) and (min-height: 650px) {
+  .shell {
+    width: min(100%, 1040px);
+    padding: 20px 26px;
+    gap: 12px;
+  }
+  .mast { padding-bottom: 14px; }
+  .meta { font-size: 14px; }
+  #view-answer,
+  #view-judge {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    column-gap: 34px;
+    row-gap: 10px;
+    align-items: start;
+  }
+  #view-answer .prompt-title,
+  #view-judge .prompt-title {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+  #view-answer .prompt-stack,
+  #view-judge .prompt-stack {
+    grid-column: 1;
+    grid-row: 2;
+    width: min(92%, 350px);
+    max-width: 350px;
+    justify-self: center;
+    align-self: center;
+    margin: 0;
+  }
+  #view-answer .prompt-stack .prompt,
+  #view-judge .prompt-stack .prompt {
+    min-height: 190px;
+    max-height: min(44dvh, 290px);
+    padding: 20px;
+  }
+  #view-answer .prompt-stack .sentence,
+  #view-judge .prompt-stack .sentence {
+    font-size: clamp(20px, 2.1vw, 27px);
+    line-height: 1.3;
+  }
+  #view-answer .hand-heading {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+  #view-answer .hand {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    height: auto;
+    width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #view-answer .card {
+    min-height: 96px;
+    font-size: 15px;
+    padding: 12px;
+  }
+  #view-answer .card[aria-pressed="true"] { padding: 11px; }
+  #view-answer .hand-pager {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: stretch;
+    align-self: center;
+  }
+  #view-answer > .bar,
+  #view-judge > .bar {
+    grid-column: 2;
+    grid-row: 4;
+    width: 100%;
+    align-self: end;
+    margin: 0;
+  }
+  #view-judge .choices {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: stretch;
+    overflow-y: auto;
+  }
+  #view-judge .judge-count {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: end;
+  }
+
+  /* On desktop the host's invite and player panels are peers rather than
+     a huge QR followed by the roster underneath. */
+  #view-lobby.has-host {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    align-items: start;
+    column-gap: 32px;
+    row-gap: 16px;
+  }
+  #view-lobby.has-host .share {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    display: grid;
+    grid-template-columns: 155px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding-top: 12px;
+  }
+  #view-lobby.has-host .share .qr { max-width: 155px; }
+  #view-lobby.has-host .share-text { min-width: 0; }
+  #view-lobby.has-host .share-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  #view-lobby.has-host .share-buttons button { flex: none; }
+  #view-lobby.has-host #lobby-count {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 12px;
+  }
+  #view-lobby.has-host .roster {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    max-height: 100%;
+    align-self: start;
+    overflow-y: auto;
+  }
+  #view-lobby.has-host #lobby-credits {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: end;
+  }
+  #view-lobby.has-host #host-join {
+    grid-column: 1;
+    grid-row: 4;
+    min-width: 0;
+  }
+  #view-lobby.has-host > .bar {
+    grid-column: 2;
+    grid-row: 4;
+    width: 100%;
+    margin: 0;
+    align-self: end;
+  }
+  #view-lobby:not(.has-host) {
+    width: min(100%, 700px);
+    align-self: center;
+  }
+  #view-lobby:not(.has-host) .roster { max-width: 600px; }
+}
