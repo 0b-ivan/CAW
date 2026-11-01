@@ -143,4 +143,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Big-Screen-Fragen/Antwortsätze und Auflösung im selben Stil, ohne private Hände
 - [x] Browser-Regressionen für Materialität, Auswahl-ARIA und Big-Screen-Stil ergänzen
 - [ ] CI-Build, `ctest`, Browser- und Lasttests für PR #12 grün bestätigen
+- [x] Zweiter Durchgang nach realen Screenshots: zentrierte Fragekarten,
+  sechs/vier Karten pro Seite, Juror-Indikatoren, einspaltige Lobby und volle Hauptaktionen
+- [x] Zusätzliche Browser-Tests für Kartenseiten, persistente Auswahl und getrennte Rollen
 - [ ] Browser-Screenshots bei 320/390 px sowie 16:9/4:3 visuell gegen Mockups abnehmen
