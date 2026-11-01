@@ -12,6 +12,7 @@ struct Metrics {
   static constexpr std::size_t kBucketCount = sizeof(kBuckets) / sizeof(kBuckets[0]);
 
   std::uint64_t sessions = 0;
+  std::uint64_t activeGames = 0;
   std::uint64_t sockets = 0;
   std::uint64_t healthChecks = 0;
   std::uint64_t healthFailures = 0;
