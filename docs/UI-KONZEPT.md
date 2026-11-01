@@ -153,10 +153,12 @@ GESPERRT · FRAG DEN HOST“.
 ### 4.5 Antworten
 
 Frage oben in eigenem Scroll-Bereich (max. 30 % Höhe), darunter die Hand
-als Raster echter, flacher Spielkarten (zwei Spalten am Handy, vier am
-Laptop). Zehn kurze Karten passen ohne Scrollen; bei langen Texten darf
-nur die Hand intern scrollen, damit keine Karte abgeschnitten wird. Antippen wählt in
-Reihenfolge; die Position steht vor der Karte (`<1/3>`). Die Frage ist
+als durchgängiges Raster echter Spielkarten (zwei Spalten am Handy, auf dem
+Desktop rechts neben der Frage). **Alle zehn Karten sind zugleich im DOM**
+und ohne Seitenwechsel erreichbar. Nur die Kartenhand scrollt vertikal;
+Frage, Kopfzeile und `[ ABGEBEN ]` bleiben stehen. Lange Kartentexte dürfen
+nicht abgeschnitten oder durch Verkleinern unlesbar werden. Antippen wählt
+in Reihenfolge; die Position steht vor der Karte (`<1/3>`). Die Frage ist
 zugleich die Vorschau: gewählte Karten stehen invertiert in ihren Lücken,
 keine eigene Vorschauzeile. Fußleiste: `[ ABWERFEN ]` (1× pro Runde, genau
 eine Karte gewählt), `2/3 GEWÄHLT`, `[ ABGEBEN ]`.
@@ -323,16 +325,17 @@ Spielregel und kein Client-/Server-Protokoll.
   bildschirmbreites Panel dargestellt.
 - **Antworten:** Antwortkarten sind papierweiß mit schwarzer Schrift,
   sichtbar von der schwarzen Fragekarte unterscheidbar. Die Handy-Hand zeigt
-  **immer zwei Spalten**, im Normalformat sechs Karten pro Seite, bei kurzen
-  Höhen vier pro Seite. Ein sichtbarer und per Tastatur bedienbarer
-  Seitenschalter ermöglicht den Zugriff auf **alle zehn** Karten; die
-  Auswahlreihenfolge bleibt beim Seitenwechsel erhalten. Gewählte Karten
+  **immer zwei Spalten**, ohne Paginierung: Alle zehn Karten werden in einer
+  zusammenhängenden Liste gerendert. Die Kartenhand besitzt einen eigenen
+  vertikalen Touch-/Maus-/Tastatur-Scrollbereich mit sichtbarem Scrollbalken.
+  Die Auswahlreihenfolge und der Scrollstand bleiben beim Antippen erhalten;
+  die komplette Seite sowie die untere Hauptaktion scrollen nicht. Gewählte Karten
   invertieren wieder zu Schwarz mit weißer Schrift, erhalten eine starke
   weiße Kontur und die sichtbare Pick-Position. Die Auswahl bleibt zusätzlich
   über `aria-pressed` lesbar, nicht nur über Farbe oder Schatten. Auf Laptop
   bleibt das Spielfeld zentriert statt auf vier Spalten zu wachsen.
   `ABWERFEN` liegt als Nebenaktion über der Hand, der aktuelle Pick-Zähler
-  bei der Seitennavigation; `ABGEBEN` bekommt die volle Breite der unteren
+  steht beim Handtitel; `ABGEBEN` bekommt die volle Breite der unteren
   Aktionsleiste. Die Hauptaktion bleibt bei 320×568 sichtbar.
 - **Juror:** Antwortoptionen erscheinen als einzelne, gut lesbare
   Kartenstreifen mit einem **sichtbaren Radio-Indikator**. Die ausgewählte
@@ -367,4 +370,6 @@ Spielregel und kein Client-/Server-Protokoll.
 - **Performance/Accessibility:** Karten sind CSS, keine Bild-Assets oder
   zusätzlichen Abhängigkeiten. Keine Daueranimationen; `prefers-reduced-motion`
   und die Mindest-Tippflächen bleiben erhalten. Testmatrix 320×568,
-  390×844, 1280×800, Big Screen 1920×1080 und 1024×768.
+  390×844, 1280×800, Big Screen 1920×1080 und 1024×768. Die Browser-Tests
+  prüfen bei zehn Karten auch scrollbaren Zugriff auf die letzte Karte,
+  Auswahl aus dem unteren Teil der Hand und feste Hauptaktion.
