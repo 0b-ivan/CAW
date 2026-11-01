@@ -749,6 +749,12 @@ footer a { text-decoration: underline; }
   background: var(--paper);
   color: var(--ink);
 }
+/* The guide is useful but remains secondary to creating a game. */
+.create-section #open-guide {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--ink);
+}
 #status { font-size: 13px; }
 
 /* The compact question has two offset card backs, not a full-width banner.
