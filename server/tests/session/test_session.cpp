@@ -319,6 +319,43 @@ Command settings(std::uint8_t rounds, std::uint8_t answerSecs) {
 }
 }  // namespace
 
+TEST_CASE("new sessions deal seven cards and the host can change the hand only in the lobby") {
+  Table table;
+  table.join(1, "Ada");
+  table.join(2, "Bert");
+  table.join(3, "Cyra");
+  table.claimHost(9);
+  CHECK(table.lastState(1).at("settings").at("hand") == 7);
+
+  Command change = settings(10, 0);
+  change.settings.hand = 5;
+  table.send(9, change);
+  CHECK(table.lastState(1).at("settings").at("hand") == 5);
+
+  table.host(9, Command::Type::Start);
+  CHECK(table.lastState(1).at("me").at("hand").size() == 5);
+  const std::string before = table.session.saveState(table.now);
+  change.settings.hand = 8;
+  table.send(9, change);
+  CHECK(table.last(9).at("code") == "rejected");
+  CHECK(table.session.saveState(table.now) == before);
+  CHECK(table.lastState(1).at("settings").at("hand") == 5);
+
+  // The host may still change clocks during the match.
+  change.settings.hand = 5;
+  change.settings.answerSecs = 30;
+  table.send(9, change);
+  CHECK(table.lastState(1).at("settings").at("answerSecs") == 30);
+}
+
+TEST_CASE("new sessions start with the configured default seven-card hand") {
+  Table table;
+  table.startThree();
+  const json state = table.lastState(1);
+  CHECK(state.at("settings").at("hand") == 7);
+  CHECK(state.at("me").at("hand").size() == 7);
+}
+
 TEST_CASE("the host sets rounds in the lobby and clocks at any time") {
   Table table;
   table.join(1, "Ada");
