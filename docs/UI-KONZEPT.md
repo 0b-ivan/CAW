@@ -94,6 +94,13 @@ DE / EN · LIZENZEN · DATENSCHUTZ
 Die Startseite soll ohne vertikales oder horizontales Scrollen in 320×568,
 390×844 und 1280×800 px passen. Der Header bleibt kompakt; Session-Aktion,
 Code-Eingabe, Sprachwahl und Status müssen ohne Scrollen sichtbar bleiben.
+Neben `[ NEUE SESSION ]` steht die Schaltfläche `[ ANLEITUNG ]`.
+Sie öffnet einen per Tastatur und Touch bedienbaren, intern scrollbaren
+Hilfedialog (de/en) mit vier kurzen Schritten: Host öffnet CAW und legt eine
+Session an; Mitspieler öffnen QR/Link oder geben den Code ein; bei WLAN/LAN
+wird die erreichbare Server-IP statt `localhost` verwendet
+(Cloudflare-Tunnel: öffentliche HTTPS-Adresse); ein optionaler Big Screen
+zeigt den gemeinsamen Spielstand. Schließen per Button oder Escape.
 Erst wenn Textzoom/Extremgrößen den Platz überschreiten, ist vertikales
 Scrollen als barrierefreie Ausnahme erlaubt. Keine festen Höhen, die Inhalte
 abschneiden.
@@ -104,10 +111,11 @@ bzw. rechts; die mittlere A-Karte ist weiß invertiert. Rechts folgt ein
 schräger Slash und das Wortzeichen `CAW / CARDS AGAINST WHATEVER`.
 Keine runden Karten, Zylinder oder 3D-Effekte.
 
-Beim **ersten Aufruf je Browser-Sitzung** erscheint ein einzelner Bootscreen:
-Karten flach mischen (ca. 0,9 s) → Deck nach links → Slash erscheint →
-Wortzeichen erscheint → A-Karte wächst als scharfkantiges, weißes Rechteck
-bildfüllend → Startseite. Die Animation läuft nicht automatisch in Schleife.
+Beim **ersten Aufruf je Browser-Sitzung** erscheint ein einzelner Bootscreen
+mit insgesamt **ca. 1,6 Sekunden** statt der bisherigen über vier Sekunden:
+kurzer Karten-Shuffle → Deck nach links → Slash → Wortzeichen →
+A-Karte wächst bildfüllend → Startseite. Die Animation läuft nicht
+automatisch in Schleife; der Skip-Button reagiert sofort.
 Sie kann über das Logo auf der Startseite erneut ausgelöst und jederzeit
 übersprungen werden. `sessionStorage` merkt den einmaligen Besuch; ohne JS
 bleibt die Startseite verwendbar. Bei `prefers-reduced-motion` wird der
