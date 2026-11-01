@@ -57,7 +57,7 @@ class DeploymentSafetyTests(unittest.TestCase):
 
     def test_pipeline_gates_real_production_access(self):
         workflow = WORKFLOW.read_text()
-        self.assertIn("push:\\n    branches: [main]".replace("\\n", "\n"), workflow)
+        self.assertIn("push:\\n    branches: [main]".replace("\n", "\n"), workflow)
         self.assertNotIn("workflow_run:", workflow)
         self.assertIn("workflow_dispatch:", workflow)
         self.assertIn("vars.CAW_PRODUCTION_APPROVED == 'true'", workflow)
@@ -79,14 +79,14 @@ class DeploymentSafetyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             fake = Path(directory) / "gh"
             fake.write_text(
-                "#!/usr/bin/env python3\\n"
-                "import os, sys\\n"
-                "if sys.argv[1] != 'api': sys.exit(2)\\n"
-                "if sys.argv[2].endswith('/commits/main'):\\n"
-                "    print(os.environ['CAW_TEST_MAIN_SHA'])\\n"
-                "elif '/actions/workflows/ci.yml/runs?' in sys.argv[2]:\\n"
-                "    print(os.environ['CAW_TEST_RUNS'])\\n"
-                "else: sys.exit(3)\\n"
+                "#!/usr/bin/env python3\n"
+                "import os, sys\n"
+                "if sys.argv[1] != 'api': sys.exit(2)\n"
+                "if sys.argv[2].endswith('/commits/main'):\n"
+                "    print(os.environ['CAW_TEST_MAIN_SHA'])\n"
+                "elif '/actions/workflows/ci.yml/runs?' in sys.argv[2]:\n"
+                "    print(os.environ['CAW_TEST_RUNS'])\n"
+                "else: sys.exit(3)\n"
             )
             fake.chmod(0o755)
             env = os.environ.copy()
