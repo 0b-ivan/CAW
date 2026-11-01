@@ -309,6 +309,32 @@ laufende dekorative Animationen. Die oben definierten Ausnahmen gelten.
 Wenn eines
 davon gewünscht wird, kommt es zuerst ins Konzept.
 
+## 10. Host-Krone (Mockup-Abgleich 2026-11-01)
+
+Als **einzige neue Akzentfarbe** ist für die Host-Krone ein gedämpftes Gold
+(`#D7AE4A`) freigegeben. Sie markiert eine Rolle, nicht einen Spielgewinn:
+Kein Gold für andere Elemente, keine Glows, Animationen, Emojis oder
+zusätzlichen Ressourcen. Das Symbol ist eine kleine, flache SVG-Krone und
+steht immer gemeinsam mit der sichtbaren Beschriftung `HOST`; allein die
+Farbe darf die Rolle nicht vermitteln.
+
+- **Lobby auf Handy, Desktop und Big Screen:** Nur Teilnehmer, die über die
+  authentifizierte Host-Verbindung **selbst mitspielen**, tragen neben ihrem
+  Namen die goldene Krone mit `HOST`. Alle anderen bleiben unverändert.
+- **Host ohne Spielerplatz:** Er erhält die Kennzeichnung an seiner eigenen
+  Host-Kopfzeile, aber keinen künstlichen Spielerplatz. Ein Host kann nur
+  durch ein gültiges Host-Token erkannt werden, nie durch seinen Namen oder
+  `DU`.
+- **Datenfluss:** Der Server veröffentlicht lediglich ein boolesches
+  `isHost` für vorhandene, authentifizierte Spielerplätze. Host-Token,
+  Verbindungsschlüssel und private Karten gelangen nicht in diese Liste.
+  Bei Beitritt, Rollenbestätigung, Wechsel oder Trennung wird die
+  öffentliche Kennzeichnung aktualisiert. Nach einem Neustart erscheint
+  sie wieder, wenn sich der Host neu authentifiziert.
+- **Abnahme:** Tests mit mitspielendem Host, eigenständigem Host ohne Sitz
+  sowie normalem Spieler; dieselbe Kennzeichnung bei den anderen Handys
+  und im Big Screen. Siegeransichten bekommen dadurch **keine Krone**.
+
 ## 9. Freigegebene Kartenoptik (Mockup-Abgleich 2026-11-01)
 
 Die Mockups mit realistischer Spielkartenoptik sind für ein eigenes UI-Polish-PR
