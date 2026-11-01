@@ -26,7 +26,11 @@
     </header>
     <div class="landing-content">
       <section class="create-section">
-        <button id="new-session" type="button" data-text="newSession"></button>
+        <div class="create-actions">
+          <button id="new-session" type="button" data-text="newSession"></button>
+          <button id="open-guide" type="button" data-text="openGuide"
+            aria-haspopup="dialog" aria-controls="guide-dialog"></button>
+        </div>
       </section>
       <section class="join-section">
         <label class="eyebrow" for="code" data-text="enterCode"></label>
@@ -48,6 +52,17 @@
       <a href="/impressum.html" data-text="imprint"></a>
     </footer>
   </main>
+
+  <dialog id="guide-dialog" class="guide-dialog" aria-labelledby="guide-title">
+    <h2 id="guide-title" data-text="guideTitle"></h2>
+    <ol>
+      <li data-text="guideHost"></li>
+      <li data-text="guidePlayers"></li>
+      <li data-text="guideNetwork"></li>
+      <li data-text="guideScreen"></li>
+    </ol>
+    <button id="close-guide" type="button" data-text="closeGuide"></button>
+  </dialog>
 
   <div id="boot-screen" class="boot-screen" hidden>
     <div class="boot-logo" aria-hidden="true">
