@@ -234,8 +234,12 @@ Run-API ab (bis zu 15 Minuten); eine PR-CI genügt nicht. Schlägt die
 Push-CI fehl, läuft die Abfrage ab oder ist der Commit nicht mehr auf
 `main`, bleibt Hetzner unverändert. Diese Form umgeht die beobachteten
 `BuildFailed`/`startup_failure`-Starts des `workflow_run`-Triggers.
-Die Ausführung ist bis zur ausdrücklich gesetzten Produktionsfreigabe
-weiterhin vollständig gesperrt.
+**Ab 2026-11-01 technisch aktiviert auf ausdrücklichen Betreiberwunsch:**
+Jeder `main`-Push nach grüner vollständiger CI löst automatisch einen
+Deployment-Versuch aus. Die früheren Repository-Variablen
+`CAW_PRODUCTION_APPROVED` und `CAW_AUTO_DEPLOY` werden für den Workflow
+nicht mehr benötigt. Eine aktiv konfigurierte Environment-Freigabe
+(Required Reviewers) bleibt wirksam und wird nicht umgangen.
 
 Nach bestätigter Push-CI baut er
 `ghcr.io/0b-ivan/caw-server:sha-<commit>` und aktualisiert
@@ -286,21 +290,20 @@ Ein SSH-Deploy aus GitHub Actions setzt voraus, dass der konfigurierte
 SSH-Port für GitHub-Runner erreichbar ist; **am Cloudflare-Tunnel
 selbst wird nichts geändert**.
 
-**Scharfschalten nach rechtlicher und betrieblicher Freigabe:**
-Unter **Settings → Secrets and variables → Actions → Variables**
-die beiden Repository-Variablen setzen:
+**Automatisch aktiv auf Betreiberanweisung vom 2026-11-01:**
+Für den technischen Rollout sind keine zusätzlichen Repository-Variablen
+mehr zu setzen. Der Workflow startet bei jedem Push auf `main`, wartet
+auf dessen vollständige grüne Push-CI für die exakte SHA und verwendet
+die bereits hinterlegten vier SSH-Secrets der Environment `production`.
+Ein manuelles `workflow_dispatch` benötigt dieselbe CI-Abnahme.
+Optionale **Required Reviewers** in der Environment bleiben wirksam.
 
-| Variable | Wert | Wirkung |
-|---|---|---|
-| `CAW_PRODUCTION_APPROVED` | `true` | Deployment nach ausdrücklich bestätigter rechtlicher/operativer Freigabe überhaupt zulassen |
-| `CAW_AUTO_DEPLOY` | `true` | Nach erfolgreicher `main`-CI automatisch deployen |
-
-Solange `CAW_PRODUCTION_APPROVED` fehlt oder `false` ist, führt auch
-`workflow_dispatch` kein Produktionsdeployment aus.
-Wenn nur `CAW_AUTO_DEPLOY` fehlt, sind nach Freigabe weiterhin manuelle
-Deployments möglich. Optional in der Environment `production`
-**Required reviewers** für die erste Phase konfigurieren; dies hält
-auch automatische Läufe bis zur GitHub-Freigabe an.
+**Risiko/noch nicht abgenommen:** Die bereits lokal wiederhergestellten
+PostgreSQL-Dumps und Redis-RDB-Snapshots schützen nicht vor vollständigem
+Hetzner-Hostverlust. Die auf Wunsch vorerst ausgesetzte verschlüsselte
+externe Sicherung von PostgreSQL und Redis sowie die rechtliche Prüfung
+der Betreiberangaben und Kartentexte sind weiterhin offen. Eine
+technische Deployment-Aktivierung ist keine `v1.0.0`-Freigabe.
 
 **Pipeline im Betrieb:**
 
@@ -329,12 +332,13 @@ lokal vorhanden. Docker-Images dürfen nicht durch automatische
 Host-weite `docker image prune -a`-Jobs während eines Deployments
 entfernt werden.
 
-**Wichtig vor dem Aktivieren:** Impressums-/Betreiberdaten,
-Kartenrechte insbesondere Prior99, verschlüsselte Offsite-Backups für
-Postgres **und Redis-AOF** mit Restore-Test sowie die externe
-HTTPS-/WSS-Abnahme bleiben Pflicht. Ein lokaler Postgres-Dump vor
-Deploy ersetzt kein Offsite-Backup. Die Pipeline bestätigt diese
-rechtlichen Freigaben nicht selbst.
+**Wichtig für die weitere Betriebsfreigabe:** Die Betreiberangaben,
+Kartenrechte insbesondere Prior99 und verschlüsselte Offsite-Backups für
+PostgreSQL **und Redis-AOF** mit Restore-Test bleiben offen. Die externe
+HTTPS-/WSS-Abnahme und der GitHub-SSH-Zugriff wurden am 2026-11-01
+erfolgreich getestet. Ein lokaler Dump vor Deploy ersetzt keine
+Offsite-Sicherung; der jetzt aktive Auto-Deploy-Workflow bestätigt
+keine rechtliche oder vollständige Disaster-Recovery-Freigabe.
 
 ## 8. Release-Kandidat bauen und GHCR-Zugriff prüfen – ohne Deployment
 

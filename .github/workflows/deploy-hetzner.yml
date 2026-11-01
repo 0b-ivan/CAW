@@ -16,11 +16,13 @@ concurrency:
 
 jobs:
   publish:
+    # Operator explicitly enabled automatic deployments from tested main pushes.
+    # The production environment, exact-SHA CI gate and rollback stay mandatory.
     if: >-
-      vars.CAW_PRODUCTION_APPROVED == 'true' &&
+      github.repository == '0b-ivan/CAW' &&
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'push' && vars.CAW_AUTO_DEPLOY == 'true'))
+       github.event_name == 'push')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:

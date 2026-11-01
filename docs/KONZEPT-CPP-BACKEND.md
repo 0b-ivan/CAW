@@ -411,14 +411,26 @@ oder `bin/smoke` auf Produktion ausführen. Das lokale Postgres-Backup
 ersetzt **nicht** die noch fehlende verschlüsselte externe Sicherung von
 Postgres und Redis.
 
-Die Pipeline wird aus Sicherheitsgründen erst nach **expliziter**
-Produktionsfreigabe (`CAW_PRODUCTION_APPROVED=true`) scharfgeschaltet.
-Automatische Deployments nach Merge auf `main` brauchen zusätzlich
-`CAW_AUTO_DEPLOY=true`. Bis die Betreiberangaben, Kartenrechte,
-Offsite-Backups und TLS/WSS-Abnahme erledigt sind, bleiben beide
-Variablen aus. SSH-Zugangsdaten gehören ausschließlich in die geschützte
-GitHub-Environment `production`; eine manuelle Deployment-Freigabe kann
-dort durch Required Reviewers ergänzt werden.
+**Betriebsentscheidung vom 2026-11-01:** Der Betreiber verlangt die
+sofortige Inbetriebnahme der automatischen technischen Deployments auf dem
+bereits erreichbaren Hetzner-Host, auch wenn die externe Backup-Einrichtung
+vorläufig ausgesetzt wurde. Deshalb startet der Produktions-Workflow nach
+jedem `main`-Push oder bewusstem manuellem Auslösen **ohne zusätzliche
+Repository-Freigabevariablen**. Der vollständige erfolgreiche CI-Lauf für
+exakt den aktuellen `main`-Commit bleibt zwingend, ebenso die geschützte
+GitHub-Environment `production`, der dedizierte SSH-Zugang, das frische
+lokale PostgreSQL-Backup vor der Änderung, Healthchecks und Rollback.
+
+Diese Aktivierung ist ausdrücklich **nur die technische Betriebsentscheidung**,
+**keine** Feststellung rechtlicher Freigabe oder vollständiger Ausfallsicherheit.
+Die Rechteklärung der Prior99-/Drittanbieter-Karten, die Prüfung realer
+Betreiberangaben und die verschlüsselte externe Sicherung von PostgreSQL und
+Redis-AOF sind weiterhin offen und müssen abgeschlossen werden. Der Betreiber
+trägt bis dahin das bekannte Risiko, dass bei vollständigem Host- oder
+Volume-Verlust sowohl Primärdaten als auch lokale Backups verloren gehen
+können. Ein offizieller `v1.0.0`-Release-Tag bleibt weiterhin gesperrt.
+GitHub-Environment-Required-Reviewers dürfen Deployments zusätzlich
+absichtlich anhalten; wir umgehen sie nicht.
 
 ## 16. GHCR Release-Kandidat vor Freigabe des Hetzner-Deployments
 
