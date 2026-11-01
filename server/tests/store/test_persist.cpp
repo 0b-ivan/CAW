@@ -147,6 +147,15 @@ TEST_CASE("a room's own card pack survives Redis restore but stays isolated") {
   CHECK(restored.customCards(room.code)->answers[0] == "Neue Testantwort");
   CHECK(restored.find(room.code)->packs() == first.find(room.code)->packs());
   CHECK_FALSE(restored.customCards(other.code));
+
+  // Removing the final cards removes their pack and keeps the base deck playable.
+  auto cleared = caw::Messages::readCustomCards(R"({"prompts":[],"answers":[]})");
+  REQUIRE(cleared);
+  const std::string activeId = restored.customCards(room.code)->id;
+  REQUIRE(restored.updateCustomCards(room.code, *cleared));
+  CHECK_FALSE(restored.customCards(room.code));
+  CHECK(restoredPacks.find(activeId) == nullptr);
+  CHECK(restored.find(room.code)->packs() == std::vector<std::string>{"test"});
 }
 
 TEST_CASE("schema 4 room snapshots remain restorable without custom cards") {
