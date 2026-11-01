@@ -409,8 +409,29 @@ h1 { font-size: clamp(22px, 6vw, 30px); font-weight: 500; line-height: 1.25; ove
 .qr-dark { fill: var(--paper); }
 .share-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .share-url { font-size: 12px; overflow-wrap: anywhere; }
-.share-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-.share-buttons button { flex: 1 1 auto; }
+.share-buttons {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.share-buttons button {
+  min-height: 48px;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#screen-link { grid-column: 1 / -1; }
+.invite-address-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.invite-address-row label, .invite-hint { font-size: 12px; }
+.invite-address-row input { min-height: 48px; width: 100%; }
+.invite-hint { overflow-wrap: anywhere; }
 
 .roster, .scores, .bars, .choices { list-style: none; margin: 0; padding: 0; }
 .roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); column-gap: 12px; grid-auto-rows: max-content; }
@@ -829,6 +850,7 @@ footer a { text-decoration: underline; }
 .choices {
   display: flex;
   flex-direction: column;
+  justify-content: safe center;
   flex: 1 1 auto;
   min-height: 0;
   border: 0;
@@ -842,7 +864,7 @@ footer a { text-decoration: underline; }
   align-items: center;
   gap: 6px;
   width: 100%;
-  min-height: 60px;
+  min-height: 70px;
   padding: 11px 12px;
   border: 1px solid var(--card-paper);
   border-radius: 6px;
@@ -915,11 +937,11 @@ footer a { text-decoration: underline; }
 #view-lobby:not(.has-host) #lobby-count { margin-top: min(7dvh, 50px); }
 #view-lobby:not(.has-host) .roster { margin-top: 16px; }
 .share {
-  flex: 0 1 auto;
+  flex: none;
   min-height: 0;
-  max-height: min(34dvh, 280px);
-  overflow-y: auto;
-  padding: 8px 0 16px;
+  max-height: none;
+  overflow: visible;
+  padding: 8px 0 12px;
   border-bottom: var(--line);
   grid-template-columns: minmax(100px, 38%) minmax(0, 1fr);
   gap: 12px;
@@ -1008,8 +1030,13 @@ footer a { text-decoration: underline; }
   .card { padding: 8px; font-size: clamp(13px, 3.8vw, 15px); min-height: clamp(76px, 11dvh, 103px); }
   .card[aria-pressed="true"] { padding: 7px; }
   .hand { gap: 7px; }
-  .share { grid-template-columns: minmax(90px, 36%) minmax(0, 1fr); gap: 8px; }
-  .share-buttons button { font-size: 11px; padding: 6px; }
+  .share {
+    grid-template-columns: minmax(96px, 34%) minmax(0, 1fr);
+    gap: 8px;
+  }
+  .share .qr { max-width: 106px; }
+  .share-text .session-code { font-size: 22px; }
+  .share-buttons button { font-size: 11px; padding: 5px 4px; }
 }
 @media (max-height: 640px) {
   #view-answer, #view-judge, #view-waiting { gap: 6px; }
@@ -1033,7 +1060,7 @@ footer a { text-decoration: underline; }
    separate the question from the hand. The TV uses .screen, not .shell. */
 @media (min-width: 900px) and (min-height: 650px) {
   .shell {
-    width: min(100%, 1040px);
+    width: min(100%, 1140px);
     padding: 20px 26px;
     gap: 12px;
   }
@@ -1043,7 +1070,7 @@ footer a { text-decoration: underline; }
   #view-judge {
     display: grid;
     min-height: 0;
-    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
     grid-template-rows: auto minmax(0, 1fr) auto auto;
     column-gap: 34px;
     row-gap: 10px;
@@ -1059,21 +1086,21 @@ footer a { text-decoration: underline; }
   #view-judge .prompt-stack {
     grid-column: 1;
     grid-row: 2;
-    width: min(92%, 350px);
-    max-width: 350px;
+    width: min(94%, 390px);
+    max-width: 390px;
     justify-self: center;
     align-self: center;
     margin: 0;
   }
   #view-answer .prompt-stack .prompt,
   #view-judge .prompt-stack .prompt {
-    min-height: 190px;
-    max-height: min(44dvh, 290px);
+    min-height: 214px;
+    max-height: min(44dvh, 300px);
     padding: 20px;
   }
   #view-answer .prompt-stack .sentence,
   #view-judge .prompt-stack .sentence {
-    font-size: clamp(20px, 2.1vw, 27px);
+    font-size: clamp(22px, 2.3vw, 29px);
     line-height: 1.3;
   }
   #view-answer .hand-heading {
@@ -1092,11 +1119,11 @@ footer a { text-decoration: underline; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   #view-answer .card {
-    min-height: 96px;
-    font-size: 15px;
-    padding: 12px;
+    min-height: 108px;
+    font-size: 16px;
+    padding: 13px;
   }
-  #view-answer .card[aria-pressed="true"] { padding: 11px; }
+  #view-answer .card[aria-pressed="true"] { padding: 12px; }
   #view-answer { grid-template-rows: auto minmax(0, 1fr) auto; }
   #view-answer > .bar,
   #view-judge > .bar {
@@ -1111,8 +1138,13 @@ footer a { text-decoration: underline; }
     grid-column: 2;
     grid-row: 1 / 3;
     align-self: stretch;
+    justify-self: center;
+    width: 100%;
+    max-width: 530px;
+    gap: 12px;
     overflow-y: auto;
   }
+  #view-judge .choice { min-height: 84px; font-size: 16px; }
   #view-judge .judge-count {
     grid-column: 2;
     grid-row: 3;
@@ -1144,10 +1176,9 @@ footer a { text-decoration: underline; }
   #view-lobby.has-host .share .qr { max-width: 155px; }
   #view-lobby.has-host .share-text { min-width: 0; }
   #view-lobby.has-host .share-buttons {
-    flex-direction: column;
-    align-items: stretch;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  #view-lobby.has-host .share-buttons button { flex: none; }
   #view-lobby.has-host #lobby-count {
     grid-column: 2;
     grid-row: 1;
@@ -1226,4 +1257,21 @@ footer a { text-decoration: underline; }
 @media (max-width: 400px) {
   .host-badge { font-size: 10px; gap: 3px; }
   .host-badge .host-crown { width: 17px; height: 17px; }
+}
+
+/* Compact host lobby: invitation controls stay in one visible flow instead of
+   being clipped inside a 34dvh scrollbox. The start action remains anchored. */
+@media (max-width: 899px) {
+  #view-lobby.has-host {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #view-lobby.has-host > .bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--paper);
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+  }
 }
