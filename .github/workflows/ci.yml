@@ -76,8 +76,15 @@ jobs:
         run: |
           npm install --no-save --prefix /tmp/caw-browser playwright@1.56.1
           /tmp/caw-browser/node_modules/.bin/playwright install --with-deps chromium
-          NODE_PATH=/tmp/caw-browser/node_modules node web/tests/landing.cjs
-          CAW_EXPECT_FAME=1 NODE_PATH=/tmp/caw-browser/node_modules node web/tests/play.cjs
+          CAW_SCREENSHOT_DIR=/tmp/caw-ui NODE_PATH=/tmp/caw-browser/node_modules node web/tests/landing.cjs
+          CAW_SCREENSHOT_DIR=/tmp/caw-ui CAW_EXPECT_FAME=1 NODE_PATH=/tmp/caw-browser/node_modules node web/tests/play.cjs
+      - name: Upload UI screenshots for PR review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caw-ui-screenshots
+          path: /tmp/caw-ui
+          if-no-files-found: ignore
       - name: "Load: 1000 rooms × 8 players + host + big screen against the budgets"
         run: node tests/load/load.mjs http://localhost:8080 1000 3
       - name: The rate limit answers 429 to a flood from one address
