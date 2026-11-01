@@ -170,3 +170,11 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Browser-Assertions für ungültige Loopback-Adresse, korrigierten QR, Buttons und Desktop-Typografie
 - [ ] Abschließenden CI-/Screenshot-Abgleich für diese UI-Korrekturen bestätigen
 
+
+## UI-Polish: kurzes Intro und Öffnen-Anleitung (PR #12)
+
+- [x] Boot-Intro von ca. 4,25 s auf ca. 1,53 s gekürzt; Skip, Replay und Reduced Motion bleiben erhalten
+- [x] `[ ANLEITUNG ]` direkt auf der Startseite mit 4 Schritten zu Host, Beitritt, LAN-/Tunnel-Adresse und Big Screen
+- [x] DE/EN-Hilfedialog mit Escape, Schließen-Button und eigener Scrollfläche
+- [x] Playwright-Checks für Dialog, Übersetzungen, Intro-Dauer und 320/390/1280 px ergänzt
+- [ ] Finale CI einschließlich Browser-Screenshots für diese Revision bestätigen
