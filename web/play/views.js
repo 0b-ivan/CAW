@@ -89,6 +89,7 @@ function renderLobby(app) {
   const frame = app.frame;
   const players = frame.players;
   $('lobby-share').hidden = !app.isHost;
+  $('view-lobby').classList.toggle('has-host', app.isHost);
   if (app.isHost) renderShare(app);
   $('lobby-count').textContent = t('players', players.length);
   $('lobby-players').replaceChildren(...rosterItems(app));
@@ -133,12 +134,32 @@ function renderAnswer(app, actions) {
   // The prompt doubles as the preview: chosen cards appear in the blanks.
   fillSentence($('answer-prompt'), frame.prompt, chosen);
 
+  // Six cards on a regular phone, four on a short viewport. Keep the
+  // original hand indices so submits and swaps still address server slots.
+  const perPage = innerHeight <= 640 ? 4 : 6;
+  const pages = Math.max(1, Math.ceil(hand.length / perPage));
+  const page = Math.max(0, Math.min(app.handPage, pages - 1));
+  app.handPage = page;
   const list = $('hand');
-  const scroll = list.scrollTop;
   const focused = [...list.children].indexOf(document.activeElement);
-  list.replaceChildren(...hand.map((card, slot) => cardButton(app, actions, card, slot)));
+  const samePage = list.dataset.page === String(page);
+  const scroll = samePage ? list.scrollTop : 0;
+  const first = page * perPage;
+  list.replaceChildren(...hand.slice(first, first + perPage)
+    .map((card, i) => cardButton(app, actions, card, first + i)));
+  list.dataset.page = String(page);
   list.scrollTop = scroll;
-  if (focused >= 0 && list.children[focused]) list.children[focused].focus({ preventScroll: true });
+  if (samePage && focused >= 0 && list.children[focused]) {
+    list.children[focused].focus({ preventScroll: true });
+  }
+
+  $('hand-title').textContent = t('handTitle', hand.length);
+  $('hand-pager').hidden = pages <= 1;
+  $('hand-page').textContent = t('handPage', page + 1, pages);
+  $('hand-previous').disabled = page === 0;
+  $('hand-next').disabled = page === pages - 1;
+  $('hand-previous').setAttribute('aria-label', t('previousCards'));
+  $('hand-next').setAttribute('aria-label', t('nextCards'));
 
   $('answer-count').textContent = t('selected', app.selection.length, frame.pick);
   $('submit-button').disabled = app.selection.length !== frame.pick;
@@ -215,6 +236,10 @@ function playItem(app, actions, play, index, canJudge) {
     body.append(i === 0 ? ' ' : ' / ', mark);
   });
   if (canJudge) {
+    const indicator = document.createElement('span');
+    indicator.className = 'choice-indicator';
+    indicator.setAttribute('aria-hidden', 'true');
+    body.append(indicator);
     body.type = 'button';
     body.setAttribute('aria-pressed', String(app.judgePick === index));
     body.addEventListener('click', () => actions.pickPlay(index));
