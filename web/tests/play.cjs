@@ -178,15 +178,20 @@ async function playRound(host, players, round, screen) {
     });
     assert.equal(paper.background, 'rgb(244, 244, 240)', 'answers look like paper cards');
     assert.equal(paper.radius, '6px', 'answers have physical card corners');
-    await checkTape(page, '#hand .card mark.answer-tape');
+    assert.equal(await page.locator('#hand .card mark').count(), 0,
+      'white hand cards must use plain text without embossed strips');
+    const handText = await cards.first().evaluate((card) => getComputedStyle(card).color);
+    assert.equal(handText, 'rgb(8, 8, 8)', 'unselected hand text stays dark on paper');
     await cards.first().click();
     await checkTape(page, '#answer-prompt mark.answer-tape');
     await page.locator('#hand .card .slot-mark', { hasText: '<1/' }).waitFor();
     const selected = await cards.first().evaluate((card) => ({
       background: getComputedStyle(card).backgroundColor,
+      color: getComputedStyle(card).color,
       pressed: card.getAttribute('aria-pressed'),
     }));
     assert.equal(selected.background, 'rgb(8, 8, 8)', 'selected answer is dark');
+    assert.equal(selected.color, 'rgb(244, 244, 240)', 'selected hand text is light and readable');
     assert.equal(selected.pressed, 'true', 'selection is accessible as text/ARIA');
     assert.equal(await page.locator('#answer-prompt mark').count(), 1, 'the chosen card fills the blank');
     await page.locator('#hand .card').first().click();
@@ -572,15 +577,13 @@ async function checkLongCards(browser) {
     for (let i = 0; i < 12; i++) {
       const card = document.createElement('button');
       card.className = 'card';
-      const tape = document.createElement('mark');
-      tape.className = 'answer-tape';
-      tape.textContent = i % 2 ? long : `Kurz ${i}`;
-      card.append(tape);
+      card.textContent = i % 2 ? long : `Kurz ${i}`;
       hand.append(card);
     }
   });
   await checkTape(page, '#answer-prompt mark.answer-tape');
-  await checkTape(page, '#hand .card mark.answer-tape');
+  assert.equal(await page.locator('#hand .card mark').count(), 0,
+    'long hand cards remain plain and readable');
   for (const [width, height] of SIZES) {
     await page.setViewportSize({ width, height });
     const clipped = await page.locator('#hand .card').evaluateAll((cards) =>
