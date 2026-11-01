@@ -186,6 +186,18 @@ das Skript stoppt absichtlich Postgres und Redis.
   von Postgres-Dumps und Redis-AOF mit regelmäßiger Restore-Probe
   eingerichtet werden. Hetzner-Snapshots sind nur eine Ergänzung.
   Der Ziel-Speicher und Zugangsdaten fehlen noch.
+- **Lokaler Restore-Test ohne Storage Box:** `bin/verify-local-restore`
+  liest den neuesten Dump aus dem CAW-Backup-Volume, startet ein
+  netzwerkisoliertes, kurzlebiges `postgres:17-alpine`, stellt die Tabellen
+  `players` und `winning_lines` wieder her und entfernt die Testumgebung.
+  Als `caw-deploy` auf Hetzner ausführen:
+  `sudo -u caw-deploy -H bash /opt/caw/bin/verify-local-restore`.
+  Das vorhandene Skript `bin/restore` **nicht ohne explizite Zieldatenbank**
+  ausführen: Sein Standardziel ist die **produktive** Datenbank `caw`.
+  Der isolierte Test benötigt keine Netzverbindung und verändert keine
+  produktiven Datenbanken oder Container.
+  **Ein lokaler Restore ist kein Offsite-Backup:** Bei vollständigem
+  Server- oder Volume-Verlust können Daten trotzdem verloren gehen.
 - Ein Update muss im CAW-Compose-Projekt stattfinden, nicht mit einem
   Host-weiten Docker-Cleanup. Vorher Datenbank/Redis sichern.
 - Monitoring über das bestehende Monitoring des Hosts oder optional
