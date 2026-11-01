@@ -164,4 +164,9 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Lobby auf Handy/Desktop/TV und Host-ohne-Sitz mit Krone + sichtbarem HOST-Text
 - [x] Tests: mitspielender Host, nicht spielender Host, Trennung/Reauthentifizierung
 - [ ] PR #12 mit Krone: Build, CTest, Browser-Screenshots und Lasttests grün bestätigen
+- [x] Audit-Fix: QR und alle Einladungsaktionen bei 320 px ohne abgeschnittenes Share-Panel
+- [x] Erreichbare LAN-/Tunnel-Basisadresse statt localhost im Host-QR und in Copy/Share/Big-Screen-Link
+- [x] Desktop-Frage und Antwortkarten vergrößert, Juror-Karten zentriert und lesbarer
+- [x] Browser-Assertions für ungültige Loopback-Adresse, korrigierten QR, Buttons und Desktop-Typografie
+- [ ] Abschließenden CI-/Screenshot-Abgleich für diese UI-Korrekturen bestätigen
 
