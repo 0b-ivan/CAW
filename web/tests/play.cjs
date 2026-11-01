@@ -162,24 +162,31 @@ async function playRound(host, players, round, screen) {
     await page.locator('#hand .card').first().click();
     assert.equal(await page.locator('#hand .slot-mark').count(), 0);
 
-    // The ten cards are paged while their original server indices stay intact.
+    // Ten cards stay in one scroll area; picking the last card must preserve
+    // its server slot, scroll position and the fixed submit button.
     const promptWidth = await page.locator('#view-answer .prompt-stack').boundingBox();
     const shellWidth = await page.locator('#shell').boundingBox();
     assert.ok(promptWidth.width < shellWidth.width * .9, 'prompt is a compact card stack');
-    assert.equal(await page.locator('#hand .card').count(), 6, 'six cards on a normal phone');
-    await page.locator('#hand-next').click();
-    await page.locator('#hand-page', { hasText: '2/2' }).waitFor();
-    assert.equal(await page.locator('#hand .card').count(), 4, 'remaining four cards on page two');
-    await page.locator('#hand .card').first().click();
+    assert.equal(await cards.count(), 10, 'the full hand is present without pagination');
+    assert.equal(await page.locator('#hand-pager').count(), 0, 'no paging buttons');
+    const hand = page.locator('#hand');
+    const metrics = await hand.evaluate((el) => ({
+      height: el.clientHeight, scrollHeight: el.scrollHeight,
+    }));
+    assert.ok(metrics.scrollHeight > metrics.height + 1, 'mobile hand is independently scrollable');
+    await cards.last().click();
+    const lowerScroll = await hand.evaluate((el) => el.scrollTop);
+    assert.ok(lowerScroll > 0, 'the last card can be reached by scrolling');
+    assert.equal(await cards.last().getAttribute('aria-pressed'), 'true',
+      'the last original server slot can be selected');
     assert.match(await page.locator('#answer-count').textContent(), /^1\//);
-    await page.locator('#hand-previous').click();
-    assert.match(await page.locator('#answer-count').textContent(), /^1\//,
-      'selection survives changing pages');
-    await page.locator('#hand-next').click();
-    assert.equal(await page.locator('#hand .card[aria-pressed="true"]').count(), 1,
-      'the selection reappears on the original card');
-    await page.locator('#hand .card[aria-pressed="true"]').click();
-    await page.locator('#hand-previous').click();
+    await hand.evaluate((el) => { el.scrollTop = 0; });
+    assert.equal(await cards.last().getAttribute('aria-pressed'), 'true',
+      'selected cards remain selected when the hand scrolls');
+    const submitBox = await page.locator('#submit-button').boundingBox();
+    assert.ok(submitBox.y + submitBox.height <= 844, 'submit is fixed below the hand');
+    await cards.last().click();
+    assert.equal(await cards.last().getAttribute('aria-pressed'), 'false');
 
     // A reload keeps the seat: the ticket is in localStorage.
     await answering[1].reload();
@@ -416,10 +423,20 @@ async function checkLongCards(browser) {
     assert.equal(clipped, 0, `${width}x${height}: ${clipped} cards cut their text`);
     const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
     assert.ok(pageHeight <= height, `${width}x${height}: long cards make the page scroll`);
+    const hand = page.locator('#hand');
+    const dimensions = await hand.evaluate((el) => ({
+      scrollHeight: el.scrollHeight, clientHeight: el.clientHeight,
+    }));
+    assert.ok(dimensions.scrollHeight > dimensions.clientHeight,
+      `${width}x${height}: all long cards should scroll inside the hand`);
+    await page.locator('#hand .card').last().scrollIntoViewIfNeeded();
+    const scrollTop = await hand.evaluate((el) => el.scrollTop);
+    assert.ok(scrollTop > 0, `${width}x${height}: last card is reachable by scrolling`);
     const submit = await page.locator('#submit-button').boundingBox();
-    assert.ok(submit.y + submit.height <= height + 0.5, `${width}x${height}: submit pushed off screen`);
+    assert.ok(submit.y >= 0 && submit.y + submit.height <= height + 0.5,
+      `${width}x${height}: submit pushed off screen`);
   }
-  console.log('PASS long cards: no text cut, no page scroll, submit on screen at all sizes');
+  console.log('PASS long cards: all cards scroll internally, text intact, submit fixed at every size');
 }
 
 (async () => {
