@@ -4,6 +4,7 @@ import { Connection, lookupSession, secrets } from '../play/connection.js';
 import { applyStaticTexts, setTextLanguage, t } from '../play/text.js';
 import { fillSentence } from '../play/sentence.js';
 import { qrSvg } from '../play/qr.js';
+import { markHost } from '../play/crown.js';
 import { creditsText, nameWithWord } from '../play/views.js';
 
 const $ = (id) => document.getElementById(id);
@@ -99,7 +100,11 @@ function renderLobby(frame) {
   $('screen-code').textContent = code;
   $('screen-url').textContent = joinUrl().replace(/^https?:\/\//, '');
   $('screen-count').textContent = t('players', frame.players.length);
-  $('screen-players').replaceChildren(...frame.players.map((player) => item(nameWithWord(player))));
+  $('screen-players').replaceChildren(...frame.players.map((player) => {
+    const name = nameWithWord(player);
+    const entry = item(name);
+    return player.isHost ? markHost(entry, name, t('hostRole')) : entry;
+  }));
   $('screen-status').textContent = `${t('screenJoin')} · ${t('waitForHost')}`;
 }
 
@@ -111,6 +116,7 @@ function renderAnswers(frame) {
 }
 
 function renderJudging(frame) {
+  fillSentence($('screen-judge-prompt'), frame.prompt, []);
   const list = $('screen-plays');
   list.classList.toggle('two-columns', frame.plays.length > 4);
   list.replaceChildren(...frame.plays.map((play, index) => {

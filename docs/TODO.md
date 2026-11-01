@@ -144,3 +144,47 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Lizenz für den CAW-Anwendungscode: MIT (`LICENSE`); Karten bleiben CC BY-NC-SA 2.0
 - [x] Release-Workflow: Tag `v*` → Server-Image nach GHCR, GitHub-Release mit `docs/releases/<tag>.md`
 - [ ] Tag `v1.0.0` setzen (nach Impressum, Zielserver und TLS-Prüfung)
+
+## UI-Polish: Spielkarten (PR #12)
+
+- [x] Abweichung zum strikten Flat-Look zuerst in `docs/UI-KONZEPT.md` erlauben und begrenzen
+- [x] Startseiten-Logo mit echten, versetzten CSS-Karten statt flachen Buchstaben
+- [x] Frage, Hand, Juror-Optionen und Auflösung im kontrastreichen Kartenstil
+- [x] Big-Screen-Fragen/Antwortsätze und Auflösung im selben Stil, ohne private Hände
+- [x] Browser-Regressionen für Materialität, Auswahl-ARIA und Big-Screen-Stil ergänzen
+- [ ] CI-Build, `ctest`, Browser- und Lasttests für PR #12 grün bestätigen
+- [x] Zweiter Durchgang nach realen Screenshots: zentrierte Fragekarten,
+  Juror-Indikatoren, einspaltige Handy-Lobby und volle Hauptaktionen
+- [x] Alle zugeteilten Handkarten ohne Pagination als durchgehendes scrollbareres Raster;
+  Scrollposition und Auswahl bleiben beim Antippen bestehen
+- [x] Playwright-Tests für die letzte Karte, die interne Scrollfläche und
+  den fest sichtbaren Abgabe-Button bei 320×568, 390×844 und 1280×800
+- [x] Zusätzliche Browser-Tests für Kartenseiten, persistente Auswahl und getrennte Rollen
+- [x] Desktop-Anordnung am MacBook: Frage links, Karten rechts,
+  Host-Einladung neben Spielerliste; eigenes responsives Layout ab 900 px
+- [x] Playwright prüft nebeneinander liegende Desktop-Elemente bei 1280×800
+- [ ] Visueller Desktop-Vergleich auf dem MacBook nach aktueller CSS-Revision
+- [ ] Browser-Screenshots bei 320/390 px sowie 16:9/4:3 visuell gegen Mockups abnehmen
+
+- [x] Handkartenzahl standardmäßig 7, Host-Änderung 3–10 nur in der Lobby
+- [x] Protokoll, Redis-Snapshots (mit Legacy-10er-Sessions), Sprachtexte und Tests erweitert
+- [ ] CI einschließlich `ctest`, Browser und Lasttests mit Hand-Einstellung grün bestätigen
+- [x] Goldene Host-Krone als einzelne freigegebene Farb-Ausnahme im UI-Konzept
+- [x] Öffentliche Host-Rolle an authentifizierte Spielerplätze binden (ohne Token/Hand)
+- [x] Lobby auf Handy/Desktop/TV und Host-ohne-Sitz mit Krone + sichtbarem HOST-Text
+- [x] Tests: mitspielender Host, nicht spielender Host, Trennung/Reauthentifizierung
+- [ ] PR #12 mit Krone: Build, CTest, Browser-Screenshots und Lasttests grün bestätigen
+- [x] Audit-Fix: QR und alle Einladungsaktionen bei 320 px ohne abgeschnittenes Share-Panel
+- [x] Erreichbare LAN-/Tunnel-Basisadresse statt localhost im Host-QR und in Copy/Share/Big-Screen-Link
+- [x] Desktop-Frage und Antwortkarten vergrößert, Juror-Karten zentriert und lesbarer
+- [x] Browser-Assertions für ungültige Loopback-Adresse, korrigierten QR, Buttons und Desktop-Typografie
+- [ ] Abschließenden CI-/Screenshot-Abgleich für diese UI-Korrekturen bestätigen
+
+
+## UI-Polish: kurzes Intro und Öffnen-Anleitung (PR #12)
+
+- [x] Boot-Intro auf ca. 1,7 s gekürzt, indem Shuffle und Zoom entfallen; ruhiges Bewegungstempo, Skip und Reduced Motion bleiben erhalten
+- [x] `[ ANLEITUNG ]` direkt auf der Startseite: drei Schritte zum Online-Spielen (Host, Beitritt, Big Screen) ohne Netzwerk-/Servereinrichtung
+- [x] DE/EN-Hilfedialog mit zwei Bereichen: SO STARTEST DU und SPIELREGELN (Juror, Pick/Draw, Punkte, Hand, Host-Einstellungen), Escape, Schließen und eigener Scrollfläche
+- [x] Playwright-Checks für DE/EN-Spielregeln, fehlende Infrastruktur-Hinweise, Dialog, ruhige Intro-Dauer und 320/390/1280 px ergänzt
+- [ ] Finale CI einschließlich Browser-Screenshots für diese Revision bestätigen

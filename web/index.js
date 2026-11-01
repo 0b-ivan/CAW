@@ -5,6 +5,9 @@ const landing = document.querySelector('#landing');
 const boot = document.querySelector('#boot-screen');
 const replayButton = document.querySelector('#replay-intro');
 const skipButton = document.querySelector('#skip-intro');
+const guide = document.querySelector('#guide-dialog');
+const openGuideButton = document.querySelector('#open-guide');
+const closeGuideButton = document.querySelector('#close-guide');
 const introKey = 'caw.intro.seen';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -77,38 +80,9 @@ function finishIntro(focusReplay = false) {
   stopIntroTimers();
   boot.hidden = true;
   boot.className = 'boot-screen';
-  boot.querySelectorAll('.zoom-card').forEach((card) => card.remove());
   landing.inert = false;
   markIntroSeen();
   if (focusReplay) replayButton.focus();
-}
-
-function zoomMiddleCard() {
-  const middleCard = boot.querySelector('.cut-card--a');
-  const from = middleCard.getBoundingClientRect();
-  const bounds = boot.getBoundingClientRect();
-  const zoomCard = document.createElement('span');
-  zoomCard.className = 'zoom-card';
-  zoomCard.textContent = 'A';
-  zoomCard.setAttribute('aria-hidden', 'true');
-  zoomCard.style.left = `${from.left - bounds.left}px`;
-  zoomCard.style.top = `${from.top - bounds.top}px`;
-  zoomCard.style.width = `${from.width}px`;
-  zoomCard.style.height = `${from.height}px`;
-  zoomCard.style.fontSize = `${from.width * 0.67}px`;
-  boot.appendChild(zoomCard);
-  void zoomCard.offsetWidth;
-
-  // A separate flat rectangle preserves the exact A-card silhouette during zoom.
-  requestAnimationFrame(() => {
-    zoomCard.style.left = '0px';
-    zoomCard.style.top = '0px';
-    zoomCard.style.width = `${boot.clientWidth}px`;
-    zoomCard.style.height = `${boot.clientHeight}px`;
-    zoomCard.style.fontSize = `${Math.min(boot.clientWidth, boot.clientHeight) * 0.75}px`;
-  });
-  later(820, () => boot.classList.add('is-completing'));
-  later(1120, () => finishIntro());
 }
 
 function startIntro() {
@@ -117,18 +91,18 @@ function startIntro() {
     finishIntro();
     return;
   }
-  boot.querySelectorAll('.zoom-card').forEach((card) => card.remove());
   boot.className = 'boot-screen';
   boot.hidden = false;
   landing.inert = true;
   skipButton.focus();
 
-  // Each step is independent of the server: no game state or timers are blocked.
-  later(80, () => boot.classList.add('is-shuffling'));
-  later(1030, () => boot.classList.add('is-shifted'));
-  later(1640, () => boot.classList.add('has-slash'));
-  later(2080, () => boot.classList.add('has-wordmark'));
-  later(3130, zoomMiddleCard);
+  // Keep the original, calm transition speeds. We shortened the intro by
+  // removing the shuffle, full-screen card zoom and idle time, not by rushing.
+  later(60, () => boot.classList.add('is-shifted'));
+  later(670, () => boot.classList.add('has-slash'));
+  later(930, () => boot.classList.add('has-wordmark'));
+  later(1400, () => boot.classList.add('is-completing'));
+  later(1700, () => finishIntro());
 }
 
 function showStatus(key) {
@@ -178,6 +152,8 @@ document.querySelector('#code').addEventListener('input', (event) => {
   event.target.value = event.target.value.toUpperCase();
 });
 skipButton.addEventListener('click', () => finishIntro(true));
+openGuideButton.addEventListener('click', () => guide.showModal());
+closeGuideButton.addEventListener('click', () => guide.close());
 replayButton.addEventListener('click', startIntro);
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !boot.hidden) finishIntro(true);

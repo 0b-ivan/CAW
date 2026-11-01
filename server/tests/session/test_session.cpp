@@ -142,16 +142,60 @@ TEST_CASE("host commands need the host token") {
   CHECK(table.lastState(9).at("me").contains("hand") == false);
 }
 
+TEST_CASE("only authenticated playing hosts are crowned in public seats") {
+  Table table;
+  table.join(1, "Ada");
+  table.join(2, "Bert");
+  table.claimHost(9);
+  // An organizer without a player seat cannot appear as a player.
+  for (const json& player : table.lastState(1).at("players"))
+    CHECK_FALSE(player.at("isHost").get<bool>());
+
+  table.claimHost(1);
+  const json players = table.lastState(2).at("players");
+  CHECK(players.at(0).at("name") == "Ada");
+  CHECK(players.at(0).at("isHost") == true);
+  CHECK(players.at(1).at("isHost") == false);
+  CHECK(table.lastState(2).dump().find(kHostToken) == std::string::npos);
+
+  table.session.addScreen(50, table.now);
+  table.deliver();
+  CHECK(table.last(50).at("players").at(0).at("isHost") == true);
+  CHECK_FALSE(table.last(50).contains("me"));
+
+  table.session.connectionClosed(1, table.now);
+  table.deliver();
+  CHECK(table.lastState(2).at("players").at(0).at("isHost") == false);
+  CHECK(table.last(50).at("players").at(0).at("isHost") == false);
+
+  Command resume;
+  resume.type = Command::Type::Resume;
+  resume.token = table.tickets[1];
+  table.send(4, resume);
+  table.claimHost(4);
+  CHECK(table.lastState(2).at("players").at(0).at("isHost") == true);
+}
+
 TEST_CASE("a full round: answers, anonymous judging, reveal with author and points") {
   Table table;
-  table.startThree();
+  table.join(1, "Ada");
+  table.join(2, "Bert");
+  table.join(3, "Cyra");
+  table.claimHost(9);
+  // With a different hand size the shuffle can put Rando first. This test
+  // checks the human winner, so disable Rando rather than depend on RNG order.
+  Command noRando;
+  noRando.type = Command::Type::Settings;
+  noRando.settings.rando = false;
+  table.send(9, noRando);
+  table.host(9, Command::Type::Start);
   const ConnectionId juror = table.juror();
   REQUIRE(juror != 0);
   for (ConnectionId c : {1u, 2u, 3u})
     if (c != juror) table.submit(c);
   json state = table.lastState(juror);
   REQUIRE(state.at("phase") == "judging");
-  REQUIRE(state.at("plays").size() == 3);  // two answers plus Rando Cardrissian
+  REQUIRE(state.at("plays").size() == 2);  // only the two human answers
   for (const json& play : state.at("plays")) CHECK(play.contains("author") == false);
   table.judge(juror, 0);
   state = table.lastState(1);
@@ -182,7 +226,8 @@ TEST_CASE("a big screen follows the table without ever seeing a hand") {
   for (const json& frame : table.inbox[50]) {
     CHECK(frame.at("type") == "screen");
     CHECK(frame.contains("me") == false);
-    CHECK(frame.dump().find("hand") == std::string::npos);
+    // The public hand-size setting is fine; private cards live only in "me".
+    CHECK_FALSE(frame.contains("me"));
   }
 
   table.session.connectionClosed(50, table.now);
@@ -318,6 +363,43 @@ Command settings(std::uint8_t rounds, std::uint8_t answerSecs) {
   return command;
 }
 }  // namespace
+
+TEST_CASE("new sessions deal seven cards and the host can change the hand only in the lobby") {
+  Table table;
+  table.join(1, "Ada");
+  table.join(2, "Bert");
+  table.join(3, "Cyra");
+  table.claimHost(9);
+  CHECK(table.lastState(1).at("settings").at("hand") == 7);
+
+  Command change = settings(10, 0);
+  change.settings.hand = 5;
+  table.send(9, change);
+  CHECK(table.lastState(1).at("settings").at("hand") == 5);
+
+  table.host(9, Command::Type::Start);
+  CHECK(table.lastState(1).at("me").at("hand").size() == 5);
+  const std::string before = table.session.saveState(table.now);
+  change.settings.hand = 8;
+  table.send(9, change);
+  CHECK(table.last(9).at("code") == "rejected");
+  CHECK(table.session.saveState(table.now) == before);
+  CHECK(table.lastState(1).at("settings").at("hand") == 5);
+
+  // The host may still change clocks during the match.
+  change.settings.hand = 5;
+  change.settings.answerSecs = 30;
+  table.send(9, change);
+  CHECK(table.lastState(1).at("settings").at("answerSecs") == 30);
+}
+
+TEST_CASE("new sessions start with the configured default seven-card hand") {
+  Table table;
+  table.startThree();
+  const json state = table.lastState(1);
+  CHECK(state.at("settings").at("hand") == 7);
+  CHECK(state.at("me").at("hand").size() == 7);
+}
 
 TEST_CASE("the host sets rounds in the lobby and clocks at any time") {
   Table table;

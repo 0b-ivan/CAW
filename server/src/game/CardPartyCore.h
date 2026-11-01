@@ -30,7 +30,7 @@ struct Deck {
   const uint16_t* answerMasks = nullptr;
 };
 struct Rules {
-  uint8_t hand = 10, rounds = 10;
+  uint8_t hand = 7, rounds = 10;
   bool rando = false;
 };
 struct PublicPlayer {
@@ -326,6 +326,16 @@ class Game {
   bool setRounds(uint8_t rounds) {
     if (phase_ != Phase::Lobby) return false;
     rules_.rounds = requestedRounds_ = rounds;
+    return true;
+  }
+  // The lobby hand size is validated against every prompt, including Draw 2.
+  // A running match cannot change its hand, even when a host changes clocks.
+  bool setHand(uint8_t hand) {
+    if (phase_ != Phase::Lobby || !deck_ || hand < 3 || hand > 10) return false;
+    Rules updated = rules_;
+    updated.hand = hand;
+    if (!validDeck(*deck_, updated)) return false;
+    rules_.hand = hand;
     return true;
   }
   // What the host chose; rules().rounds is the fair count once started.

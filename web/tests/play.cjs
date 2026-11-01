@@ -38,6 +38,34 @@ async function checkFit(page, label, mainAction) {
       const box = await control.boundingBox();
       if (box) assert.ok(box.height >= 47.5, `${label} ${width}x${height}: a control is ${box.height}px tall`);
     }
+    // Desktop uses side-by-side panels instead of stretching the phone mockup.
+    if (width === 1280 && label === 'answer') {
+      const prompt = await page.locator('#view-answer .prompt-stack').boundingBox();
+      const hand = await page.locator('#hand').boundingBox();
+      assert.ok(prompt && hand && prompt.x + prompt.width < hand.x,
+        'desktop question must be left of the answer cards');
+      // Bounding boxes include the deliberate two-degree card rotation.
+      assert.ok(prompt.width >= 310 && prompt.width <= 450,
+        'desktop question retains compact physical-card proportions');
+      const font = await page.locator('#hand .card').first()
+        .evaluate((card) => parseFloat(getComputedStyle(card).fontSize));
+      assert.ok(font >= 16, 'desktop answer cards have readable text');
+    }
+    if (width === 1280 && label === 'judge') {
+      const prompt = await page.locator('#view-judge .prompt-stack').boundingBox();
+      const choices = await page.locator('#judge-list').boundingBox();
+      assert.ok(prompt && choices && prompt.x + prompt.width < choices.x,
+        'desktop juror question must be left of the anonymous choices');
+      const optionHeight = await page.locator('#judge-list .choice').first()
+        .evaluate((card) => card.getBoundingClientRect().height);
+      assert.ok(optionHeight >= 84, 'desktop juror choices have generous tap targets');
+    }
+    if (width === 1280 && label === 'lobby-host-full') {
+      const invite = await page.locator('#lobby-share').boundingBox();
+      const players = await page.locator('#lobby-players').boundingBox();
+      assert.ok(invite && players && invite.x + invite.width < players.x,
+        'desktop lobby must show QR invite beside the players, not above them');
+    }
     if (process.env.CAW_SCREENSHOT_DIR) {
       fs.mkdirSync(process.env.CAW_SCREENSHOT_DIR, { recursive: true });
       await page.screenshot({ path: `${process.env.CAW_SCREENSHOT_DIR}/${label}-${width}.png` });
@@ -123,13 +151,54 @@ async function playRound(host, players, round, screen) {
     await checkScreen(screen, 'answers', 'answers');
     const page = answering[0];
     await checkFit(page, 'answer', '#submit-button');
-    const hand = await page.locator('#hand').evaluate((list) => list.scrollHeight <= list.clientHeight + 1);
-    assert.ok(hand, 'at 390x844 the whole hand is visible without scrolling');
-    await page.locator('#hand .card').first().click();
+    const cards = page.locator('#hand .card');
+    const paper = await cards.first().evaluate((card) => {
+      const style = getComputedStyle(card);
+      return { background: style.backgroundColor, radius: style.borderRadius };
+    });
+    assert.equal(paper.background, 'rgb(244, 244, 240)', 'answers look like paper cards');
+    assert.equal(paper.radius, '6px', 'answers have physical card corners');
+    await cards.first().click();
     await page.locator('#hand .card .slot-mark', { hasText: '<1/' }).waitFor();
+    const selected = await cards.first().evaluate((card) => ({
+      background: getComputedStyle(card).backgroundColor,
+      pressed: card.getAttribute('aria-pressed'),
+    }));
+    assert.equal(selected.background, 'rgb(8, 8, 8)', 'selected answer is dark');
+    assert.equal(selected.pressed, 'true', 'selection is accessible as text/ARIA');
     assert.equal(await page.locator('#answer-prompt mark').count(), 1, 'the chosen card fills the blank');
     await page.locator('#hand .card').first().click();
     assert.equal(await page.locator('#hand .slot-mark').count(), 0);
+
+    // All seven cards stay in one scroll area. Use a short viewport to
+    // exercise scrolling regardless of the synthetic card text.
+    const promptWidth = await page.locator('#view-answer .prompt-stack').boundingBox();
+    const shellWidth = await page.locator('#shell').boundingBox();
+    assert.ok(promptWidth.width < shellWidth.width * .9, 'prompt is a compact card stack');
+    const handSize = await cards.count();
+    assert.ok(handSize >= 7 && handSize <= 9,
+      'seven regular cards plus at most two optional Draw-2 cards');
+    assert.equal(await page.locator('#hand-pager').count(), 0, 'no paging buttons');
+    await page.setViewportSize({ width: 320, height: 568 });
+    const hand = page.locator('#hand');
+    const metrics = await hand.evaluate((el) => ({
+      height: el.clientHeight, scrollHeight: el.scrollHeight,
+    }));
+    assert.ok(metrics.scrollHeight > metrics.height + 1, 'mobile hand is independently scrollable');
+    await cards.last().click();
+    const lowerScroll = await hand.evaluate((el) => el.scrollTop);
+    assert.ok(lowerScroll > 0, 'the last card can be reached by scrolling');
+    assert.equal(await cards.last().getAttribute('aria-pressed'), 'true',
+      'the last original server slot can be selected');
+    assert.match(await page.locator('#answer-count').textContent(), /^1\//);
+    await hand.evaluate((el) => { el.scrollTop = 0; });
+    assert.equal(await cards.last().getAttribute('aria-pressed'), 'true',
+      'selected cards remain selected when the hand scrolls');
+    const submitBox = await page.locator('#submit-button').boundingBox();
+    assert.ok(submitBox.y + submitBox.height <= 568, 'submit is fixed below the hand');
+    await cards.last().click();
+    assert.equal(await cards.last().getAttribute('aria-pressed'), 'false');
+    await page.setViewportSize({ width: 390, height: 844 });
 
     // A reload keeps the seat: the ticket is in localStorage.
     await answering[1].reload();
@@ -159,14 +228,27 @@ async function playRound(host, players, round, screen) {
   if (round === 1) {
     await checkFit(juror, 'judge', '#judge-button');
     await checkScreen(screen, 'judging', 'judging');
+    assert.ok((await screen.locator('#screen-judge-prompt').textContent()).length > 0,
+      'the TV shows the question above answer cards');
+    const screenPaper = await screen.locator('#screen-plays li').first()
+      .evaluate((card) => getComputedStyle(card).backgroundColor);
+    assert.equal(screenPaper, 'rgb(244, 244, 240)', 'TV shows legible paper answer cards');
   }
+  const judgePaper = await juror.locator('#judge-list .choice').first()
+    .evaluate((card) => getComputedStyle(card).backgroundColor);
+  assert.equal(judgePaper, 'rgb(244, 244, 240)', 'juror options are paper strips');
   await juror.locator('#judge-list .choice').first().click();
+  assert.equal(await juror.locator('#judge-list .choice').first().getAttribute('aria-pressed'),
+    'true', 'the chosen answer is also announced to assistive technology');
   // The pick fills the blanks of the prompt shown once on top.
   assert.ok(await juror.locator('#judge-prompt mark').count() >= 1, 'the pick appears in the prompt');
   await juror.getByRole('button', { name: '[ BESTÄTIGEN ]' }).click();
 
   for (const page of [host, ...players]) await waitView(page, 'reveal');
   assert.match(await host.locator('#reveal-winner').textContent(), /^GEWINNER: /);
+  const revealPaper = await host.locator('#reveal-sentence')
+    .evaluate((card) => getComputedStyle(card).backgroundColor);
+  assert.equal(revealPaper, 'rgb(244, 244, 240)', 'the reveal is a single large paper card');
   if (round === 1) {
     await checkScreen(screen, 'reveal', 'reveal');
     await checkFit(host, 'reveal-host', '#next-button');
@@ -182,7 +264,39 @@ async function run(browser) {
   await host.getByRole('button', { name: '[ NEUE SESSION ]' }).click();
   await host.waitForURL(/\/s\/[A-HJKMNP-Z2-9]{6}$/);
   const code = host.url().split('/').pop();
+  // A localhost URL is only reachable on the host device. Require an
+  // explicitly entered LAN origin before exposing QR, Copy or Share.
+  await host.locator('#invite-address').waitFor();
+  assert.equal(await host.locator('#lobby-qr svg').count(), 0, 'no unusable localhost QR');
+  assert.equal(await host.locator('#copy-link').isDisabled(), true, 'no unusable localhost copy link');
+  const inviteOrigin = 'http://192.168.50.77:8080';
+  await host.locator('#invite-address').fill('http://127.0.0.1:8080');
+  await host.locator('#invite-address').press('Tab');
+  await host.locator('#invite-hint', { hasText: 'BITTE VOLLSTÄNDIGE' }).waitFor();
+  await host.locator('#invite-address').fill(inviteOrigin);
+  await host.locator('#invite-address').press('Tab');
   await host.locator('#lobby-qr svg').waitFor();
+  assert.equal(await host.locator('#lobby-qr').getAttribute('data-url'),
+    `${inviteOrigin}/s/${code}`, 'QR uses the explicit LAN URL');
+  assert.equal(await host.locator('#lobby-url').textContent(),
+    `192.168.50.77:8080/s/${code}`);
+  assert.equal(await host.locator('#copy-link').isDisabled(), false);
+  assert.equal(await host.locator('#invite-address-row').isVisible(), false,
+    'the configured address editor collapses to leave space for players');
+  await host.locator('#lobby-url').click();
+  assert.equal(await host.locator('#invite-address-row').isVisible(), true,
+    'the URL is an accessible toggle for editing the address');
+  await host.locator('#lobby-url').click();
+  assert.equal(await host.locator('#invite-address-row').isVisible(), false);
+  assert.equal(await host.evaluate(async (session) =>
+    (await import('/play/invite.js')).shareableSessionUrl(session), code),
+  `${inviteOrigin}/s/${code}`, 'Copy and Share use the same URL as the QR');
+  await host.locator('#host-badge .host-crown').waitFor();
+  assert.equal(await host.locator('#host-badge .host-crown')
+    .evaluate((crown) => getComputedStyle(crown).color), 'rgb(215, 174, 74)',
+  'a non-playing host has a gold crown in the header');
+  assert.ok(await host.locator('#view-lobby').evaluate((view) => view.classList.contains('has-host')),
+    'the host lobby has invite controls');
   assert.equal(await host.locator('#lobby-code').textContent(), code);
   assert.equal(await host.locator('#start-button').isDisabled(), true, 'START needs three players');
   await checkFit(host, 'lobby-host', '#start-button');
@@ -198,8 +312,30 @@ async function run(browser) {
   const players = [];
   for (const name of ['Ada', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
+  await checkFit(host, 'lobby-host-full', '#start-button');
+  await host.setViewportSize({ width: 320, height: 568 });
+  assert.equal(await host.locator('#invite-address-row').isVisible(), false);
+  const invitePanel = await host.locator('#lobby-share').evaluate((panel) => ({
+    scrollHeight: panel.scrollHeight, height: panel.clientHeight,
+  }));
+  assert.ok(invitePanel.scrollHeight <= invitePanel.height + 1,
+    'all invite actions are exposed without an internally clipped QR panel');
+  await host.locator('#screen-link').scrollIntoViewIfNeeded();
+  const bigScreenButton = await host.locator('#screen-link').boundingBox();
+  const copyButton = await host.locator('#copy-link').boundingBox();
+  assert.ok(bigScreenButton.y >= 0 && bigScreenButton.y + bigScreenButton.height <= 568,
+    'Big Screen action is reachable at 320x568');
+  assert.ok(Math.abs(bigScreenButton.y - copyButton.y) <= 2,
+    'mobile invite actions use one row and leave space for the roster');
+  await host.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await players[0].locator('#lobby-share').isVisible(), false,
+    'the guest lobby does not show host-only share controls');
   await checkFit(players[0], 'lobby', '#lobby-status');
   await screen.locator('#screen-players li', { hasText: 'Cyra·' }).waitFor();
+  assert.equal(await players[0].locator('#lobby-players .host-crown').count(), 0,
+    'host-only organizers are never mistaken for players');
+  assert.equal(await screen.locator('#screen-players .host-crown').count(), 0,
+    'the TV does not invent a host seat');
   // Every name carries its word, and the three words differ.
   const words = await host.locator('#lobby-players li').allTextContents();
   assert.equal(new Set(words.map((label) => label.split('·')[1])).size, 3, 'three different words');
@@ -211,11 +347,21 @@ async function run(browser) {
   await checkFit(host, 'menu-screen', '#menu-close');
   await host.locator('#menu-close').click();
 
-  // Three rounds instead of ten: ‹ steps 10 → 8 → 5 → 3.
+  // Hand is seven by default. Check the host's new lobby control, then
+  // restore seven for the scrollable-hand match.
   await openMenuPage(host, 'SPIELREGELN');
-  const fewer = host.locator('.stepper').first().getByRole('button', { name: 'Weniger' });
+  const handRule = host.locator('.stepper', { hasText: 'HANDKARTEN' });
+  await handRule.locator('.stepper-value', { hasText: /^7$/ }).waitFor();
+  await handRule.getByRole('button', { name: 'Mehr' }).click();
+  await handRule.locator('.stepper-value', { hasText: /^8$/ }).waitFor();
+  await handRule.getByRole('button', { name: 'Weniger' }).click();
+  await handRule.locator('.stepper-value', { hasText: /^7$/ }).waitFor();
+
+  // Three rounds instead of ten: ‹ steps 10 → 8 → 5 → 3.
+  const roundsRule = host.locator('.stepper', { hasText: 'RUNDEN' });
+  const fewer = roundsRule.getByRole('button', { name: 'Weniger' });
   for (let i = 0; i < 3; i++) await fewer.click();
-  await host.locator('.stepper .stepper-value').first().filter({ hasText: /^3$/ }).waitFor();
+  await roundsRule.locator('.stepper-value', { hasText: /^3$/ }).waitFor();
   await checkFit(host, 'menu-rules', '#menu-close');
   await host.locator('#menu-close').click();
 
@@ -247,7 +393,9 @@ async function run(browser) {
   for (const payload of screenFrames) {
     const frame = JSON.parse(payload);
     assert.equal(frame.type, 'screen', 'the big screen only gets screen frames');
-    assert.ok(!('me' in frame) && !payload.includes('"hand"'), 'the big screen never sees a hand');
+    assert.ok(!('me' in frame), 'the big screen never sees a private player hand');
+    assert.ok(frame.settings.hand >= 3 && frame.settings.hand <= 10,
+      'the screen may see the public hand-size rule');
   }
   await checkFit(players[0], 'finished', '#again-button');
   await checkFit(host, 'finished-host', '#rematch-button');
@@ -309,6 +457,26 @@ async function run(browser) {
   }
   await players[0].locator('#menu-close').click();
 
+  // The organizer now joins as a player. Every device must mark only that
+  // authenticated seat, while the non-playing header badge disappears.
+  await host.locator('#host-name').fill('Ivan');
+  await host.locator('#host-join button').click();
+  await host.locator('#lobby-players li.host-player', { hasText: 'Ivan' }).waitFor();
+  await players[0].locator('#lobby-players li.host-player', { hasText: 'Ivan' }).waitFor();
+  await screen.locator('#screen-players li.host-player', { hasText: 'Ivan' }).waitFor();
+  for (const page of [host, players[0], screen]) {
+    const list = page === screen ? '#screen-players' : '#lobby-players';
+    assert.equal(await page.locator(`${list} .host-crown`).count(), 1,
+      'exactly one player wears the crown');
+    assert.match(await page.locator(`${list} li.host-player`).textContent(), /HOST/);
+    assert.equal(await page.locator(`${list} .host-crown`)
+      .evaluate((crown) => getComputedStyle(crown).color), 'rgb(215, 174, 74)');
+  }
+  assert.equal(await host.locator('#host-badge').isVisible(), false,
+    'a playing host gets the crown next to their name instead of twice');
+  await checkFit(host, 'host-player-lobby', '#start-button');
+  await checkScreen(screen, 'lobby', 'lobby-host-player');
+
   // An unknown code ends on a clear page instead of a spinner.
   const lost = await openPhone(browser);
   await lost.goto(`${target}/s/ZZZZZZ`);
@@ -348,10 +516,20 @@ async function checkLongCards(browser) {
     assert.equal(clipped, 0, `${width}x${height}: ${clipped} cards cut their text`);
     const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
     assert.ok(pageHeight <= height, `${width}x${height}: long cards make the page scroll`);
+    const hand = page.locator('#hand');
+    const dimensions = await hand.evaluate((el) => ({
+      scrollHeight: el.scrollHeight, clientHeight: el.clientHeight,
+    }));
+    assert.ok(dimensions.scrollHeight > dimensions.clientHeight,
+      `${width}x${height}: all long cards should scroll inside the hand`);
+    await page.locator('#hand .card').last().scrollIntoViewIfNeeded();
+    const scrollTop = await hand.evaluate((el) => el.scrollTop);
+    assert.ok(scrollTop > 0, `${width}x${height}: last card is reachable by scrolling`);
     const submit = await page.locator('#submit-button').boundingBox();
-    assert.ok(submit.y + submit.height <= height + 0.5, `${width}x${height}: submit pushed off screen`);
+    assert.ok(submit.y >= 0 && submit.y + submit.height <= height + 0.5,
+      `${width}x${height}: submit pushed off screen`);
   }
-  console.log('PASS long cards: no text cut, no page scroll, submit on screen at all sizes');
+  console.log('PASS long cards: all cards scroll internally, text intact, submit fixed at every size');
 }
 
 (async () => {

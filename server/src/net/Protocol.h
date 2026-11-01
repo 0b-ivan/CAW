@@ -66,7 +66,10 @@ struct StateFrame {
   cardparty::Settings settings;
   std::uint8_t requestedRounds = 0;    // the host's choice; `rounds` is the fair count once started
   std::vector<const CardPack*> packs;  // the packs in play, for credits on every screen
-  const char* words[cardparty::kPlayers] = {};    // per seat: the word after the name, or null
+  // Per-seat player word, or null when that seat is empty.
+  const char* words[cardparty::kPlayers] = {};
+  // Public role flags only; no host token or secret leaves the server.
+  bool hostSeats[cardparty::kPlayers] = {};
   const std::vector<MatchLine>* lines = nullptr;  // sent with the final standings only
   bool locked = false;
 };

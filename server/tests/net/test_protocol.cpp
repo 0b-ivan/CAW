@@ -66,13 +66,14 @@ TEST_CASE("notices and errors are small typed frames") {
         nlohmann::json({{"type", "expired"}}));
 }
 
-TEST_CASE("settings accept exactly the X4's choices") {
+TEST_CASE("settings accept hand size 3 through 10 and the existing timer choices") {
   const std::string good =
-      R"({"type":"settings","settings":{"rounds":5,"answerSecs":60,"extensionSecs":15,)"
+      R"({"type":"settings","settings":{"hand":7,"rounds":5,"answerSecs":60,"extensionSecs":15,)"
       R"("jurorSecs":30,"autoSecs":8,"rando":false}})";
   auto settings = Protocol::parse(good);
   REQUIRE(settings);
   CHECK(settings->type == Command::Type::Settings);
+  CHECK(settings->settings.hand == 7);
   CHECK(settings->settings.rounds == 5);
   CHECK(settings->settings.answerSecs == 60);
   CHECK(settings->settings.jurorSecs == 30);
@@ -85,6 +86,15 @@ TEST_CASE("settings accept exactly the X4's choices") {
     return text;
   };
   CHECK_FALSE(Protocol::parse(changed("\"rounds\":5", "\"rounds\":7")));
+  CHECK_FALSE(Protocol::parse(changed("\"hand\":7", "\"hand\":2")));
+  CHECK_FALSE(Protocol::parse(changed("\"hand\":7", "\"hand\":11")));
+  CHECK_FALSE(Protocol::parse(changed("\"hand\":7", "\"hand\":\"7\"")));
+  CHECK_FALSE(Protocol::parse(changed("\"hand\":7,", "")));
+  for (unsigned hand = 3; hand <= 10; ++hand) {
+    auto value = Protocol::parse(changed("\"hand\":7", "\"hand\":" + std::to_string(hand)));
+    REQUIRE(value);
+    CHECK(value->settings.hand == hand);
+  }
   CHECK_FALSE(Protocol::parse(changed("\"answerSecs\":60", "\"answerSecs\":61")));
   CHECK_FALSE(Protocol::parse(changed("\"rando\":false", "\"rando\":0")));
   CHECK_FALSE(Protocol::parse(changed(",\"rando\":false", "")));

@@ -23,6 +23,7 @@ struct Match {
       REQUIRE(seats.join(i + 10, name.c_str(), secret, tickets[i]));
     }
     Settings settings;
+    settings.hand = 10;  // legacy fixture keeps the original ten-card rule
     settings.answerSecs = 30;
     settings.jurorSecs = 20;
     settings.autoSecs = 5;
@@ -125,6 +126,39 @@ TEST_CASE("restored random state and draw piles produce the same entire match") 
     }
     roundtrip(original);
   }
+}
+
+TEST_CASE("the configured hand size survives a Redis snapshot roundtrip") {
+  Match match;
+  REQUIRE(match.game.setHand(7));
+  Settings settings = match.table.settings();
+  settings.hand = 7;
+  match.table.apply(settings, 1000);
+  REQUIRE(match.seats.hostStart());
+  HandView hand;
+  REQUIRE(match.game.privateHand(1, hand));
+  CHECK(hand.size == 7);
+  roundtrip(match);
+}
+
+TEST_CASE("legacy Redis snapshots without the new field preserve ten cards") {
+  Match match;
+  REQUIRE(match.seats.hostStart());
+  const std::string snapshot = Messages::saveState(match.game, match.table, match.seats, 1000);
+  const auto saved = nlohmann::json::parse(snapshot);
+  auto legacy = saved;
+  legacy["table"]["settings"].erase("hand");
+
+  Match restored;
+  REQUIRE(Messages::loadState(legacy.dump(), restored.game, restored.table, restored.seats, 1000));
+  CHECK(restored.game.rules().hand == 10);
+  CHECK(restored.table.settings().hand == 10);
+
+  // A new snapshot cannot claim a different hand count from the game itself.
+  auto invalid = saved;
+  invalid["table"]["settings"]["hand"] = 7;
+  CHECK_FALSE(
+      Messages::loadState(invalid.dump(), restored.game, restored.table, restored.seats, 1000));
 }
 
 TEST_CASE("snapshots reject malformed data atomically") {

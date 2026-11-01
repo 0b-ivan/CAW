@@ -24,6 +24,7 @@ struct Settings {
   uint8_t jurorSecs = 0;       // 0: the Juror takes as long as needed
   uint8_t autoSecs = 0;        // 0: the host starts every round
   bool rando = true;
+  uint8_t hand = 7;  // number of cards dealt per player; lobby-only
 };
 
 class Table final {

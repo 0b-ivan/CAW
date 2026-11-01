@@ -3,6 +3,9 @@
   --ink: #fff;
   --paper: #000;
   --line: 1px solid var(--ink);
+  --card-paper: #f4f4f0;
+  --card-ink: #080808;
+  --card-edge: #777;
   font: 16px/1.4 ui-monospace, Menlo, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
   color: var(--ink);
   background: var(--paper);
@@ -149,6 +152,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outli
 }
 .landing-content .create-section { border-top: 0; }
 .create-section button { width: 100%; }
+.create-actions { display: flex; align-items: stretch; gap: 8px; }
+.create-actions #new-session { flex: 1 1 auto; min-width: 0; width: auto; }
+.create-actions #open-guide {
+  flex: none;
+  width: auto;
+  padding-inline: 9px;
+  font-size: clamp(12px, 3.4vw, 15px);
+}
 label { display: block; margin-bottom: 9px; }
 .join-row { display: flex; gap: 8px; }
 .join-row input {
@@ -171,6 +182,33 @@ footer {
 }
 nav { display: flex; align-items: center; gap: 6px; }
 nav button { min-width: 48px; }
+
+/* The guide is an accessible modal, not a new page that takes space from
+   the phone's start actions. Text can scroll inside without page scrolling. */
+.guide-dialog {
+  width: min(540px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--line);
+  line-height: 1.45;
+}
+.guide-dialog::backdrop { background: rgba(0, 0, 0, .86); }
+.guide-dialog h2 { margin: 0 0 14px; font-size: 19px; line-height: 1.25; }
+.guide-dialog h3 { margin: 14px 0 8px; font-size: 15px; line-height: 1.3; }
+.guide-dialog ol, .guide-dialog ul { margin: 0 0 14px; padding-left: 24px; }
+.guide-dialog li { padding: 0 0 9px 4px; margin-bottom: 8px; border-bottom: var(--line); }
+.guide-dialog #close-guide {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+}
 
 /* A single fullscreen brand intro, not a loading spinner or a looping animation. */
 .boot-screen {
@@ -212,24 +250,6 @@ nav button { min-width: 48px; }
 .boot-wordmark strong { font-size: 49px; }
 .boot-wordmark > span { font-size: 11px; }
 .boot-screen.has-wordmark .boot-wordmark { opacity: 1; transform: translateX(0); }
-.boot-screen.is-shuffling .cut-card--c { animation: shuffle-c 900ms ease-in-out 1; }
-.boot-screen.is-shuffling .cut-card--a { animation: shuffle-a 900ms ease-in-out 1; }
-.boot-screen.is-shuffling .cut-card--w { animation: shuffle-w 900ms ease-in-out 1; }
-@keyframes shuffle-c {
-  0%, 100% { transform: translateX(0) rotate(-7deg); }
-  30% { transform: translateX(calc(2 * var(--card-step))) translateY(-17px) rotate(12deg); }
-  65% { transform: translateX(var(--card-step)) translateY(9px) rotate(-12deg); }
-}
-@keyframes shuffle-a {
-  0%, 100% { transform: translateX(var(--card-step)); }
-  30% { transform: translateX(0) translateY(14px) rotate(-14deg); }
-  65% { transform: translateX(calc(2 * var(--card-step))) translateY(-9px) rotate(11deg); }
-}
-@keyframes shuffle-w {
-  0%, 100% { transform: translateX(calc(2 * var(--card-step))) rotate(7deg); }
-  30% { transform: translateX(var(--card-step)) translateY(-16px) rotate(-10deg); }
-  65% { transform: translateX(0) translateY(9px) rotate(13deg); }
-}
 .skip-intro {
   position: absolute;
   right: 16px;
@@ -237,26 +257,6 @@ nav button { min-width: 48px; }
   min-height: 48px;
   padding: 9px 14px;
   z-index: 2;
-}
-.zoom-card {
-  position: absolute;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--ink);
-  background: var(--ink);
-  color: var(--paper);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -.1em;
-  overflow: hidden;
-  border-radius: 0;
-  transition: left 800ms cubic-bezier(.55,0,.22,1),
-    top 800ms cubic-bezier(.55,0,.22,1),
-    width 800ms cubic-bezier(.55,0,.22,1),
-    height 800ms cubic-bezier(.55,0,.22,1),
-    font-size 800ms cubic-bezier(.55,0,.22,1);
 }
 .boot-screen.is-completing { opacity: 0; transition: opacity 260ms linear; }
 .boot-screen.is-completing .skip-intro { pointer-events: none; }
@@ -405,9 +405,43 @@ h1 { font-size: clamp(22px, 6vw, 30px); font-weight: 500; line-height: 1.25; ove
 .qr-light { fill: var(--ink); }
 .qr-dark { fill: var(--paper); }
 .share-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.share-url { font-size: 12px; overflow-wrap: anywhere; }
-.share-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-.share-buttons button { flex: 1 1 auto; }
+.share-url {
+  min-height: 48px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  text-decoration: underline;
+  font: inherit;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.share-buttons {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.share-buttons button {
+  min-height: 48px;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#screen-link { grid-column: 1 / -1; }
+.invite-address-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.share.needs-address { grid-template-columns: minmax(0, 1fr); }
+.invite-address-row label, .invite-hint { font-size: 12px; }
+.invite-address-row input { min-height: 48px; width: 100%; }
+.invite-hint { overflow-wrap: anywhere; }
 
 .roster, .scores, .bars, .choices { list-style: none; margin: 0; padding: 0; }
 .roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); column-gap: 12px; grid-auto-rows: max-content; }
@@ -617,3 +651,650 @@ div.choice { min-height: 48px; }
 .info-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
 .info .button { align-self: flex-start; }
 footer a { text-decoration: underline; }
+
+
+/* ---------- Physical playing-card treatment (UI concept section 9) ---------- */
+/* Materiality belongs to cards only. Controls, menus and scores remain flat.
+   No images, downloaded fonts, moving textures or constant animations. */
+
+.cut-deck--small {
+  --card-width: 72px;
+  --card-height: 93px;
+  --card-step: 13px;
+  height: 105px;
+}
+.cut-deck--small .cut-card {
+  top: 5px;
+  padding: 0;
+  border: 2px solid var(--card-paper);
+  border-radius: 5px;
+  font-size: 0;
+  box-shadow: 2px 3px 0 var(--card-edge);
+}
+.cut-deck--small .cut-card--c {
+  background: var(--card-paper);
+  color: var(--card-ink);
+  transform: translateX(0) rotate(-10deg);
+}
+.cut-deck--small .cut-card--a {
+  background: var(--card-paper);
+  color: var(--card-ink);
+  transform: translateX(var(--card-step)) rotate(-4deg);
+}
+.cut-deck--small .cut-card--w {
+  z-index: 4;
+  background: var(--card-ink);
+  color: var(--card-paper);
+  transform: translateX(calc(2 * var(--card-step))) rotate(4deg);
+}
+.cut-deck--small .cut-card--w::before {
+  content: "C/A/W";
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -.08em;
+}
+.cut-deck--small .cut-card::after { display: none; }
+.landing-header {
+  min-height: 144px;
+  padding-top: 18px;
+  justify-content: center;
+}
+.landing-header .brand-trigger { gap: 14px; }
+.landing-header .brand-wordmark strong { font-size: 30px; }
+.landing-header .brand-wordmark > span { font-size: 11px; width: 116px; }
+.create-section button {
+  background: var(--card-paper);
+  color: var(--card-ink);
+  border-color: var(--card-paper);
+  font-weight: 700;
+}
+.create-section button:disabled {
+  background: var(--paper);
+  color: var(--ink);
+}
+/* The guide is useful but remains secondary to creating a game. */
+.create-section #open-guide {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+#status { font-size: 13px; }
+
+/* The compact question has two offset card backs, not a full-width banner.
+   The inner face scrolls for an unusually long prompt. */
+#view-answer, #view-judge, #view-waiting { gap: 9px; }
+.prompt-title { flex: none; align-self: flex-start; font-weight: 700; }
+.prompt-stack {
+  position: relative;
+  flex: none;
+  width: min(82%, 350px);
+  max-width: 100%;
+  align-self: center;
+  margin: 6px 0 12px;
+  transform: rotate(-2deg);
+  isolation: isolate;
+}
+.prompt-stack::before,
+.prompt-stack::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-ink);
+  pointer-events: none;
+}
+.prompt-stack::before { transform: translate(9px, -8px) rotate(3deg); z-index: -2; }
+.prompt-stack::after { transform: translate(5px, -4px) rotate(1deg); z-index: -1; }
+.prompt-stack .prompt {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  width: 100%;
+  min-height: 122px;
+  max-height: min(26dvh, 218px);
+  padding: 17px 18px;
+  overflow-y: auto;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-ink);
+  box-shadow: 3px 4px 0 var(--card-edge);
+}
+.prompt-stack .sentence {
+  font-size: clamp(17px, 3.7vw, 23px);
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.prompt-stack .prompt:focus-visible {
+  outline: 2px solid var(--card-paper);
+  outline-offset: 3px;
+}
+
+/* A continuous, scrollable two-column hand on phones and desktop.
+   Only the hand scrolls: the question and submit action stay in place. */
+.hand-heading {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hand-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hand-title { margin: 0; font-weight: 700; }
+.hand-heading #swap-button {
+  min-height: 48px;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+.hand-heading #swap-button:disabled { opacity: .5; }
+.hand {
+  display: grid;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
+  border: 0;
+  gap: 8px;
+  padding: 2px 5px 5px 2px;
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+.card {
+  min-height: clamp(70px, 11dvh, 103px);
+  padding: 10px 11px;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-paper);
+  color: var(--card-ink);
+  box-shadow: 2px 3px 0 var(--card-edge);
+  font-size: clamp(13px, 3.4vw, 15px);
+  font-weight: 600;
+  line-height: 1.27;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+.card[aria-pressed="true"] {
+  padding: 9px 10px;
+  border: 2px solid var(--card-paper);
+  background: var(--card-ink);
+  color: var(--card-paper);
+  box-shadow: 0 0 0 2px var(--card-paper), 2px 3px 0 var(--card-edge);
+}
+.card:focus-visible, .choice:focus-visible {
+  outline: 2px solid var(--card-paper);
+  outline-offset: 3px;
+}
+.slot-mark {
+  display: block;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid currentColor;
+  font-size: 12px;
+}
+#answer-count { font-size: 12px; white-space: nowrap; font-weight: 700; }
+
+/* The primary action is unmistakable; discard remains a secondary action. */
+.bar { min-height: 60px; }
+.bar button:not(.mini) {
+  border-color: var(--card-paper);
+  background: var(--card-paper);
+  color: var(--card-ink);
+  font-weight: 700;
+}
+.bar button:not(.mini):disabled {
+  border-style: dashed;
+  background: var(--paper);
+  color: var(--ink);
+}
+#view-answer .bar button,
+#view-judge .bar button { width: 100%; text-align: center; }
+#view-judge .judge-count {
+  flex: none;
+  min-height: 1.4em;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Anonymous submissions become individual paper strips with an accessible
+   circular pick indicator, as in the approved mockup. */
+.choices {
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 0;
+  gap: 7px;
+  padding: 2px 5px 5px 2px;
+}
+.choices li { border: 0; flex: none; }
+.choice {
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 70px;
+  padding: 11px 12px;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-paper);
+  color: var(--card-ink);
+  box-shadow: 2px 2px 0 var(--card-edge);
+  font-weight: 600;
+  text-align: left;
+}
+.choice-content {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.choice mark { background: var(--card-ink); color: var(--card-paper); }
+.choice-number { flex: none; margin-right: 2px; }
+.choice-indicator {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
+  margin-left: auto;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+.choice[aria-pressed="true"] {
+  background: var(--card-ink);
+  color: var(--card-paper);
+  border: 2px solid var(--card-paper);
+  padding: 10px 11px;
+  box-shadow: 0 0 0 2px var(--card-paper), 2px 2px 0 var(--card-edge);
+}
+.choice[aria-pressed="true"] mark {
+  background: var(--card-paper);
+  color: var(--card-ink);
+}
+.choice[aria-pressed="true"] .choice-indicator::after {
+  content: "";
+  display: block;
+  width: 11px;
+  height: 11px;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+/* Guest and host lobby have different affordances but the same tidy roster. */
+#view-lobby { gap: 10px; }
+#lobby-count { font-size: 13px; font-weight: 700; }
+.roster {
+  display: grid;
+  flex: 0 1 auto;
+  width: min(100%, 500px);
+  align-self: center;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+}
+.roster li {
+  min-height: 44px;
+  padding: 9px 12px;
+  border-bottom: var(--line);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.roster li::before { content: "○  "; font-weight: 900; }
+#view-lobby:not(.has-host) #lobby-count { margin-top: min(7dvh, 50px); }
+#view-lobby:not(.has-host) .roster { margin-top: 16px; }
+.share {
+  flex: none;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  padding: 8px 0 12px;
+  border-bottom: var(--line);
+  grid-template-columns: minmax(100px, 38%) minmax(0, 1fr);
+  gap: 12px;
+}
+.share-text .session-code { font-size: clamp(23px, 6vw, 32px); }
+.share-buttons button { font-size: 12px; }
+#lobby-status { font-weight: 700; }
+
+/* Reveal: a single white winning sentence card above plain scores. */
+#reveal-sentence {
+  flex-shrink: 1;
+  min-height: 0;
+  align-self: stretch;
+  margin: 6px 5px 6px 0;
+  padding: 16px;
+  overflow-y: auto;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-paper);
+  color: var(--card-ink);
+  box-shadow: 3px 3px 0 var(--card-edge);
+}
+#reveal-sentence mark { background: var(--card-ink); color: var(--card-paper); }
+.winner-line { font-size: clamp(17px, 4.5vw, 22px); }
+
+/* TV: strong headline and white answer strips, keeping complete sentences.
+   Fitting keeps the display responsive even for Pick-3 rounds. */
+.screen-judge-prompt {
+  flex: none;
+  max-height: 22dvh;
+  padding: .6em .8em;
+  overflow-y: auto;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  font-size: clamp(22px, 2.8vw, 44px);
+  line-height: 1.2;
+  font-weight: 700;
+}
+#screen-answers .fit {
+  padding: 2vw;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-ink);
+}
+.screen-plays { display: flex; flex-direction: column; gap: .2em; }
+.screen-plays li {
+  padding: .35em .45em;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-paper);
+  color: var(--card-ink);
+  overflow-wrap: anywhere;
+}
+.screen-plays li mark { background: var(--card-ink); color: var(--card-paper); }
+.screen-plays.two-columns {
+  display: grid;
+  columns: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
+  gap: .2em;
+}
+#screen-reveal .fit {
+  padding: 2vw;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-paper);
+  color: var(--card-ink);
+}
+#screen-reveal .screen-prompt mark { background: var(--card-ink); color: var(--card-paper); }
+
+@media (max-width: 400px) {
+  .cut-deck--small {
+    --card-width: 64px;
+    --card-height: 82px;
+    --card-step: 11px;
+    height: 94px;
+  }
+  .cut-deck--small .cut-card--w::before { font-size: 18px; }
+  .landing-header { min-height: 130px; padding-top: 12px; }
+  .landing-header .brand-trigger { gap: 9px; }
+  .landing-header .brand-wordmark strong { font-size: 27px; }
+  .landing-header .brand-wordmark > span { font-size: 9px; width: 105px; }
+  .prompt-stack { width: min(83%, 320px); margin: 3px 0 8px; }
+  .prompt-stack .prompt { min-height: 112px; padding: 12px 13px; }
+  .prompt-stack .sentence { font-size: clamp(17px, 5vw, 20px); }
+  .card { padding: 8px; font-size: clamp(13px, 3.8vw, 15px); min-height: clamp(76px, 11dvh, 103px); }
+  .card[aria-pressed="true"] { padding: 7px; }
+  .hand { gap: 7px; }
+  .share {
+    grid-template-columns: minmax(96px, 34%) minmax(0, 1fr);
+    gap: 8px;
+  }
+  .share .qr { max-width: 106px; }
+  .share-text .session-code { font-size: 22px; }
+  .share-buttons button { font-size: 11px; padding: 5px 4px; }
+}
+@media (max-height: 640px) {
+  #view-answer, #view-judge, #view-waiting { gap: 6px; }
+  .prompt-stack { margin: 1px 0 5px; }
+  .prompt-stack .prompt { min-height: 86px; max-height: 20dvh; padding: 10px 12px; }
+  .prompt-stack .sentence { font-size: 16px; }
+  .hand-heading #swap-button { padding: 4px 8px; }
+  #answer-count { font-size: 11px; }
+  .card { min-height: 63px; }
+  .bar { min-height: 55px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card, .choice, .cut-deck--small .cut-card {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* ---------- Desktop composition: game board, not an enlarged phone ---------- */
+/* Keep actual card text at readable sizes while using the extra space to
+   separate the question from the hand. The TV uses .screen, not .shell. */
+@media (min-width: 900px) and (min-height: 650px) {
+  .shell {
+    width: min(100%, 1140px);
+    padding: 20px 26px;
+    gap: 12px;
+  }
+  .mast { padding-bottom: 14px; }
+  .meta { font-size: 14px; }
+  #view-answer,
+  #view-judge {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    column-gap: 34px;
+    row-gap: 10px;
+    align-items: start;
+  }
+  #view-answer .prompt-title,
+  #view-judge .prompt-title {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+  #view-answer .prompt-stack,
+  #view-judge .prompt-stack {
+    grid-column: 1;
+    grid-row: 2;
+    width: min(94%, 390px);
+    max-width: 390px;
+    justify-self: center;
+    align-self: center;
+    margin: 0;
+  }
+  #view-answer .prompt-stack .prompt,
+  #view-judge .prompt-stack .prompt {
+    min-height: 214px;
+    max-height: min(44dvh, 300px);
+    padding: 20px;
+  }
+  #view-answer .prompt-stack .sentence,
+  #view-judge .prompt-stack .sentence {
+    font-size: clamp(22px, 2.3vw, 29px);
+    line-height: 1.3;
+  }
+  #view-answer .hand-heading {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+  #view-answer .hand {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: stretch;
+    height: 100%;
+    width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #view-answer .card {
+    min-height: 108px;
+    font-size: 16px;
+    padding: 13px;
+  }
+  #view-answer .card[aria-pressed="true"] { padding: 12px; }
+  #view-answer { grid-template-rows: auto minmax(0, 1fr) auto; }
+  #view-answer > .bar,
+  #view-judge > .bar {
+    grid-column: 2;
+    grid-row: 3;
+    width: 100%;
+    align-self: end;
+    margin: 0;
+  }
+  #view-judge > .bar { grid-row: 4; }
+  #view-judge .choices {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: stretch;
+    justify-self: center;
+    width: 100%;
+    max-width: 530px;
+    gap: 12px;
+    overflow-y: auto;
+  }
+  #view-judge .choice { min-height: 84px; font-size: 16px; }
+  #view-judge .judge-count {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: end;
+  }
+
+  /* On desktop the host's invite and player panels are peers rather than
+     a huge QR followed by the roster underneath. */
+  #view-lobby.has-host {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    align-items: start;
+    column-gap: 32px;
+    row-gap: 16px;
+  }
+  #view-lobby.has-host .share {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    display: grid;
+    grid-template-columns: 155px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding-top: 12px;
+  }
+  #view-lobby.has-host .share .qr { max-width: 155px; }
+  #view-lobby.has-host .share.needs-address { grid-template-columns: minmax(0, 1fr); }
+  #view-lobby.has-host .share-text { min-width: 0; }
+  #view-lobby.has-host .share-buttons {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #view-lobby.has-host #lobby-count {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 12px;
+  }
+  #view-lobby.has-host .roster {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    max-height: 100%;
+    align-self: start;
+    overflow-y: auto;
+  }
+  #view-lobby.has-host #lobby-credits {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: end;
+  }
+  #view-lobby.has-host #host-join {
+    grid-column: 1;
+    grid-row: 4;
+    min-width: 0;
+  }
+  #view-lobby.has-host > .bar {
+    grid-column: 2;
+    grid-row: 4;
+    width: 100%;
+    margin: 0;
+    align-self: end;
+  }
+  #view-lobby:not(.has-host) {
+    width: min(100%, 700px);
+    align-self: center;
+  }
+  #view-lobby:not(.has-host) .roster { max-width: 600px; }
+}
+
+/* Host role only: the gold crown is never used for scoring or card selection.
+   The accompanying HOST text remains visible in monochrome/low-color modes. */
+:root { --host-gold: #d7ae4a; }
+.host-crown {
+  display: inline-block;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: var(--host-gold);
+  vertical-align: middle;
+}
+.host-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.roster li.host-player::before { content: none; }
+.host-player-name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.host-role-label {
+  flex: none;
+  margin-left: auto;
+  font-size: .75em;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+.host-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+.host-badge .host-crown { width: 19px; height: 19px; }
+.screen-players li.host-player { display: flex; align-items: center; gap: .3em; }
+.screen-players .host-crown { width: 1em; height: 1em; }
+.screen-players .host-role-label { font-size: .55em; }
+@media (max-width: 400px) {
+  .host-badge { font-size: 10px; gap: 3px; }
+  .host-badge .host-crown { width: 17px; height: 17px; }
+}
+
+/* Compact host lobby: invitation controls stay in one visible flow instead of
+   being clipped inside a 34dvh scrollbox. The start action remains anchored. */
+@media (max-width: 899px) {
+  #view-lobby.has-host .share-buttons {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+  #view-lobby.has-host #screen-link { grid-column: auto; }
+  #view-lobby.has-host {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #view-lobby.has-host > .bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--paper);
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+  }
+}

@@ -16,21 +16,24 @@ async function assertFitsViewport(page) {
   assert.ok(size.height <= size.viewportHeight, 'Landing should fit without vertical scrolling');
 }
 
-async function verifyCardsHaveSquareCorners(page) {
-  const corners = await page.locator('.cut-deck--small .cut-card--w').evaluate((card) => {
-    const style = getComputedStyle(card);
-    const marker = getComputedStyle(card, '::after');
-    return {
-      radius: style.borderBottomRightRadius,
-      markerRight: marker.right,
-      markerBorderRight: marker.borderRightWidth,
-      markerBorderBottom: marker.borderBottomWidth,
-    };
-  });
-  assert.equal(corners.radius, '0px');
-  assert.equal(corners.markerRight, '3px');
-  assert.equal(corners.markerBorderRight, '1px');
-  assert.equal(corners.markerBorderBottom, '1px');
+async function verifyPhysicalDeck(page) {
+  const cards = await page.locator('.cut-deck--small .cut-card').evaluateAll((nodes) =>
+    nodes.map((card) => {
+      const style = getComputedStyle(card);
+      return {
+        radius: style.borderRadius,
+        background: style.backgroundColor,
+        transform: style.transform,
+      };
+    }));
+  assert.equal(cards.length, 3, 'the logo has two card backs and a front card');
+  assert.ok(cards.every((card) => card.radius === '5px'), 'cards have subtle paper corners');
+  assert.equal(cards[0].background, cards[1].background, 'two light paper backs');
+  assert.notEqual(cards[1].background, cards[2].background, 'contrasting black card front');
+  assert.notEqual(cards[0].transform, cards[2].transform, 'stacked cards have distinct angles');
+  const front = await page.locator('.cut-deck--small .cut-card--w')
+    .evaluate((card) => getComputedStyle(card, '::before').content);
+  assert.ok(front.includes('C/A/W'), 'the front card carries the CAW mark');
 }
 
 async function checkLanding(browser, width, height) {
@@ -42,10 +45,30 @@ async function checkLanding(browser, width, height) {
     await page.locator('#boot-screen').waitFor({ state: 'visible' });
     await page.getByRole('button', { name: /ÜBERSPRINGEN/ }).click();
     await page.locator('#boot-screen').waitFor({ state: 'hidden' });
-    await verifyCardsHaveSquareCorners(page);
+    await verifyPhysicalDeck(page);
 
     await page.getByRole('button', { name: 'DE', exact: true }).click();
     await page.getByText('[ NEUE SESSION ]', { exact: true }).waitFor();
+    // The four-step opening guide is visible on every screen size, but
+    // its text scrolls only inside the native modal, never the page.
+    await page.getByRole('button', { name: '[ ANLEITUNG ]' }).click();
+    const guide = page.getByRole('dialog', { name: 'CAW · ANLEITUNG' });
+    await guide.waitFor({ state: 'visible' });
+    assert.equal(await guide.locator('.guide-steps li').count(), 3);
+    assert.equal(await guide.locator('.guide-rules li').count(), 6);
+    assert.match(await guide.textContent(), /QR-Code/);
+    assert.match(await guide.textContent(), /BIG SCREEN/);
+    assert.match(await guide.textContent(), /SPIELREGELN/);
+    assert.match(await guide.textContent(), /Juror/);
+    assert.match(await guide.textContent(), /7 Handkarten/);
+    assert.match(await guide.textContent(), /Rando/);
+    assert.doesNotMatch(await guide.textContent(), /localhost|LAN-IP|WLAN|Tunnel|192\.168/i,
+      'the online-play guide should not include server setup instructions');
+    const guideBounds = await guide.boundingBox();
+    assert.ok(guideBounds.y >= 0 && guideBounds.y + guideBounds.height <= height + 1,
+      'the guide dialog must fit inside the viewport');
+    await page.keyboard.press('Escape');
+    await guide.waitFor({ state: 'hidden' });
     assert.equal(await page.getByText('[ NEUE SESSION ]', { exact: true }).isDisabled(), false);
     await page.getByLabel('Session-Code (6 Zeichen)').fill('k7m2qx');
     assert.equal(await page.locator('#code').inputValue(), 'K7M2QX');
@@ -61,6 +84,18 @@ async function checkLanding(browser, width, height) {
 
     await page.getByRole('button', { name: 'EN', exact: true }).click();
     await page.getByText('[ NEW SESSION ]', { exact: true }).waitFor();
+    await page.getByRole('button', { name: '[ HOW TO START ]' }).click();
+    const englishGuide = page.getByRole('dialog', { name: 'CAW · GUIDE' });
+    await englishGuide.waitFor({ state: 'visible' });
+    assert.equal(await englishGuide.locator('.guide-steps li').count(), 3);
+    assert.equal(await englishGuide.locator('.guide-rules li').count(), 6);
+    assert.match(await englishGuide.textContent(), /GAME RULES/);
+    assert.match(await englishGuide.textContent(), /judge/);
+    assert.match(await englishGuide.textContent(), /7 cards/);
+    assert.match(await englishGuide.textContent(), /Rando/);
+    assert.doesNotMatch(await englishGuide.textContent(), /localhost|LAN IP|WI-FI|Tunnel|192\.168/i);
+    await page.getByRole('button', { name: '[ CLOSE ]' }).click();
+    await englishGuide.waitFor({ state: 'hidden' });
     assert.equal(await page.locator('html').getAttribute('lang'), 'en');
     await assertFitsViewport(page);
 
@@ -78,10 +113,29 @@ async function checkLanding(browser, width, height) {
       'Intro must not replay on reload within the same browser session');
 
     if (width === 1280) {
+      const beganAt = Date.now();
       await page.getByRole('button', { name: 'CAW-Intro erneut abspielen' }).click();
       await page.locator('#boot-screen').waitFor({ state: 'visible' });
-      await page.locator('#boot-screen.has-wordmark').waitFor({ state: 'visible', timeout: 5000 });
-      await page.locator('#boot-screen').waitFor({ state: 'hidden', timeout: 5000 });
+      const motion = await page.locator('#boot-screen').evaluate((element) => {
+        const duration = (selector) => getComputedStyle(element.querySelector(selector))
+          .transitionDuration.split(',')[0].trim();
+        return {
+          deck: duration('.boot-logo .cut-deck'),
+          slash: duration('.boot-slash'),
+          wordmark: duration('.boot-wordmark'),
+          shuffled: element.classList.contains('is-shuffling'),
+        };
+      });
+      assert.deepEqual(motion, {
+        deck: '0.52s', slash: '0.32s', wordmark: '0.34s', shuffled: false,
+      }, 'keep the original motion speed; remove stages instead');
+      await page.locator('#boot-screen.has-wordmark').waitFor({ state: 'visible', timeout: 2000 });
+      assert.equal(await page.locator('#boot-screen .zoom-card').count(), 0,
+        'the full-screen card zoom has been removed');
+      await page.locator('#boot-screen').waitFor({ state: 'hidden', timeout: 3000 });
+      const elapsed = Date.now() - beganAt;
+      assert.ok(elapsed >= 1500 && elapsed < 2800,
+        'the shorter intro should use calm transitions, not accelerated motion');
       await assertFitsViewport(page);
     }
 
@@ -93,7 +147,7 @@ async function checkLanding(browser, width, height) {
         fullPage: true,
       });
     }
-    console.log(`PASS ${width}x${height}: intro, DE/EN, keyboard, square cards, 48px targets, zero scroll`);
+    console.log(`PASS ${width}x${height}: intro, DE/EN, keyboard, physical cards, 48px targets, zero scroll`);
   } finally {
     await page.close();
   }

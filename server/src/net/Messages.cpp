@@ -328,7 +328,8 @@ json Messages::saveTable(const Table& table, std::uint32_t now) {
   for (auto since : table.offlineSince_)
     offline.push_back(since ? json(static_cast<std::uint32_t>(now - since)) : json(nullptr));
   return {{"settings",
-           {{"rounds", settings.rounds},
+           {{"hand", settings.hand},
+            {"rounds", settings.rounds},
             {"answerSecs", settings.answerSecs},
             {"extensionSecs", settings.extensionSecs},
             {"jurorSecs", settings.jurorSecs},
@@ -347,12 +348,21 @@ json Messages::saveTable(const Table& table, std::uint32_t now) {
 }
 void Messages::loadTable(const json& state, Table& table, std::uint32_t now) {
   const json& settings = state.at("settings");
-  table.settings_ = Settings{static_cast<std::uint8_t>(number(settings.at("rounds"), 255)),
-                             static_cast<std::uint8_t>(number(settings.at("answerSecs"), 255)),
-                             static_cast<std::uint8_t>(number(settings.at("extensionSecs"), 255)),
-                             static_cast<std::uint8_t>(number(settings.at("jurorSecs"), 255)),
-                             static_cast<std::uint8_t>(number(settings.at("autoSecs"), 255)),
-                             settings.at("rando").get<bool>()};
+  Settings loaded;
+  loaded.rounds = static_cast<std::uint8_t>(number(settings.at("rounds"), 255));
+  loaded.answerSecs = static_cast<std::uint8_t>(number(settings.at("answerSecs"), 255));
+  loaded.extensionSecs = static_cast<std::uint8_t>(number(settings.at("extensionSecs"), 255));
+  loaded.jurorSecs = static_cast<std::uint8_t>(number(settings.at("jurorSecs"), 255));
+  loaded.autoSecs = static_cast<std::uint8_t>(number(settings.at("autoSecs"), 255));
+  loaded.rando = settings.at("rando").get<bool>();
+  loaded.hand = table.game_.rules_.hand;
+  if (settings.contains("hand"))
+    loaded.hand = static_cast<std::uint8_t>(number(settings.at("hand"), 10));
+  table.settings_ = loaded;
+  // Old Redis snapshots have no hand setting; retain their game's saved
+  // hand size instead of silently replacing ten cards with the new default.
+  if (table.settings_.hand != table.game_.rules_.hand)
+    throw std::runtime_error("Hand setting does not match game rules");
   table.clock_ = static_cast<Table::Clock>(number(state.at("clock"), 3));
   table.left_ = number(state.at("remaining"), INT32_MAX);
   table.deadline_ = now + table.left_;

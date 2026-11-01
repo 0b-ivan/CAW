@@ -9,15 +9,20 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
 ## 1. Gestaltungsprinzipien
 
 - **Monochrom.** Schwarz `#000` als Grund, Weiß `#fff` als Schrift und Linie.
-  Keine Farben, keine Grautöne, keine Verläufe, Schatten, Rundungen, Glows
-  oder Animations-Effekte, außer den ausdrücklich beschriebenen CAW-Intros,
-  Gewinner- und Timer-Signalen.
+  Bedienelemente bleiben flach und kontrastreich. **Ausnahme: physische
+  Spielkarten** dürfen gebrochenes Weiß (`#f4f4f0`), eine feine neutrale
+  Papierkante, bis zu 6 px Eckradius und einen dezenten schwarzen/weißen
+  Versatzschatten bekommen. Keine Akzentfarben, Glows oder Verläufe.
+  Animationen nur für die bereits vorgesehenen CAW-Intros, Gewinner- und
+  Timer-Signale.
 - **Monospace für alles.** `ui-monospace, Menlo, SFMono-Regular, Consolas,
   Liberation Mono` – keine Webfont-Pflicht (Performance-Budget).
 - **Typografie trägt die Hierarchie:** kurze Labels in GROSSBUCHSTABEN mit
   Sperrung, Fließtext normal geschrieben, Fragen groß.
-- **Linien statt Kästen:** 1 px weiße Trennlinien; Auswahl = invertiert
-  (weißer Grund, schwarze Schrift); deaktiviert = gestrichelter Rahmen.
+- **Linien statt Kästen:** 1 px weiße Trennlinien für Navigation und
+  Struktur; echte Frage-/Antwortkarten sind die bewusste Ausnahme. Auswahl
+  erhält eine klar unterscheidbare invertierte Kartenfläche plus
+  Positionskennzeichnung; deaktivierte Aktionen bleiben gestrichelt.
 - **Befehle in eckigen Klammern:** `[ ABGEBEN ]`, `[ PAUSE ]`, `[ START ]`.
 - **Touch zuerst:** Tippziele mindestens 48 px hoch, wichtige Aktionen
   unten in der Fußleiste, Daumenreichweite.
@@ -45,7 +50,7 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
 | Frage Big Screen | `clamp(40px, 5vw, 96px)` |
 | Tippziel | min. 48 px (Liste 56 px) |
 | Abstände | 8 / 14 / 16 / 20 px |
-| Layout-Breite Handy/Laptop | `min(100%, 720px)`, zentriert |
+| Layout-Breite Spieler/Host | Handy bis 720 px; Desktop ab 900 px zweispaltiges Spielfeld bis 1040 px; Big Screen volle Fläche |
 | Fokus | 2 px weiße Outline, 3 px Abstand |
 
 Eine CSS-Datei für alle Ansichten, Ansicht-spezifisch nur Layout und Größen.
@@ -89,6 +94,22 @@ DE / EN · LIZENZEN · DATENSCHUTZ
 Die Startseite soll ohne vertikales oder horizontales Scrollen in 320×568,
 390×844 und 1280×800 px passen. Der Header bleibt kompakt; Session-Aktion,
 Code-Eingabe, Sprachwahl und Status müssen ohne Scrollen sichtbar bleiben.
+Neben `[ NEUE SESSION ]` steht die Schaltfläche `[ ANLEITUNG ]`.
+Sie öffnet einen per Tastatur und Touch bedienbaren, intern scrollbaren
+Hilfedialog (de/en), gegliedert in zwei Bereiche:
+- **SO GEHT'S LOS:** Host erstellt eine Session auf der öffentlichen CAW-Seite;
+  Mitspieler öffnen den Einladungslink, scannen den QR-Code oder geben
+  den sechsstelligen Code ein; optional wird BIG SCREEN auf einem anderen
+  Bildschirm geöffnet. Der Host kann ab drei Spielern starten.
+- **SPIELREGELN:** 3–8 Spieler, sieben Handkarten als Standard (3–10 vor
+  Spielstart einstellbar), rotierender Juror, Pick 1–3 und gelegentlich
+  Draw 2, anonyme Abgabe, Juror bestimmt Rundensieger mit einem Punkt,
+  Handauffüllung, einmaliger Kartentausch pro Runde, Spielende und
+  Endstand. Optionale Rando-/Zeitregeln werden kurz erläutert.
+
+Die Anleitung setzt **öffentliches Hosting** voraus. Hinweise zu
+`localhost`, LAN-IP, WLAN, Tunnel-Konfiguration oder lokalen Servern
+gehören **nicht** in den Spielhilfe-Dialog. Schließen per Button oder Escape.
 Erst wenn Textzoom/Extremgrößen den Platz überschreiten, ist vertikales
 Scrollen als barrierefreie Ausnahme erlaubt. Keine festen Höhen, die Inhalte
 abschneiden.
@@ -99,10 +120,14 @@ bzw. rechts; die mittlere A-Karte ist weiß invertiert. Rechts folgt ein
 schräger Slash und das Wortzeichen `CAW / CARDS AGAINST WHATEVER`.
 Keine runden Karten, Zylinder oder 3D-Effekte.
 
-Beim **ersten Aufruf je Browser-Sitzung** erscheint ein einzelner Bootscreen:
-Karten flach mischen (ca. 0,9 s) → Deck nach links → Slash erscheint →
-Wortzeichen erscheint → A-Karte wächst als scharfkantiges, weißes Rechteck
-bildfüllend → Startseite. Die Animation läuft nicht automatisch in Schleife.
+Beim **ersten Aufruf je Browser-Sitzung** erscheint ein einzelner
+Bootscreen mit **ca. 1,7 Sekunden** Laufzeit. Die einzelnen Bewegungen
+behalten ihr ursprüngliches ruhiges Tempo: Deck verschiebt sich
+(ca. 520 ms) → Slash erscheint (ca. 320 ms) → Wortzeichen erscheint
+(ca. 340 ms) → kurzer Übergang zur Startseite (ca. 260 ms).
+**Kartenmischen, bildfüllender A-Karten-Zoom und unnötige Wartepausen
+entfallen**, statt die gesamte Animation schneller abzuspielen.
+Die Animation läuft nicht in Schleife; der Skip-Button reagiert sofort.
 Sie kann über das Logo auf der Startseite erneut ausgelöst und jederzeit
 übersprungen werden. `sessionStorage` merkt den einmaligen Besuch; ohne JS
 bleibt die Startseite verwendbar. Bei `prefers-reduced-motion` wird der
@@ -147,10 +172,15 @@ GESPERRT · FRAG DEN HOST“.
 
 ### 4.5 Antworten
 
+Die Hand enthält standardmäßig **7 Karten** (Host-Einstellung **3–10** im Menü SPIELREGELN, ausschließlich in der Lobby). Spieler sehen immer alle gerade zugeteilten Karten; bei Draw 2 kann die Hand kurzfristig um bis zu zwei Karten wachsen. Geändert wird nur vor dem Start einer neuen Partie; bereits gespeicherte und laufende Partien behalten ihren Wert.
+
 Frage oben in eigenem Scroll-Bereich (max. 30 % Höhe), darunter die Hand
-als Raster aus Karten mit Trennlinien (zwei Spalten am Handy, vier am
-Laptop), damit zehn Karten ohne Scrollen sichtbar sind. Antippen wählt in
-Reihenfolge; die Position steht vor der Karte (`<1/3>`). Die Frage ist
+als durchgängiges Raster echter Spielkarten (zwei Spalten am Handy, auf dem
+Desktop rechts neben der Frage). **Alle aktuell zugeteilten Handkarten (standardmäßig sieben) sind zugleich im DOM**
+und ohne Seitenwechsel erreichbar. Nur die Kartenhand scrollt vertikal;
+Frage, Kopfzeile und `[ ABGEBEN ]` bleiben stehen. Lange Kartentexte dürfen
+nicht abgeschnitten oder durch Verkleinern unlesbar werden. Antippen wählt
+in Reihenfolge; die Position steht vor der Karte (`<1/3>`). Die Frage ist
 zugleich die Vorschau: gewählte Karten stehen invertiert in ihren Lücken,
 keine eigene Vorschauzeile. Fußleiste: `[ ABWERFEN ]` (1× pro Runde, genau
 eine Karte gewählt), `2/3 GEWÄHLT`, `[ ABGEBEN ]`.
@@ -195,6 +225,8 @@ mit `[‹]` `[›]`, darunter die fünf neuesten Siegersätze. Ohne Datenbank:
 „NOCH KEINE EINTRÄGE“.
 
 ### 4.10 Host-Bereich (Menü `≡` → HOST)
+
+Im Untermenü **SPIELREGELN** zeigt eine eigene Stepper-Zeile `HANDKARTEN` die aktuelle Handgröße (3–10), mit Standard `7`. Wie die Rundenzahl lässt sich diese Einstellung **nur in der Lobby** ändern; während der Partie ist sie sichtbar, aber gesperrt. Die Einstellung wird in den Serverstatus und in Redis-Snapshots übernommen.
 
 Schlichte Zeilen, keine einzeln umrahmten Schaltflächen; gruppiert unter
 SPIEL / HOST / SESSION, mit Zustand rechts. Gezeigt wird nur, was im
@@ -266,8 +298,8 @@ Fußzeile Rechteinhaber und Lizenz der Packs.
 | Breite | Verhalten |
 |---|---|
 | 320–400 px | Kopfzeile ohne Umbruch, kleinere Labels, Frage max. 30 % Höhe |
-| 401–719 px | Standard-Handy |
-| ab 720 px (Laptop) | zentrierte 720-px-Spalte; Host kann am Laptop spielen |
+| 401–899 px | kompakte Handy-/Tablet-Ansicht, Antwort-Hand zwei Spalten |
+| ab 900 px (Laptop) | eigene Desktop-Komposition: Frage links, Karten und Aktionen rechts; Host-Lobby mit Einladung links und Spielerliste rechts |
 | Big Screen | eigene Ansicht, volle Fläche, Text eingepasst |
 
 Getestet mit Playwright bei 320×568, 390×844, 1280×800 und Big Screen
@@ -296,3 +328,132 @@ Farbthemes, Sounds, Konfetti, Avatare, Emojis in der UI, Chat sowie
 laufende dekorative Animationen. Die oben definierten Ausnahmen gelten.
 Wenn eines
 davon gewünscht wird, kommt es zuerst ins Konzept.
+
+## 11. UI-Abnahme: kleine Lobby, erreichbare Einladungen und Desktop (2026-11-01)
+
+- **Host-Lobby bei 320×568:** QR, Code und alle Einladungsaktionen
+  einschließlich `BIG SCREEN` sind direkt bedienbar, ohne einen zweiten
+  verschachtelten Scrollbereich für die Einladungsaktionen. Kopieren,
+  Teilen (falls verfügbar) und Big Screen stehen auf schmalen Geräten in
+  **einer gemeinsamen Reihe**, damit unter dem QR noch echte Spielerzeilen
+  sichtbar bleiben. Nur die Teilnehmerliste darf bei vielen Spielern
+  intern scrollen; die Start-Aktion bleibt fixiert. Alle Buttons bleiben
+  mindestens 48 px hoch.
+- **Einladungslinks im Heimnetz:** Wird die Host-Seite über
+  `localhost`, `127.0.0.1` oder `[::1]` geöffnet, gibt es keine
+  automatisch ermittelbare Adresse, die andere Geräte erreichen können.
+  Deshalb bietet die Host-Lobby ein explizites Eingabefeld für die
+  erreichbare Basisadresse (etwa `http://192.168.1.10:8080`).
+  Bis zur gültigen Eingabe wird kein irreführender Loopback-QR-Code
+  angeboten und keine solche Einladung kopiert/geteilt. Nach Eingabe
+  verwenden QR, Kopieren und Teilen dieselbe bestätigte URL, ohne
+  Host-Token. Die Eingabe wird nur im lokalen Browser gespeichert.
+  Nach dem Speichern klappt das Feld zu, damit die Spielerliste auch bei
+  320×568 Platz erhält; ein Tipp auf die angezeigte URL öffnet die
+  Adressbearbeitung erneut. Bei einem bereits erreichbaren Hostnamen
+  oder einer LAN-IP ist kein zusätzlicher Schritt erforderlich.
+- **MacBook ab 900 px:** Frage links, Hand rechts und Hauptaktion unten
+  rechts. Frage- und Antwortkarten dürfen den verfügbaren Raum besser
+  nutzen (lesbarere Schrift, größere Karten), ohne aus dem Viewport zu
+  ragen. Die Juror-Auswahl wird im rechten Bereich bei wenigen Antworten
+  vertikal zentriert und erhält größere Tippflächen; bei vielen Antworten
+  bleibt sie intern scrollbar. Diese Anpassungen gelten nicht für den
+  eigenständigen Big Screen.
+- **Regression:** Geometrie-Tests bei 320×568 und 390×844 für QR/
+  Einladungsaktionen, Copy/Share-URL und Host-Link-Eingabe sowie
+  Desktop-Checks bei 1280×800 für Kartentextgröße und Juror-Position.
+
+## 10. Host-Krone (Mockup-Abgleich 2026-11-01)
+
+Als **einzige neue Akzentfarbe** ist für die Host-Krone ein gedämpftes Gold
+(`#D7AE4A`) freigegeben. Sie markiert eine Rolle, nicht einen Spielgewinn:
+Kein Gold für andere Elemente, keine Glows, Animationen, Emojis oder
+zusätzlichen Ressourcen. Das Symbol ist eine kleine, flache SVG-Krone und
+steht immer gemeinsam mit der sichtbaren Beschriftung `HOST`; allein die
+Farbe darf die Rolle nicht vermitteln.
+
+- **Lobby auf Handy, Desktop und Big Screen:** Nur Teilnehmer, die über die
+  authentifizierte Host-Verbindung **selbst mitspielen**, tragen neben ihrem
+  Namen die goldene Krone mit `HOST`. Alle anderen bleiben unverändert.
+- **Host ohne Spielerplatz:** Er erhält die Kennzeichnung an seiner eigenen
+  Host-Kopfzeile, aber keinen künstlichen Spielerplatz. Ein Host kann nur
+  durch ein gültiges Host-Token erkannt werden, nie durch seinen Namen oder
+  `DU`.
+- **Datenfluss:** Der Server veröffentlicht lediglich ein boolesches
+  `isHost` für vorhandene, authentifizierte Spielerplätze. Host-Token,
+  Verbindungsschlüssel und private Karten gelangen nicht in diese Liste.
+  Bei Beitritt, Rollenbestätigung, Wechsel oder Trennung wird die
+  öffentliche Kennzeichnung aktualisiert. Nach einem Neustart erscheint
+  sie wieder, wenn sich der Host neu authentifiziert.
+- **Abnahme:** Tests mit mitspielendem Host, eigenständigem Host ohne Sitz
+  sowie normalem Spieler; dieselbe Kennzeichnung bei den anderen Handys
+  und im Big Screen. Siegeransichten bekommen dadurch **keine Krone**.
+
+## 9. Freigegebene Kartenoptik (Mockup-Abgleich 2026-11-01)
+
+Die Mockups mit realistischer Spielkartenoptik sind für ein eigenes UI-Polish-PR
+freigegeben. Diese Entscheidung präzisiert die strikten Flat-Design-Regeln in
+Abschnitt 1; **nur Spielkarten** erhalten Materialität. Sie ändert keine
+Spielregel und kein Client-/Server-Protokoll.
+
+- **Marke und Startseite:** Das CUT-DECK-Logo bleibt aus CSS aufgebaut,
+  zeigt aber 3–4 sichtbar versetzte, nahezu rechteckige Kartenrücken und
+  eine schwarze Vorderkarte mit `C/A/W`. Keine Bilddateien oder Fonts nötig.
+  Die primäre Aktion `NEUE SESSION` darf eine helle, invertierte Fläche
+  erhalten; Nebenaktionen bleiben eckig und zurückhaltend.
+- **Frage:** Die schwarze Fragekarte erscheint **zentriert und kompakt**
+  wie im freigegebenen Handy-Mockup: maximal 380 px breit, mit leichter
+  statischer Drehung und zwei versetzten Kartenrücken dahinter. Die
+  Fragen-Schrift wird auf langen Karten reduziert; der Inhalt bleibt im
+  Fragebereich scrollbar. Auf Desktop wird die Frage **nicht** als
+  bildschirmbreites Panel dargestellt.
+- **Antworten:** Antwortkarten sind papierweiß mit schwarzer Schrift,
+  sichtbar von der schwarzen Fragekarte unterscheidbar. Die Handy-Hand zeigt
+  **immer zwei Spalten**, ohne Paginierung: Alle zugeteilten Karten werden in einer
+  zusammenhängenden Liste gerendert. Die Kartenhand besitzt einen eigenen
+  vertikalen Touch-/Maus-/Tastatur-Scrollbereich mit sichtbarem Scrollbalken.
+  Die Auswahlreihenfolge und der Scrollstand bleiben beim Antippen erhalten;
+  die komplette Seite sowie die untere Hauptaktion scrollen nicht. Gewählte Karten
+  invertieren wieder zu Schwarz mit weißer Schrift, erhalten eine starke
+  weiße Kontur und die sichtbare Pick-Position. Die Auswahl bleibt zusätzlich
+  über `aria-pressed` lesbar, nicht nur über Farbe oder Schatten. Auf Laptop
+  bleibt das Spielfeld zentriert statt auf vier Spalten zu wachsen.
+  `ABWERFEN` liegt als Nebenaktion über der Hand, der aktuelle Pick-Zähler
+  steht beim Handtitel; `ABGEBEN` bekommt die volle Breite der unteren
+  Aktionsleiste. Die Hauptaktion bleibt bei 320×568 sichtbar.
+- **Juror:** Antwortoptionen erscheinen als einzelne, gut lesbare
+  Kartenstreifen mit einem **sichtbaren Radio-Indikator**. Die ausgewählte
+  Option wird invers und erhält einen deutlich gefüllten Indikator; das
+  `aria-pressed`-Attribut bleibt maßgeblich. Die Frage steht weiterhin
+  nur einmal oben und zeigt die gewählte Kombination. Die Hauptaktion
+  `BESTÄTIGEN` füllt die untere Aktionsleiste aus. Keine fremden Hände
+  oder Zuordnungen.
+- **Auflösung:** Der Siegersatz erhält die Materialität einer großen
+  hellen Karte; Name und Punktestand bleiben typografisch darunter.
+  Keine Krone oder Konfetti als zwingender Bestandteil.
+- **Big Screen:** In der Jurorphase steht eine kurze schwarze
+  Fragekarte **oberhalb** der Antwortliste, damit dieselbe Komposition wie
+  auf dem Handy sichtbar bleibt. Die **ganzen** eingesetzten Sätze folgen
+  in papierhellen Kartenreihen, ab fünf Optionen in zwei Spalten. Der Inhalt
+  wird weiterhin an 16:9 und 4:3 angepasst und nie abgeschnitten. Bei
+  hohen Textmengen geht Lesbarkeit vor dekorativer Rotation.
+- **Lobby:** Host: QR und Code als kompakter oberer Block, Teilnehmer
+  darunter als einspaltige nummerierte/markierte Zeilen, feste
+  `[ START ]`-Aktion. Spieler: derselbe klare Teilnehmerblock ohne die
+  privaten Host-Werkzeuge, mit `WARTE AUF HOST`. Beide Zustände sind
+  Teil der visuellen Abnahme; die Gast-Lobby darf kein Host-Token zeigen.
+- **Desktopdarstellung:** Am MacBook wird die Spielansicht als eigenes,
+  räumlich gegliedertes Desktop-Layout gestaltet, nicht wie eine vergrößerte
+  Handyansicht und nicht als schmale 420-px-Handyspalte. Auf breiten Displays
+  steht die kompakte gestapelte Frage links; Hand, Seitennavigation und
+  Hauptaktion stehen rechts. Die Host-Lobby stellt QR-/Einladungsbereich
+  und Teilnehmerliste nebeneinander dar, ohne den QR-Code zu überdimensionieren.
+  Handy und Tablet behalten ihre vertikale Komposition. Der echte Big Screen
+  (TV) bleibt vollflächig. Getestet werden Desktop 1280×800 und mobile 320×568
+  sowie 390×844; kein horizontaler oder vertikaler Dokument-Scroll.
+- **Performance/Accessibility:** Karten sind CSS, keine Bild-Assets oder
+  zusätzlichen Abhängigkeiten. Keine Daueranimationen; `prefers-reduced-motion`
+  und die Mindest-Tippflächen bleiben erhalten. Testmatrix 320×568,
+  390×844, 1280×800, Big Screen 1920×1080 und 1024×768. Die Browser-Tests
+  prüfen bei einer vollen Hand auch scrollbaren Zugriff auf die letzte Karte,
+  Auswahl aus dem unteren Teil der Hand und feste Hauptaktion.

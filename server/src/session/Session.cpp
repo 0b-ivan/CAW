@@ -13,7 +13,7 @@ namespace caw {
 using namespace cardparty;
 
 namespace {
-constexpr Rules kDefaultRules{10, 10, true};
+constexpr Rules kDefaultRules{7, 10, true};
 
 bool isPlayerMove(Command::Type type) {
   switch (type) {
@@ -125,8 +125,9 @@ void Session::claimHost(ConnectionId connection, const Command& command, std::ui
   if (!isHostToken(command.token)) return send(connection, Protocol::error("not_host"));
   hosts_.insert(connection);
   send(connection, Protocol::notice("host"));
-  // A host page needs the table at once, not after the next change.
-  sendState(connection, seats_.seatOf(connection), now);
+  // Notify everyone: a host who already plays must receive the crown on
+  // other clients without waiting for the next round or player action.
+  publishAll(now);
 }
 
 bool Session::playerMove(ConnectionId connection, const Command& command, std::uint32_t now) {
@@ -193,10 +194,14 @@ bool Session::hostCommand(const Command& command, std::uint32_t now) {
   }
 }
 
-// Clocks and Rando apply at once; like on the X4 the number of rounds only
-// changes in the lobby, so a running match refuses a different count.
+// Clocks and Rando apply at once, but hand size and round count are
+// lobby-only. Reject the whole update before changing either rule.
 bool Session::applySettings(const Settings& settings, std::uint32_t now) {
-  if (settings.rounds != game_.requestedRounds() && !game_.setRounds(settings.rounds)) return false;
+  const bool handChanged = settings.hand != game_.rules().hand;
+  const bool roundsChanged = settings.rounds != game_.requestedRounds();
+  if (game_.phase() != Phase::Lobby && (handChanged || roundsChanged)) return false;
+  if (handChanged && !game_.setHand(settings.hand)) return false;
+  if (roundsChanged && !game_.setRounds(settings.rounds)) return false;
   table_.apply(settings, now);
   return true;
 }
@@ -381,8 +386,11 @@ StateFrame Session::publicFrame(std::uint32_t now) const {
   frame.settings = table_.settings();
   frame.requestedRounds = game_.requestedRounds();
   for (const std::string& id : packIds_) frame.packs.push_back(library_.find(id));
-  for (std::uint8_t seat = 0; seat < kPlayers; ++seat)
+  for (std::uint8_t seat = 0; seat < kPlayers; ++seat) {
     if (!identities_[seat].playerId.empty()) frame.words[seat] = playerWord(identities_[seat].word);
+    const ConnectionId connection = seatConnection_[seat];
+    frame.hostSeats[seat] = connection != kNoConnection && hosts_.count(connection) != 0;
+  }
   frame.lines = &matchLines_;
   frame.locked = locked_;
   return frame;

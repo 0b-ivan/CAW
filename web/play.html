@@ -12,6 +12,7 @@
     <header class="mast">
       <a class="mast-brand" href="/">C/A/W</a>
       <span id="connection" class="mast-status" role="status" data-text="connecting"></span>
+      <span id="host-badge" class="host-badge" hidden></span>
       <span class="mast-tools">
         <button id="pause-button" class="mini" type="button" hidden data-text="pause"></button>
         <button id="menu-button" class="mini" type="button" aria-expanded="false" aria-controls="menu"
@@ -54,12 +55,18 @@
           <div class="share-text">
             <p class="eyebrow" data-text="session"></p>
             <p class="session-code" id="lobby-code"></p>
-            <p class="share-url" id="lobby-url"></p>
-            <div class="share-buttons">
-              <button id="copy-link" type="button" data-text="copyLink"></button>
-              <button id="share-link" type="button" data-text="share" hidden></button>
-              <button id="screen-link" type="button" data-text="bigScreenButton"></button>
-            </div>
+            <button class="share-url" id="lobby-url" type="button"></button>
+          </div>
+          <div class="share-buttons">
+            <button id="copy-link" type="button" data-text="copyLink"></button>
+            <button id="share-link" type="button" data-text="share" hidden></button>
+            <button id="screen-link" type="button" data-text="bigScreenButton"></button>
+          </div>
+          <div id="invite-address-row" class="invite-address-row" hidden>
+            <label for="invite-address" data-text="inviteAddressLabel"></label>
+            <input id="invite-address" type="url" inputmode="url"
+              placeholder="http://192.168.1.100:8080" autocomplete="off" spellcheck="false">
+            <p id="invite-hint" class="invite-hint" role="status"></p>
           </div>
         </div>
         <p class="eyebrow" id="lobby-count"></p>
@@ -76,22 +83,31 @@
       </section>
 
       <section id="view-answer" class="view" hidden>
-        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
-          <p class="eyebrow" id="answer-eyebrow"></p>
-          <h1 id="answer-prompt" class="sentence"></h1>
+        <p class="eyebrow prompt-title" id="answer-eyebrow"></p>
+        <div class="prompt-stack">
+          <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+            <h1 id="answer-prompt" class="sentence"></h1>
+          </div>
         </div>
-        <div id="hand" class="hand" role="group" data-label="handLabel"></div>
-        <div class="bar">
+        <div class="hand-heading">
+          <div class="hand-info">
+            <p class="eyebrow hand-title" id="hand-title"></p>
+            <span id="answer-count" role="status"></span>
+          </div>
           <button id="swap-button" class="mini" type="button" data-text="swap"></button>
-          <span id="answer-count"></span>
+        </div>
+        <div id="hand" class="hand" role="group" tabindex="0" data-label="handLabel"></div>
+        <div class="bar">
           <button id="submit-button" type="button" data-text="submit"></button>
         </div>
       </section>
 
       <section id="view-waiting" class="view" hidden>
-        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
-          <p class="eyebrow" id="waiting-eyebrow"></p>
-          <h1 id="waiting-prompt" class="sentence"></h1>
+        <p class="eyebrow prompt-title" id="waiting-eyebrow"></p>
+        <div class="prompt-stack">
+          <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+            <h1 id="waiting-prompt" class="sentence"></h1>
+          </div>
         </div>
         <p class="big-status" id="waiting-title"></p>
         <p class="progress" id="waiting-progress" aria-hidden="true"></p>
@@ -100,12 +116,15 @@
       </section>
 
       <section id="view-judge" class="view" hidden>
-        <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
-          <p class="eyebrow" id="judge-eyebrow"></p>
-          <h1 id="judge-prompt" class="sentence"></h1>
+        <p class="eyebrow prompt-title" id="judge-eyebrow"></p>
+        <div class="prompt-stack">
+          <div class="prompt" tabindex="0" role="region" data-label="promptLabel">
+            <h1 id="judge-prompt" class="sentence"></h1>
+          </div>
         </div>
         <ol id="judge-list" class="choices" data-label="playsLabel"></ol>
-        <div class="bar"><span id="judge-status"></span>
+        <p id="judge-status" class="judge-count" role="status"></p>
+        <div class="bar">
           <button id="judge-button" type="button" hidden data-text="confirm"></button></div>
       </section>
 
