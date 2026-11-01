@@ -22,10 +22,16 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   Band-Schlagschatten. Ausschließlich für die Kunststoffbänder sind
   dezente monochrome CSS-Verläufe und mehrlagige Schatten erlaubt; sie
   simulieren Material und Prägung, nicht eine farbige oder animierte UI.
-  Kein Bild, kein Webfont und keine Animation. Die normalen Handkarten und
+  Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
+  eine verfügbare runde, mechanisch wirkende Systemschrift (ohne Webfont).
+  Feste, datenunabhängige Materialvarianten bilden kleine Knicke,
+  Reflexionswinkel und nicht perfekt gerade Kanten nach; kein Zufall bei jedem
+  Rendern. Kein Bild und keine Animation. Die normalen Handkarten und
   Juror-Antwortoptionen bleiben frei von Prägebändern; beim Einsetzen in
-  den Fragesatz entsteht das Band. Ein langer Antworttext verteilt sich
-  mit vollständigen Bandkanten auf mehrere Zeilen, ohne horizontalen Overflow.
+  den Fragesatz entsteht das Band. Lange Antworten werden anhand der
+  tatsächlichen Textzeilen in eigenständige, geringfügig unterschiedliche
+  Bandstücke aufgeteilt. Auch bei Viewport-Änderungen und auf dem Big Screen
+  bleiben Text und Zeilenumbrüche vollständig lesbar, ohne Overflow.
 - **Monospace für alles.** `ui-monospace, Menlo, SFMono-Regular, Consolas,
   Liberation Mono` – keine Webfont-Pflicht (Performance-Budget).
 - **Typografie trägt die Hierarchie:** kurze Labels in GROSSBUCHSTABEN mit
