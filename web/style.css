@@ -623,11 +623,9 @@ footer a { text-decoration: underline; }
 
 
 /* ---------- Physical playing-card treatment (UI concept section 9) ---------- */
-/* Only the game cards acquire paper, a thin edge and a stacked silhouette.
-   Navigation stays flat; the effect costs no image assets or web fonts. */
+/* Materiality belongs to cards only. Controls, menus and scores remain flat.
+   No images, downloaded fonts, moving textures or constant animations. */
 
-/* The compact logo is a deck seen from above, rather than three loose letters.
-   The front is black; the two offset paper backs remain visible behind it. */
 .cut-deck--small {
   --card-width: 61px;
   --card-height: 74px;
@@ -636,10 +634,10 @@ footer a { text-decoration: underline; }
 }
 .cut-deck--small .cut-card {
   top: 5px;
+  padding: 0;
   border: 2px solid var(--card-paper);
   border-radius: 5px;
   font-size: 0;
-  padding: 0;
   box-shadow: 2px 3px 0 var(--card-edge);
 }
 .cut-deck--small .cut-card--c {
@@ -672,177 +670,333 @@ footer a { text-decoration: underline; }
   border-color: var(--card-paper);
   font-weight: 700;
 }
-.create-section button:disabled { background: var(--paper); color: var(--ink); }
-.create-section button:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 3px;
+.create-section button:disabled {
+  background: var(--paper);
+  color: var(--ink);
 }
 #status { font-size: 13px; }
 
-/* Question cards retain black faces so their type is dominant. */
-.prompt {
-  max-height: 30dvh;
-  margin: 0 4px 4px 0;
-  padding: 12px 14px;
-  border: 1px solid var(--card-paper);
-  border-radius: 5px;
-  background: var(--card-ink);
-  box-shadow: 3px 3px 0 var(--card-edge);
+/* The compact question has two offset card backs, not a full-width banner.
+   The inner face scrolls for an unusually long prompt. */
+#view-answer, #view-judge, #view-waiting { gap: 9px; }
+.prompt-title { flex: none; align-self: flex-start; font-weight: 700; }
+.prompt-stack {
+  position: relative;
+  flex: none;
+  width: min(82%, 350px);
+  max-width: 100%;
+  align-self: center;
+  margin: 6px 0 12px;
+  transform: rotate(-2deg);
+  isolation: isolate;
 }
-.prompt:focus-visible { outline: 2px solid var(--card-paper); outline-offset: 2px; }
-.prompt .sentence { overflow-wrap: break-word; }
+.prompt-stack::before,
+.prompt-stack::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-ink);
+  pointer-events: none;
+}
+.prompt-stack::before { transform: translate(9px, -8px) rotate(3deg); z-index: -2; }
+.prompt-stack::after { transform: translate(5px, -4px) rotate(1deg); z-index: -1; }
+.prompt-stack .prompt {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  width: 100%;
+  min-height: 122px;
+  max-height: min(26dvh, 218px);
+  padding: 17px 18px;
+  overflow-y: auto;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  background: var(--card-ink);
+  box-shadow: 3px 4px 0 var(--card-edge);
+}
+.prompt-stack .sentence {
+  font-size: clamp(17px, 3.7vw, 23px);
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.prompt-stack .prompt:focus-visible {
+  outline: 2px solid var(--card-paper);
+  outline-offset: 3px;
+}
 
-/* The hand has individual paper cards instead of a shared ruled grid.
-   Cards keep content height; if needed, only this region scrolls. */
+/* Mobile hand: two columns and six cards (four on short viewports).
+   The pager exposes the rest of the ten-card hand without shrinking text. */
+.hand-title { font-weight: 700; margin-top: 2px; }
 .hand {
+  display: grid;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
   border: 0;
   gap: 8px;
   padding: 2px 5px 5px 2px;
+  overflow-y: auto;
 }
 .card {
-  min-height: 68px;
-  padding: 9px 10px;
+  min-height: clamp(70px, 11dvh, 103px);
+  padding: 10px 11px;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
   background: var(--card-paper);
   color: var(--card-ink);
-  border: 1px solid var(--card-paper);
-  border-radius: 5px;
-  box-shadow: 2px 2px 0 var(--card-edge);
-  font-size: 14px;
+  box-shadow: 2px 3px 0 var(--card-edge);
+  font-size: clamp(13px, 3.4vw, 15px);
   font-weight: 600;
+  line-height: 1.27;
+  hyphens: auto;
   overflow-wrap: anywhere;
 }
 .card[aria-pressed="true"] {
+  padding: 9px 10px;
+  border: 2px solid var(--card-paper);
   background: var(--card-ink);
   color: var(--card-paper);
-  border: 2px solid var(--card-paper);
-  box-shadow: 2px 2px 0 var(--card-paper);
-  padding: 8px 9px;
+  box-shadow: 0 0 0 2px var(--card-paper), 2px 3px 0 var(--card-edge);
 }
-.card:focus-visible,
-.choice:focus-visible {
+.card:focus-visible, .choice:focus-visible {
   outline: 2px solid var(--card-paper);
   outline-offset: 3px;
 }
 .slot-mark {
   display: block;
-  margin-bottom: 3px;
-  padding-bottom: 3px;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
   border-bottom: 1px solid currentColor;
   font-size: 12px;
 }
-@media (hover: hover) {
-  .card:not([aria-pressed="true"]):hover { background: #fff; }
+.hand-pager {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 48px;
+  font-size: 12px;
 }
-
-/* Anonymous juror options are also paper strips. An inversion indicates
-   the selected winner without revealing the player behind the cards. */
-.choices {
+.hand-pager button {
+  min-width: 48px;
+  min-height: 48px;
   border: 0;
+  font-size: 18px;
+  padding: 4px 6px;
+}
+.hand-pager button:disabled { opacity: .35; }
+#hand-page { text-align: center; min-width: 90px; }
+
+/* The primary action is unmistakable; discard remains a secondary action. */
+.bar { min-height: 60px; }
+.bar button:not(.mini) {
+  border-color: var(--card-paper);
+  background: var(--card-paper);
+  color: var(--card-ink);
+  font-weight: 700;
+}
+.bar button:not(.mini):disabled {
+  border-style: dashed;
+  background: var(--paper);
+  color: var(--ink);
+}
+.bar #swap-button { background: var(--paper); color: var(--ink); }
+.bar #swap-button:disabled { opacity: .55; }
+
+/* Anonymous submissions become individual paper strips with an accessible
+   circular pick indicator, as in the approved mockup. */
+.choices {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 0;
   gap: 7px;
   padding: 2px 5px 5px 2px;
 }
-.choices li { border: 0; }
+.choices li { border: 0; flex: none; }
 .choice {
-  min-height: 56px;
-  padding: 10px 12px;
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 60px;
+  padding: 11px 12px;
   border: 1px solid var(--card-paper);
-  border-radius: 5px;
-  color: var(--card-ink);
+  border-radius: 6px;
   background: var(--card-paper);
+  color: var(--card-ink);
   box-shadow: 2px 2px 0 var(--card-edge);
   font-weight: 600;
+  text-align: left;
 }
 .choice mark { background: var(--card-ink); color: var(--card-paper); }
+.choice-number { flex: none; margin-right: 2px; }
+.choice-indicator {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
+  margin-left: auto;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
 .choice[aria-pressed="true"] {
   background: var(--card-ink);
   color: var(--card-paper);
   border: 2px solid var(--card-paper);
-  padding: 9px 11px;
-  box-shadow: 2px 2px 0 var(--card-paper);
+  padding: 10px 11px;
+  box-shadow: 0 0 0 2px var(--card-paper), 2px 2px 0 var(--card-edge);
 }
 .choice[aria-pressed="true"] mark {
   background: var(--card-paper);
   color: var(--card-ink);
 }
-.choice-number { margin-right: .5em; }
+.choice[aria-pressed="true"] .choice-indicator::after {
+  content: "";
+  display: block;
+  width: 11px;
+  height: 11px;
+  background: currentColor;
+  border-radius: 50%;
+}
 
-/* Reveals gain one prominent sentence card; scores remain plain text. */
+/* Guest and host lobby have different affordances but the same tidy roster. */
+#view-lobby { gap: 10px; }
+#lobby-count { font-size: 13px; font-weight: 700; }
+.roster {
+  display: grid;
+  flex: 0 1 auto;
+  width: min(100%, 500px);
+  align-self: center;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+}
+.roster li {
+  min-height: 44px;
+  padding: 9px 12px;
+  border-bottom: var(--line);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.roster li::before { content: "○  "; font-weight: 900; }
+#view-lobby:not(.has-host) #lobby-count { margin-top: min(7dvh, 50px); }
+#view-lobby:not(.has-host) .roster { margin-top: 16px; }
+.share {
+  padding: 8px 0 16px;
+  border-bottom: var(--line);
+  grid-template-columns: minmax(100px, 38%) minmax(0, 1fr);
+  gap: 12px;
+}
+.share-text .session-code { font-size: clamp(23px, 6vw, 32px); }
+.share-buttons button { font-size: 12px; }
+#lobby-status { font-weight: 700; }
+
+/* Reveal: a single white winning sentence card above plain scores. */
 #reveal-sentence {
+  flex-shrink: 1;
+  min-height: 0;
   align-self: stretch;
-  margin: 4px 5px 4px 0;
+  margin: 6px 5px 6px 0;
   padding: 16px;
-  border-radius: 5px;
+  overflow-y: auto;
   border: 1px solid var(--card-paper);
+  border-radius: 6px;
   background: var(--card-paper);
   color: var(--card-ink);
   box-shadow: 3px 3px 0 var(--card-edge);
-  overflow-y: auto;
-  min-height: 0;
-  flex-shrink: 1;
 }
 #reveal-sentence mark { background: var(--card-ink); color: var(--card-paper); }
 .winner-line { font-size: clamp(17px, 4.5vw, 22px); }
-.share { padding-bottom: 12px; border-bottom: var(--line); }
-.share-text .session-code { font-size: clamp(22px, 7vw, 32px); }
 
-/* TV: a black question above white anonymous response cards. Keep all
-   sentence text, as required by the privacy and Big Screen contracts. */
+/* TV: strong headline and white answer strips, keeping complete sentences.
+   Fitting keeps the display responsive even for Pick-3 rounds. */
+.screen-judge-prompt {
+  flex: none;
+  max-height: 22dvh;
+  padding: .6em .8em;
+  overflow-y: auto;
+  border: 1px solid var(--card-paper);
+  border-radius: 6px;
+  font-size: clamp(22px, 2.8vw, 44px);
+  line-height: 1.2;
+  font-weight: 700;
+}
 #screen-answers .fit {
   padding: 2vw;
   border: 1px solid var(--card-paper);
-  border-radius: 5px;
+  border-radius: 6px;
   background: var(--card-ink);
 }
-.screen-plays {
-  display: flex;
-  flex-direction: column;
-  gap: .18em;
-}
+.screen-plays { display: flex; flex-direction: column; gap: .2em; }
 .screen-plays li {
-  padding: .32em .4em;
+  padding: .35em .45em;
   border: 1px solid var(--card-paper);
-  border-radius: 5px;
-  color: var(--card-ink);
+  border-radius: 6px;
   background: var(--card-paper);
+  color: var(--card-ink);
   overflow-wrap: anywhere;
 }
 .screen-plays li mark { background: var(--card-ink); color: var(--card-paper); }
 .screen-plays.two-columns {
-  columns: auto;
   display: grid;
+  columns: auto;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: .2em;
   align-content: center;
+  gap: .2em;
 }
 #screen-reveal .fit {
   padding: 2vw;
   border: 1px solid var(--card-paper);
-  border-radius: 5px;
+  border-radius: 6px;
   background: var(--card-paper);
   color: var(--card-ink);
 }
-#screen-reveal .screen-prompt mark {
-  background: var(--card-ink);
-  color: var(--card-paper);
-}
+#screen-reveal .screen-prompt mark { background: var(--card-ink); color: var(--card-paper); }
 
-/* On short screens, prioritize the submit action, then let the hand scroll.
-   Rotations are reserved for the static brand so no text is clipped. */
 @media (max-width: 400px) {
-  .cut-deck--small { --card-width: 54px; --card-height: 65px; height: 76px; }
+  .cut-deck--small {
+    --card-width: 54px;
+    --card-height: 65px;
+    height: 76px;
+  }
   .cut-deck--small .cut-card--w::before { font-size: 15px; }
   .landing-header { min-height: 82px; }
-  .card { min-height: 62px; padding: 7px 8px; }
-  .card[aria-pressed="true"] { padding: 6px 7px; }
-  .hand { gap: 6px; }
-  .prompt { padding: 9px 10px; }
+  .prompt-stack { width: min(83%, 320px); margin: 3px 0 8px; }
+  .prompt-stack .prompt { min-height: 112px; padding: 12px 13px; }
+  .prompt-stack .sentence { font-size: 17px; }
+  .card { padding: 8px; font-size: 13px; min-height: 70px; }
+  .card[aria-pressed="true"] { padding: 7px; }
+  .hand { gap: 7px; }
+  .share { grid-template-columns: minmax(90px, 36%) minmax(0, 1fr); gap: 8px; }
+  .share-buttons button { font-size: 11px; padding: 6px; }
 }
 @media (max-height: 640px) {
-  .prompt { max-height: 24dvh; }
-  .card { min-height: 54px; }
+  #view-answer, #view-judge, #view-waiting { gap: 6px; }
+  .prompt-stack { margin: 1px 0 5px; }
+  .prompt-stack .prompt { min-height: 86px; max-height: 20dvh; padding: 10px 12px; }
+  .prompt-stack .sentence { font-size: 16px; }
+  .hand-title { margin-top: 0; }
+  .card { min-height: 63px; }
+  .hand-pager { min-height: 48px; }
+  .bar { min-height: 55px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .card, .choice, .cut-deck--small .cut-card { animation: none; transition: none; }
+  .card, .choice, .cut-deck--small .cut-card {
+    animation: none;
+    transition: none;
+  }
 }
