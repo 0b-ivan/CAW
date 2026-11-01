@@ -24,7 +24,7 @@ struct RoomRecord {
   std::vector<Identity> identities;
   std::vector<MatchLine> lines;
   bool locked = false;
-  std::optional<CardPack> customPack;  // only this room may use these texts
+  std::optional<CardPack> customPack = std::nullopt;  // only this room may use these texts
 };
 
 class Messages {
