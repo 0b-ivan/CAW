@@ -336,7 +336,9 @@ async function run(browser) {
   for (const payload of screenFrames) {
     const frame = JSON.parse(payload);
     assert.equal(frame.type, 'screen', 'the big screen only gets screen frames');
-    assert.ok(!('me' in frame) && !payload.includes('"hand"'), 'the big screen never sees a hand');
+    assert.ok(!('me' in frame), 'the big screen never sees a private player hand');
+    assert.ok(frame.settings.hand >= 3 && frame.settings.hand <= 10,
+      'the screen may see the public hand-size rule');
   }
   await checkFit(players[0], 'finished', '#again-button');
   await checkFit(host, 'finished-host', '#rematch-button');
