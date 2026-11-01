@@ -142,6 +142,40 @@ TEST_CASE("host commands need the host token") {
   CHECK(table.lastState(9).at("me").contains("hand") == false);
 }
 
+TEST_CASE("only authenticated playing hosts are crowned in public seats") {
+  Table table;
+  table.join(1, "Ada");
+  table.join(2, "Bert");
+  table.claimHost(9);
+  // An organizer without a player seat cannot appear as a player.
+  for (const json& player : table.lastState(1).at("players"))
+    CHECK_FALSE(player.at("isHost").get<bool>());
+
+  table.claimHost(1);
+  const json players = table.lastState(2).at("players");
+  CHECK(players.at(0).at("name") == "Ada");
+  CHECK(players.at(0).at("isHost") == true);
+  CHECK(players.at(1).at("isHost") == false);
+  CHECK(table.lastState(2).dump().find(kHostToken) == std::string::npos);
+
+  table.session.addScreen(50, table.now);
+  table.deliver();
+  CHECK(table.last(50).at("players").at(0).at("isHost") == true);
+  CHECK_FALSE(table.last(50).contains("me"));
+
+  table.session.connectionClosed(1, table.now);
+  table.deliver();
+  CHECK(table.lastState(2).at("players").at(0).at("isHost") == false);
+  CHECK(table.last(50).at("players").at(0).at("isHost") == false);
+
+  Command resume;
+  resume.type = Command::Type::Resume;
+  resume.token = table.tickets[1];
+  table.send(4, resume);
+  table.claimHost(4);
+  CHECK(table.lastState(2).at("players").at(0).at("isHost") == true);
+}
+
 TEST_CASE("a full round: answers, anonymous judging, reveal with author and points") {
   Table table;
   table.join(1, "Ada");
