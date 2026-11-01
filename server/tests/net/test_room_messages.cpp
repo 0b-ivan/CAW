@@ -38,7 +38,10 @@ TEST_CASE("custom cards use the same syntax limits as CSV packs") {
   CHECK(cards->prompts[0].draw == 2);
   REQUIRE(cards->answers.size() == 1);
   CHECK(cards->answers[0] == "Antwort, \"Zitat\"");
-  CHECK_FALSE(caw::Messages::readCustomCards(R"({"prompts":[],"answers":[]})"));
+  const auto cleared = caw::Messages::readCustomCards(R"({"prompts":[],"answers":[]})");
+  REQUIRE(cleared);
+  CHECK(cleared->prompts.empty());
+  CHECK(cleared->answers.empty());
   CHECK_FALSE(caw::Messages::readCustomCards(R"({"prompts":["___ ___ ___ ___"],"answers":[]})"));
   CHECK_FALSE(caw::Messages::readCustomCards(R"({"prompts":["A"],"answers":[],"host":"secret"})"));
   CHECK_FALSE(caw::Messages::readCustomCards(R"({"prompts":[3],"answers":[]})"));
