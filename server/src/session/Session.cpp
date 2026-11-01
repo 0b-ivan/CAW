@@ -13,7 +13,7 @@ namespace caw {
 using namespace cardparty;
 
 namespace {
-constexpr Rules kDefaultRules{10, 10, true};
+constexpr Rules kDefaultRules{7, 10, true};
 
 bool isPlayerMove(Command::Type type) {
   switch (type) {
@@ -193,10 +193,14 @@ bool Session::hostCommand(const Command& command, std::uint32_t now) {
   }
 }
 
-// Clocks and Rando apply at once; like on the X4 the number of rounds only
-// changes in the lobby, so a running match refuses a different count.
+// Clocks and Rando apply at once, but hand size and round count are
+// lobby-only. Reject the whole update before changing either rule.
 bool Session::applySettings(const Settings& settings, std::uint32_t now) {
-  if (settings.rounds != game_.requestedRounds() && !game_.setRounds(settings.rounds)) return false;
+  const bool handChanged = settings.hand != game_.rules().hand;
+  const bool roundsChanged = settings.rounds != game_.requestedRounds();
+  if (game_.phase() != Phase::Lobby && (handChanged || roundsChanged)) return false;
+  if (handChanged && !game_.setHand(settings.hand)) return false;
+  if (roundsChanged && !game_.setRounds(settings.rounds)) return false;
   table_.apply(settings, now);
   return true;
 }
