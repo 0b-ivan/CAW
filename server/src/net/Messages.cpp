@@ -161,19 +161,19 @@ std::optional<CardPack> Messages::readCustomCards(std::string_view body) {
     const json& answers = request.at("answers");
     if (!prompts.is_array() || !answers.is_array() || prompts.size() > 100 ||
         answers.size() > 100 || prompts.empty() && answers.empty()) return std::nullopt;
-    std::string csv = "typ,text\\n";
+    std::string csv = "typ,text\n";
     const auto append = [&csv](const json& cards, char type) {
       for (const json& item : cards) {
         if (!item.is_string()) return false;
         const std::string value = item.get<std::string>();
-        if (value.find_first_of("\\r\\n") != std::string::npos) return false;
+        if (value.find_first_of("\r\n") != std::string::npos) return false;
         csv += type;
-        csv += ",\\\"";
+        csv += ",\"";
         for (char c : value) {
           if (c == '"') csv += '"';
           csv += c;
         }
-        csv += "\\\"\\n";
+        csv += "\"\n";
       }
       return true;
     };
