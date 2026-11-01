@@ -238,7 +238,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 ## UI-Polish: geprägtes Antwortband (2026-11-01)
 
 - [x] Gezielte DYMO-Prägeband-Ausnahme im UI-Konzept für eingesetzte Antworten festhalten
-- [x] Schwarze Kunststoffstreifen mit erhabenen hellen Buchstaben als reines CSS, ohne Bilder/Webfonts
+- [x] Schwarze Kunststoffstreifen mit erhabenen hellen Buchstaben, CSS-Glanzverläufen und Material-/Reliefschatten, ohne Bilder/Webfonts
 - [x] Weiße Handkarten und die Antwortliste des Jurors mit normalem Text belassen; Prägebänder nur für eingesetzte Antworten in den Fragesätzen, Auflösung und Big Screen
 - [x] Zeilenumbruch mit einzeln fortgeführten Bändern und synthetische Browser-Regressionstests
 - [ ] PR-CI inklusive Browser-Tests, CTest, Docker-Smoke und Lasttest grün bestätigen
