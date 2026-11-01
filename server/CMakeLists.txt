@@ -29,11 +29,11 @@ target_link_libraries(caw_support PRIVATE caw_warnings)
 add_library(caw_session src/session/Codes.cpp src/session/PlayerWords.cpp)
 target_include_directories(caw_session PUBLIC src)
 target_link_libraries(caw_session PRIVATE caw_warnings)
-add_library(caw_messages src/net/Messages.cpp)
+add_library(caw_messages src/net/Messages.cpp src/packs/CsvPack.cpp)
 target_include_directories(caw_messages PUBLIC src)
 target_link_libraries(caw_messages PUBLIC caw_game nlohmann_json::nlohmann_json PRIVATE caw_warnings)
 add_library(caw_play src/net/Protocol.cpp src/session/Session.cpp src/session/SessionRegistry.cpp
-  src/store/PersistQueue.cpp src/packs/CsvPack.cpp src/packs/PackLibrary.cpp src/packs/SyntheticPack.cpp)
+  src/store/PersistQueue.cpp src/packs/PackLibrary.cpp src/packs/SyntheticPack.cpp)
 target_include_directories(caw_play PUBLIC src)
 find_package(Threads REQUIRED)
 target_link_libraries(caw_play PUBLIC caw_game caw_session caw_messages caw_support
