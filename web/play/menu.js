@@ -8,6 +8,7 @@ const $ = (id) => document.getElementById(id);
 
 // The values the X4 offers on its rules screen; the server accepts exactly these.
 const RULES = [
+  { key: 'hand', label: 'handRule', options: [3, 4, 5, 6, 7, 8, 9, 10] },
   { key: 'rounds', label: 'rounds', options: [3, 5, 8, 10, 12, 15, 20, 30] },
   { key: 'answerSecs', label: 'answerClock', options: [0, 30, 45, 60, 90, 120] },
   { key: 'extensionSecs', label: 'extension', options: [0, 10, 15, 20, 30] },
@@ -91,16 +92,16 @@ function rulesPage(app, actions) {
   const settings = app.frame.settings;
   const rows = [backRow(actions)];
   for (const rule of RULES) {
-    const locked = rule.key === 'rounds' && app.frame.phase !== 'lobby';
+    const locked = (rule.key === 'rounds' || rule.key === 'hand') && app.frame.phase !== 'lobby';
     rows.push(stepperRow(rule, settings[rule.key], locked, (value) => actions.changeSettings({ [rule.key]: value })));
   }
   rows.push(row(t('randoRule'), t(settings.rando ? 'on' : 'off'), () => actions.changeSettings({ rando: !settings.rando })));
-  if (app.frame.phase !== 'lobby') rows.push(note(t('roundsLocked')));
+  if (app.frame.phase !== 'lobby') rows.push(note(t('handAndRoundsLocked')));
   return rows;
 }
 
 function optionText(rule, value) {
-  if (rule.key === 'rounds') return String(value);
+  if (rule.key === 'rounds' || rule.key === 'hand') return String(value);
   return value === 0 ? t('off') : t('seconds', value);
 }
 
