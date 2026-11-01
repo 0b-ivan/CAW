@@ -152,6 +152,8 @@ GESPERRT · FRAG DEN HOST“.
 
 ### 4.5 Antworten
 
+Die Hand enthält standardmäßig **7 Karten** (Host-Einstellung **3–10** im Menü SPIELREGELN, ausschließlich in der Lobby). Spieler sehen immer alle gerade zugeteilten Karten; bei Draw 2 kann die Hand kurzfristig um bis zu zwei Karten wachsen. Geändert wird nur vor dem Start einer neuen Partie; bereits gespeicherte und laufende Partien behalten ihren Wert.
+
 Frage oben in eigenem Scroll-Bereich (max. 30 % Höhe), darunter die Hand
 als durchgängiges Raster echter Spielkarten (zwei Spalten am Handy, auf dem
 Desktop rechts neben der Frage). **Alle zehn Karten sind zugleich im DOM**
@@ -203,6 +205,8 @@ mit `[‹]` `[›]`, darunter die fünf neuesten Siegersätze. Ohne Datenbank:
 „NOCH KEINE EINTRÄGE“.
 
 ### 4.10 Host-Bereich (Menü `≡` → HOST)
+
+Im Untermenü **SPIELREGELN** zeigt eine eigene Stepper-Zeile `HANDKARTEN` die aktuelle Handgröße (3–10), mit Standard `7`. Wie die Rundenzahl lässt sich diese Einstellung **nur in der Lobby** ändern; während der Partie ist sie sichtbar, aber gesperrt. Die Einstellung wird in den Serverstatus und in Redis-Snapshots übernommen.
 
 Schlichte Zeilen, keine einzeln umrahmten Schaltflächen; gruppiert unter
 SPIEL / HOST / SESSION, mit Zustand rechts. Gezeigt wird nur, was im
