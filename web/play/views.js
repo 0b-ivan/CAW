@@ -134,32 +134,20 @@ function renderAnswer(app, actions) {
   // The prompt doubles as the preview: chosen cards appear in the blanks.
   fillSentence($('answer-prompt'), frame.prompt, chosen);
 
-  // Six cards on a regular phone, four on a short viewport. Keep the
-  // original hand indices so submits and swaps still address server slots.
-  const perPage = innerHeight <= 640 ? 4 : 6;
-  const pages = Math.max(1, Math.ceil(hand.length / perPage));
-  const page = Math.max(0, Math.min(app.handPage, pages - 1));
-  app.handPage = page;
+  // Render every server slot in one scrolling hand. Remember the scroll offset
+  // across picks, but reset it when the round or hand changes.
   const list = $('hand');
+  const sameHand = list.dataset.handKey === app.selectionKey;
+  const scroll = sameHand ? list.scrollTop : 0;
   const focused = [...list.children].indexOf(document.activeElement);
-  const samePage = list.dataset.page === String(page);
-  const scroll = samePage ? list.scrollTop : 0;
-  const first = page * perPage;
-  list.replaceChildren(...hand.slice(first, first + perPage)
-    .map((card, i) => cardButton(app, actions, card, first + i)));
-  list.dataset.page = String(page);
+  list.replaceChildren(...hand.map((card, slot) => cardButton(app, actions, card, slot)));
+  list.dataset.handKey = app.selectionKey;
   list.scrollTop = scroll;
-  if (samePage && focused >= 0 && list.children[focused]) {
+  if (sameHand && focused >= 0 && list.children[focused]) {
     list.children[focused].focus({ preventScroll: true });
   }
 
   $('hand-title').textContent = t('handTitle', hand.length);
-  $('hand-pager').hidden = pages <= 1;
-  $('hand-page').textContent = t('handPage', page + 1, pages);
-  $('hand-previous').disabled = page === 0;
-  $('hand-next').disabled = page === pages - 1;
-  $('hand-previous').setAttribute('aria-label', t('previousCards'));
-  $('hand-next').setAttribute('aria-label', t('nextCards'));
 
   $('answer-count').textContent = t('selected', app.selection.length, frame.pick);
   $('submit-button').disabled = app.selection.length !== frame.pick;
