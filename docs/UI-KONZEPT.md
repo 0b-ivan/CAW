@@ -178,9 +178,12 @@ GESPERRT · FRAG DEN HOST“.
 
 ### 4.5 Antworten
 
-Die Antworttexte auf den Handkarten tragen ebenfalls den schwarzen
-Prägeband-Look, während die Karten selbst papierhell bleiben; ausgewählte
-Karten behalten ihre kontrastreiche Zustandsmarkierung.
+Die weißen Handkarten zeigen ihre Antworttexte ohne Prägeband oder
+Reliefeffekt als normalen dunklen Text auf hellem Papier, damit auch längere
+Antworten sofort lesbar bleiben. Die invertierte Darstellung ausgewählter
+Handkarten bleibt bestehen. Erst wenn Antworten in die Frage eingesetzt oder
+in der Juror- und Auflösungsansicht gezeigt werden, erscheint das schwarze
+Prägeband.
 
 Die Hand enthält standardmäßig **7 Karten** (Host-Einstellung **3–10** im Menü SPIELREGELN, ausschließlich in der Lobby). Spieler sehen immer alle gerade zugeteilten Karten; bei Draw 2 kann die Hand kurzfristig um bis zu zwei Karten wachsen. Geändert wird nur vor dem Start einer neuen Partie; bereits gespeicherte und laufende Partien behalten ihren Wert.
 
