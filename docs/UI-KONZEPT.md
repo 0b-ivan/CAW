@@ -17,10 +17,15 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   Timer-Signale.
   **Weitere gezielte Material-Ausnahme:** Eingesetzte Antworttexte dürfen als
   schwarze Kunststoff-Prägebänder (klassisches DYMO-Reliefband) erscheinen:
-  helle erhabene Buchstaben, feine helle Kanten und sehr dezente Schatten,
-  ausschließlich durch CSS. Kein Bild, kein Webfont, kein Verlauf und keine
-  Animation. Fragekarten bleiben papierhell; die Antwortbänder müssen sich
-  bei Zeilenumbrüchen sauber auf mehrere Streifen verteilen.
+  helle, sichtbar erhabene Reliefbuchstaben mit hellen und dunklen
+  Lichtkanten, leicht glänzender schwarzer Kunststoff und sanfte
+  Band-Schlagschatten. Ausschließlich für die Kunststoffbänder sind
+  dezente monochrome CSS-Verläufe und mehrlagige Schatten erlaubt; sie
+  simulieren Material und Prägung, nicht eine farbige oder animierte UI.
+  Kein Bild, kein Webfont und keine Animation. Die normalen Handkarten und
+  Juror-Antwortoptionen bleiben frei von Prägebändern; beim Einsetzen in
+  den Fragesatz entsteht das Band. Ein langer Antworttext verteilt sich
+  mit vollständigen Bandkanten auf mehrere Zeilen, ohne horizontalen Overflow.
 - **Monospace für alles.** `ui-monospace, Menlo, SFMono-Regular, Consolas,
   Liberation Mono` – keine Webfont-Pflicht (Performance-Budget).
 - **Typografie trägt die Hierarchie:** kurze Labels in GROSSBUCHSTABEN mit
