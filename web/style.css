@@ -1344,7 +1344,7 @@ mark.answer-tape,
   font-weight: 600;
   letter-spacing: .105em;
   line-height: 1.27;
-  white-space: nowrap;
+  white-space: normal;
   text-align: left;
   text-transform: none;
   text-shadow: none;
@@ -1357,7 +1357,7 @@ mark.answer-tape,
   transform: rotate(-.65deg) skewY(-.18deg);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  overflow-wrap: normal;
+  overflow-wrap: anywhere;
   hyphens: none;
 }
 
@@ -1418,4 +1418,5 @@ mark.answer-tape--measuring {
   white-space: normal;
   overflow-wrap: anywhere;
 }
-mark.answer-tape--strip { white-space: nowrap; }
+/* A very long single label remains wrappable inside its plastic strip. */
+mark.answer-tape--strip { white-space: normal; overflow-wrap: anywhere; }
