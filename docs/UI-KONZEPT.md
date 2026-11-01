@@ -315,25 +315,42 @@ Spielregel und kein Client-/Server-Protokoll.
   eine schwarze Vorderkarte mit `C/A/W`. Keine Bilddateien oder Fonts nötig.
   Die primäre Aktion `NEUE SESSION` darf eine helle, invertierte Fläche
   erhalten; Nebenaktionen bleiben eckig und zurückhaltend.
-- **Frage:** Die schwarze Fragekarte sitzt auf einer minimal versetzten
-  Kartenkante, mit großzügigem Text und ruhiger Hierarchie. Auf kleinen
-  Handys muss sie im vorgesehenen Fragebereich vollständig scrollbar bleiben.
+- **Frage:** Die schwarze Fragekarte erscheint **zentriert und kompakt**
+  wie im freigegebenen Handy-Mockup: maximal 380 px breit, mit leichter
+  statischer Drehung und zwei versetzten Kartenrücken dahinter. Die
+  Fragen-Schrift wird auf langen Karten reduziert; der Inhalt bleibt im
+  Fragebereich scrollbar. Auf Desktop wird die Frage **nicht** als
+  bildschirmbreites Panel dargestellt.
 - **Antworten:** Antwortkarten sind papierweiß mit schwarzer Schrift,
-  sichtbar von der schwarzen Fragekarte unterscheidbar. Gewählte Karten
+  sichtbar von der schwarzen Fragekarte unterscheidbar. Die Handy-Hand zeigt
+  **immer zwei Spalten**, im Normalformat sechs Karten pro Seite, bei kurzen
+  Höhen vier pro Seite. Ein sichtbarer und per Tastatur bedienbarer
+  Seitenschalter ermöglicht den Zugriff auf **alle zehn** Karten; die
+  Auswahlreihenfolge bleibt beim Seitenwechsel erhalten. Gewählte Karten
   invertieren wieder zu Schwarz mit weißer Schrift, erhalten eine starke
   weiße Kontur und die sichtbare Pick-Position. Die Auswahl bleibt zusätzlich
-  über `aria-pressed` lesbar, nicht nur über Farbe oder Schatten.
+  über `aria-pressed` lesbar, nicht nur über Farbe oder Schatten. Auf Laptop
+  bleibt das Spielfeld zentriert statt auf vier Spalten zu wachsen.
 - **Juror:** Antwortoptionen erscheinen als einzelne, gut lesbare
-  Kartenstreifen. Die Frage steht weiterhin nur einmal oben und zeigt
-  die gewählte Kombination. Keine fremden Hände oder Zuordnungen.
+  Kartenstreifen mit einem **sichtbaren Radio-Indikator**. Die ausgewählte
+  Option wird invers und erhält einen deutlich gefüllten Indikator; das
+  `aria-pressed`-Attribut bleibt maßgeblich. Die Frage steht weiterhin
+  nur einmal oben und zeigt die gewählte Kombination. Keine fremden Hände
+  oder Zuordnungen.
 - **Auflösung:** Der Siegersatz erhält die Materialität einer großen
   hellen Karte; Name und Punktestand bleiben typografisch darunter.
   Keine Krone oder Konfetti als zwingender Bestandteil.
-- **Big Screen:** In der Jurorphase werden die **ganzen** eingesetzten
-  Sätze in papierhellen Kartenreihen angezeigt, ab fünf Optionen in zwei
-  Spalten. Der Inhalt wird weiterhin an 16:9 und 4:3 angepasst und nie
-  abgeschnitten. Bei hohen Textmengen geht Lesbarkeit vor einer dekorativen
-  Kartenrotation.
+- **Big Screen:** In der Jurorphase steht eine kurze schwarze
+  Fragekarte **oberhalb** der Antwortliste, damit dieselbe Komposition wie
+  auf dem Handy sichtbar bleibt. Die **ganzen** eingesetzten Sätze folgen
+  in papierhellen Kartenreihen, ab fünf Optionen in zwei Spalten. Der Inhalt
+  wird weiterhin an 16:9 und 4:3 angepasst und nie abgeschnitten. Bei
+  hohen Textmengen geht Lesbarkeit vor dekorativer Rotation.
+- **Lobby:** Host: QR und Code als kompakter oberer Block, Teilnehmer
+  darunter als einspaltige nummerierte/markierte Zeilen, feste
+  `[ START ]`-Aktion. Spieler: derselbe klare Teilnehmerblock ohne die
+  privaten Host-Werkzeuge, mit `WARTE AUF HOST`. Beide Zustände sind
+  Teil der visuellen Abnahme; die Gast-Lobby darf kein Host-Token zeigen.
 - **Performance/Accessibility:** Karten sind CSS, keine Bild-Assets oder
   zusätzlichen Abhängigkeiten. Keine Daueranimationen; `prefers-reduced-motion`
   und die Mindest-Tippflächen bleiben erhalten. Testmatrix 320×568,
