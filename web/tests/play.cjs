@@ -129,7 +129,7 @@ async function playRound(host, players, round, screen) {
       return { background: style.backgroundColor, radius: style.borderRadius };
     });
     assert.equal(paper.background, 'rgb(244, 244, 240)', 'answers look like paper cards');
-    assert.equal(paper.radius, '5px', 'answers have physical card corners');
+    assert.equal(paper.radius, '6px', 'answers have physical card corners');
     await cards.first().click();
     await page.locator('#hand .card .slot-mark', { hasText: '<1/' }).waitFor();
     const selected = await cards.first().evaluate((card) => ({
@@ -141,6 +141,25 @@ async function playRound(host, players, round, screen) {
     assert.equal(await page.locator('#answer-prompt mark').count(), 1, 'the chosen card fills the blank');
     await page.locator('#hand .card').first().click();
     assert.equal(await page.locator('#hand .slot-mark').count(), 0);
+
+    // The ten cards are paged while their original server indices stay intact.
+    const promptWidth = await page.locator('.prompt-stack').boundingBox();
+    const shellWidth = await page.locator('#shell').boundingBox();
+    assert.ok(promptWidth.width < shellWidth.width * .9, 'prompt is a compact card stack');
+    assert.equal(await page.locator('#hand .card').count(), 6, 'six cards on a normal phone');
+    await page.locator('#hand-next').click();
+    await page.locator('#hand-page', { hasText: '2/2' }).waitFor();
+    assert.equal(await page.locator('#hand .card').count(), 4, 'remaining four cards on page two');
+    await page.locator('#hand .card').first().click();
+    assert.match(await page.locator('#answer-count').textContent(), /^1\//);
+    await page.locator('#hand-previous').click();
+    assert.match(await page.locator('#answer-count').textContent(), /^1\//,
+      'selection survives changing pages');
+    await page.locator('#hand-next').click();
+    assert.equal(await page.locator('#hand .card[aria-pressed="true"]').count(), 1,
+      'the selection reappears on the original card');
+    await page.locator('#hand .card[aria-pressed="true"]').click();
+    await page.locator('#hand-previous').click();
 
     // A reload keeps the seat: the ticket is in localStorage.
     await answering[1].reload();
@@ -170,6 +189,8 @@ async function playRound(host, players, round, screen) {
   if (round === 1) {
     await checkFit(juror, 'judge', '#judge-button');
     await checkScreen(screen, 'judging', 'judging');
+    assert.ok((await screen.locator('#screen-judge-prompt').textContent()).length > 0,
+      'the TV shows the question above answer cards');
     const screenPaper = await screen.locator('#screen-plays li').first()
       .evaluate((card) => getComputedStyle(card).backgroundColor);
     assert.equal(screenPaper, 'rgb(244, 244, 240)', 'TV shows legible paper answer cards');
@@ -205,6 +226,8 @@ async function run(browser) {
   await host.waitForURL(/\/s\/[A-HJKMNP-Z2-9]{6}$/);
   const code = host.url().split('/').pop();
   await host.locator('#lobby-qr svg').waitFor();
+  assert.ok(await host.locator('#view-lobby').evaluate((view) => view.classList.contains('has-host')),
+    'the host lobby has invite controls');
   assert.equal(await host.locator('#lobby-code').textContent(), code);
   assert.equal(await host.locator('#start-button').isDisabled(), true, 'START needs three players');
   await checkFit(host, 'lobby-host', '#start-button');
@@ -220,6 +243,8 @@ async function run(browser) {
   const players = [];
   for (const name of ['Ada', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
+  assert.equal(await players[0].locator('#lobby-share').isVisible(), false,
+    'the guest lobby does not show host-only share controls');
   await checkFit(players[0], 'lobby', '#lobby-status');
   await screen.locator('#screen-players li', { hasText: 'Cyra·' }).waitFor();
   // Every name carries its word, and the three words differ.
