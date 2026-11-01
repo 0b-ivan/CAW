@@ -373,9 +373,12 @@ Deploy **nur bei Leerlauf** die Instanz ersetzen.
   gerade offline sind. Lobbys oder beendete Partien ohne Clients blockieren
   hingegen nicht.
 - Der alte Hetzner-Server hat \`caw_active_games\` noch nicht. Für dessen
-  **erste** Aktualisierung wird vorsichtshalber \`caw_sessions == 0\` verlangt.
-  Das kann wegen der 24-Stunden-Gültigkeit zuletzt angelegter Test-Lobbys
-  die Auslieferung verzögern; das ist beabsichtigt.
+  **erste** Aktualisierung werden stattdessen die Phasen aller
+  Redis-Room-Snapshots intern geprüft. Lobbys (Phase 0) und beendete
+  Partien (Phase 4) blockieren bei null WebSockets nicht. Laufende Partien
+  (Phasen 1–3) blockieren auch bei unterbrochenen Verbindungen. Bei fehlenden
+  Snapshots, abweichender Raumanzahl oder unlesbaren Daten wird nicht
+  ausgerollt. Zugangstokens und private Karten werden niemals protokolliert.
 - Vor jeder Änderung am laufenden Checkout wird zweimal kontrolliert,
   unmittelbar nach dem GHCR-Image-Pull noch einmal mit kurzer Stabilitätszeit.
   Bei belegter Instanz meldet GitHub Actions einen zurückgestellten Rollout
