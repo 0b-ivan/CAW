@@ -455,3 +455,44 @@ Die Produktion bleibt bis zur ausdrücklich bestätigten rechtlichen und
 betrieblichen Freigabe gesperrt, einschließlich der noch fehlenden
 Offsite-Backups von PostgreSQL und Redis. Ein erfolgreicher Image-Publish
 allein ist **keine** Produktionsabnahme.
+
+## 17. Spielraum-schonende automatische Aktualisierung
+
+Ein einzelner C++-Server mit bestehenden WebSocket-Verbindungen kann nicht
+ohne Unterbrechung seiner TCP-Verbindungen ersetzt werden. Die Wiederherstellung
+von Redis-Snapshots und das clientseitige Resume sind **kein** garantiert
+unterbrechungsfreies Deployment. Daher wechselt der automatische Rollout
+nur während nachgewiesenen Spiel-Leerlaufs die Version.
+
+Vor jeder Änderung an Git-Checkout, \`deploy/.env\` oder laufenden
+Containern muss der Deploy-Prozess über den **internen** \`/metrics\`-Endpunkt
+beide Werte prüfen: \`caw_sessions == 0\` und \`caw_sockets == 0\`. Es zählt
+bewusst jede noch gespeicherte Session, auch eine gerade nicht verbundene:
+Ein abgebrochenes Spiel darf nicht nur wegen momentan fehlender Verbindungen
+unterbrochen werden. Ein fehlender, unlesbarer oder mehrdeutiger Messwert
+blockiert die Auslieferung. Nach Image-Pull und unmittelbar vor der Umschaltung
+wird erneut geprüft. Eine belegte Instanz quittiert den Versuch als
+**zurückgestellt** und bleibt unverändert.
+
+Ein planmäßiger GitHub-Actions-Lauf prüft ungefähr alle 30 Minuten, ob für
+das aktuelle, vollständig CI-geprüfte \`main\`-Commit noch ein Release
+aussteht. Ein bereits veröffentlichter SHA-Tag wird dabei nicht erneut
+überschrieben oder gebaut. Ein Host, dessen Checkout und \`CAW_VERSION\`
+schon den gewünschten SHA-Tag verwenden, wird nicht erneut neugestartet.
+Damit benötigt der Betreiber bei laufenden Spielen keinen manuellen Eingriff.
+
+Die Leerlaufprüfung und Docker-Compose-Aktion erfolgen unter derselben
+\`flock\`-Deploy-Sperre. Zwischen dem letzten Messwert und der tatsächlichen
+Server-Umschaltung besteht beim Single-Instance-Betrieb allerdings ein
+kleines Race-Fenster für neue Session-Anlagen. Eine **harte Garantie**
+erfordert künftig Admission-Drain oder zwei parallele Instanzen mit
+Session-Routing. Bis dahin ist dies ein konservativer, pragmatischer
+Schutz gegen das Unterbrechen bereits laufender Spiele.
+
+Für das erste Upgrade des älteren Hetzner-Checkouts, das noch kein
+\`bin/deploy-hetzner\` besitzt, holt die SSH-Action das Skript aus dem
+CI-geprüften Git-Commit und startet es als temporäre Datei unter
+\`.git/\`. Git-Sicherheitschecks und Leerlaufprüfung erfolgen weiterhin
+vor dem Aktualisieren getrackter Dateien. Passwörter bleiben ausschließlich
+auf dem kurzlebigen Standard-Eingabekanal und in der bestehenden
+geschützten GitHub-Environment.
