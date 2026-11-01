@@ -265,10 +265,20 @@ async function playRound(host, players, round, screen) {
   const judgePaper = await juror.locator('#judge-list .choice').first()
     .evaluate((card) => getComputedStyle(card).backgroundColor);
   assert.equal(judgePaper, 'rgb(244, 244, 240)', 'juror options are paper strips');
-  await checkTape(juror, '#judge-list mark.answer-tape');
+  assert.equal(await juror.locator('#judge-list mark').count(), 0,
+    'juror answer options must stay plain without embossed tape');
+  const choiceText = await juror.locator('#judge-list .choice').first()
+    .evaluate((element) => getComputedStyle(element).color);
+  assert.equal(choiceText, 'rgb(8, 8, 8)', 'unselected juror options use readable dark text');
   await juror.locator('#judge-list .choice').first().click();
   assert.equal(await juror.locator('#judge-list .choice').first().getAttribute('aria-pressed'),
     'true', 'the chosen answer is also announced to assistive technology');
+  const selectedChoiceText = await juror.locator('#judge-list .choice').first()
+    .evaluate((element) => getComputedStyle(element).color);
+  assert.equal(selectedChoiceText, 'rgb(244, 244, 240)',
+    'selected juror options use readable inverted plain text');
+  assert.equal(await juror.locator('#judge-list mark').count(), 0,
+    'selecting a juror option does not add an embossed strip below');
   // The pick fills the blanks of the prompt shown once on top.
   assert.ok(await juror.locator('#judge-prompt mark').count() >= 1, 'the pick appears in the prompt');
   await checkTape(juror, '#judge-prompt mark.answer-tape');
