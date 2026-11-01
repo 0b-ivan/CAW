@@ -103,9 +103,9 @@ void PackLibrary::remove(const std::string& id) {
     else
       ++it;
   }
-  packs_.erase(std::remove_if(packs_.begin(), packs_.end(), [&](const auto& pack) {
-                 return pack->id == id;
-               }), packs_.end());
+  packs_.erase(std::remove_if(packs_.begin(), packs_.end(),
+                              [&](const auto& pack) { return pack->id == id; }),
+               packs_.end());
 }
 
 std::vector<std::string> PackLibrary::defaultSelection(const std::string& language) const {
