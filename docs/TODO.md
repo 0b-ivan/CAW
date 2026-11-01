@@ -95,6 +95,12 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - Verschoben: Packs als `jsonb` in Postgres nach M6 (kommt mit der Datenbankanbindung; bis dahin sind die Dateien im Image die Quelle),
   `XCAWPK2`- und JSONL-Import aus der Firmware offen (die Dateien liegen nicht im Repo), Kategorien entfallen für die CSV-Sets (Packs sind die Auswahl)
 - [x] Fremde Originalkarten ausschließlich in freigegebenem Lizenz-/Quellverzeichnis; Test-Fixtures nur synthetisch
+- [x] Prior99-Quellbestand (107 schwarze, 610 weiße Karten) technisch geprüft;
+  lokaler LaTeX-zu-CSV-Konverter mit synthetischen Offline-Tests vorhanden
+  (docs/cardpacks/PRIOR99.md)
+- [ ] Prior99-Karten erst nach Klärung von Original-, Übersetzungs- und
+  Fanbeitragsrechten sowie redaktioneller Sichtung zur Veröffentlichung
+  freigeben; keine fremden Kartentexte vorab versionieren
 
 ## M6 – Persistenz und Wall of Fame
 
