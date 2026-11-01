@@ -22,6 +22,7 @@ struct CardPack {
   std::string sourceUrl;
   std::vector<PromptCard> prompts;
   std::vector<std::string> answers;
+  bool defaultSelected = true;  // adult/special packs require explicit host selection
 };
 
 // What a manifest says about one pack file.
@@ -33,6 +34,7 @@ struct PackEntry {
   std::string license;
   std::string rightsHolder;
   std::string sourceUrl;
+  bool defaultSelected = true;
 };
 
 }  // namespace caw
