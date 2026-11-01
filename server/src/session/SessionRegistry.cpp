@@ -82,7 +82,10 @@ bool SessionRegistry::updateCustomCards(std::string_view code, CardPack pack) {
   }
   if (selected.size() >= PackLibrary::kMaxPacks) return false;
   // Immutable version per edit: no live deck ever points to replaced card text.
-  const std::string id = customPrefix(code) + Codes::sessionCode();
+  std::string suffix = Codes::sessionCode();
+  for (char& letter : suffix)
+    letter = static_cast<char>(std::tolower(static_cast<unsigned char>(letter)));
+  const std::string id = customPrefix(code) + suffix;
   pack.id = id;
   if (!packs_.add(std::move(pack))) return false;
   selected.push_back(id);
