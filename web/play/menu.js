@@ -171,6 +171,8 @@ function packsPage(app, actions) {
     return [...rows, note(t('packsLoading'))];
   }
   const chosen = app.frame.packs.map((pack) => pack.id);
+  if (chosen.some((id) => id.startsWith('custom-')) && !app.editor && !app.editorLoading)
+    actions.loadCards();
   const locked = app.frame.phase !== 'lobby';
   rows.push(note(t(locked ? 'packsLobbyOnly' : 'packsHint')));
   const available = [...app.catalog];
