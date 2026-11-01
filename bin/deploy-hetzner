@@ -88,8 +88,16 @@ requireIdle() {
       echo "FAIL: Redis container not found for legacy room check" >&2
       return 1
     fi
-    git show "$sha:bin/verify-legacy-rooms-idle.py" |
-      python3 - "$redis_container" "$sessions"
+    # This one existing checkout contains a single abandoned match.
+    # Operator attested on 2026-11-01 that nobody is playing. Never allow
+    # the exception on newer installations or with connected sockets.
+    if [[ "$previous_sha" == cc02372* ]]; then
+      git show "$sha:bin/verify-legacy-rooms-idle.py" |
+        python3 - "$redis_container" "$sessions" --one-abandoned
+    else
+      git show "$sha:bin/verify-legacy-rooms-idle.py" |
+        python3 - "$redis_container" "$sessions"
+    fi
     return $?
   fi
   if [[ ! "$in_progress" =~ ^[0-9]+$ ]]; then
