@@ -6,6 +6,8 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 
+#include "packs/CsvPack.h"
+
 namespace caw {
 namespace {
 using nlohmann::json;
@@ -149,6 +151,58 @@ std::optional<std::vector<PackEntry>> Messages::readPackManifest(std::string_vie
   }
 }
 
+// Reuse the CSV reader for identical blank, UTF-8, length and control-char rules.
+std::optional<CardPack> Messages::readCustomCards(std::string_view body) {
+  try {
+    const json request = json::parse(body);
+    if (!request.is_object() || request.size() != 2 || !request.contains("prompts") ||
+        !request.contains("answers")) return std::nullopt;
+    const json& prompts = request.at("prompts");
+    const json& answers = request.at("answers");
+    if (!prompts.is_array() || !answers.is_array() || prompts.size() > 100 ||
+        answers.size() > 100 || prompts.empty() && answers.empty()) return std::nullopt;
+    std::string csv = "typ,text\\n";
+    const auto append = [&csv](const json& cards, char type) {
+      for (const json& item : cards) {
+        if (!item.is_string()) return false;
+        const std::string value = item.get<std::string>();
+        if (value.find_first_of("\\r\\n") != std::string::npos) return false;
+        csv += type;
+        csv += ",\\\"";
+        for (char c : value) {
+          if (c == '"') csv += '"';
+          csv += c;
+        }
+        csv += "\\\"\\n";
+      }
+      return true;
+    };
+    if (!append(prompts, 'b') || !append(answers, 'w')) return std::nullopt;
+    CardPack pack;
+    pack.title = "Eigene Karten";
+    pack.language = "de";
+    pack.license = "User supplied";
+    pack.rightsHolder = "Session host";
+    pack.sourceUrl = "local";
+    pack.defaultSelected = false;
+    std::string error;
+    if (!CsvPack::read(csv, pack, error)) return std::nullopt;
+    return pack;
+  } catch (const json::exception&) {
+    return std::nullopt;
+  }
+}
+
+std::string Messages::customCards(const CardPack* pack) {
+  json prompts = json::array();
+  json answers = json::array();
+  if (pack != nullptr) {
+    for (const PromptCard& card : pack->prompts) prompts.push_back(card.text);
+    for (const std::string& card : pack->answers) answers.push_back(card);
+  }
+  return json{{"prompts", prompts}, {"answers", answers}}.dump();
+}
+
 std::string Messages::saveRoom(const RoomRecord& room) {
   json identities = json::array();
   for (const Identity& identity : room.identities)
@@ -156,10 +210,15 @@ std::string Messages::saveRoom(const RoomRecord& room) {
   json lines = json::array();
   for (const MatchLine& line : room.lines)
     lines.push_back({{"name", line.name}, {"sentence", line.sentence}});
+  json custom = nullptr;
+  if (room.customPack) {
+    custom = json::parse(customCards(&*room.customPack));
+    custom["id"] = room.customPack->id;
+  }
   const std::string head = json{
-      {"schema", 4},          {"language", room.language}, {"hostToken", room.hostToken},
+      {"schema", 5},          {"language", room.language}, {"hostToken", room.hostToken},
       {"packs", room.packs},  {"identities", identities},  {"lines", lines},
-      {"locked", room.locked}}.dump();
+      {"locked", room.locked}, {"custom", custom}}.dump();
   // room.state is already JSON text (saveState); spliced in rather than parsed again.
   return head.substr(0, head.size() - 1) + ",\"state\":" + room.state + "}";
 }
@@ -168,7 +227,9 @@ std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
   try {
     const json record = json::parse(text);
     // Older schemas lack packs or player identities; such rooms are not restored.
-    if (!record.is_object() || record.size() != 8 || record.at("schema") != 4 ||
+    if (!record.is_object() ||
+        !((record.size() == 8 && record.at("schema") == 4) ||
+          (record.size() == 9 && record.at("schema") == 5)) ||
         !record.at("language").is_string() || !record.at("hostToken").is_string() ||
         !record.at("packs").is_array() || !record.at("state").is_object())
       return std::nullopt;
@@ -178,6 +239,17 @@ std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
     room.packs = record.at("packs").get<std::vector<std::string>>();
     room.state = record.at("state").dump();
     room.locked = record.at("locked").get<bool>();
+    if (record.at("schema") == 5 && !record.at("custom").is_null()) {
+      json content = record.at("custom");
+      if (!content.is_object() || !content.contains("id") ||
+          !content.at("id").is_string()) return std::nullopt;
+      const std::string id = content.at("id").get<std::string>();
+      content.erase("id");
+      auto custom = readCustomCards(content.dump());
+      if (!custom) return std::nullopt;
+      custom->id = id;
+      room.customPack = std::move(*custom);
+    }
     for (const json& identity : record.at("identities"))
       room.identities.push_back(
           {identity.at("player").get<std::string>(), identity.at("word").get<std::uint8_t>()});
