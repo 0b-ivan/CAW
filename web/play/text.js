@@ -22,6 +22,7 @@ const texts = {
     copyLink: '[ LINK KOPIEREN ]', share: '[ TEILEN ]', copied: 'LINK KOPIERT',
     copyFailed: 'KOPIEREN NICHT MÖGLICH', qrLabel: 'QR-Code für den Session-Link',
     offlineMark: ' · OFFLINE', youMark: ' · DU', hostMark: ' · HOST',
+    hostRole: 'HOST',
 
     pick: 'PICK {0}', handLabel: 'Deine Karten',
     handTitle: 'DEINE KARTEN ({0})',
@@ -111,6 +112,7 @@ const texts = {
     copyLink: '[ COPY LINK ]', share: '[ SHARE ]', copied: 'LINK COPIED',
     copyFailed: 'COPYING NOT POSSIBLE', qrLabel: 'QR code for the session link',
     offlineMark: ' · OFFLINE', youMark: ' · YOU', hostMark: ' · HOST',
+    hostRole: 'HOST',
 
     pick: 'PICK {0}', handLabel: 'Your cards',
     handTitle: 'YOUR CARDS ({0})',
