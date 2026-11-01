@@ -16,7 +16,6 @@ Details und Häkchen: [TODO.md](TODO.md). Hintergrund: [KONZEPT.md](KONZEPT.md),
 | M7 | Performance und Härtung | Lasttest erfüllt die Budgets aus KONZEPT 5a, Rate-Limits, Backpressure |
 | M8 | Betrieb und Release v1.0 | Läuft auf eurem Server mit TLS, Backups, Monitoring, Datenschutzseite |
 | M9 | Eigene Karten (nach v1) | Host-Editor für private Frage- und Antwortkarten in der Lobby mit JSON-Import/-Export und Redis-Persistenz |
-
 | M10 | Gemeinsame Kartenvorschläge | Spieler schlagen Lobby-Karten vor; der Host prüft und übernimmt sie ins private Deck; Redis hält die Warteschlange |
 
 Reihenfolge mit Absicht: Die Spielregeln (M1) kommen vor jeder UI. Sie sind

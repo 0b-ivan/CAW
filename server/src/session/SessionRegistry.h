@@ -63,7 +63,7 @@ class SessionRegistry final {
     Time expiresAt;
     std::unique_ptr<Session> session;
     std::optional<CardPack> customPack = std::nullopt;
-    std::vector<CardProposal> proposals;
+    std::vector<CardProposal> proposals = {};
   };
 
   std::chrono::hours ttl_;

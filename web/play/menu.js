@@ -32,8 +32,8 @@ export function renderMenu(app, actions) {
     ? 'main' : app.menu.page;
   const pages = {
     main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage, packs: packsPage, cards: (app, actions) => editorPage(app, actions, () => backRow(actions)),
-    proposal: (app, actions) => suggestPage(app, actions, backRow(actions)),
-    proposals: (app, actions) => reviewPage(app, actions, backRow(actions)),
+    proposal: (app, actions) => suggestPage(app, actions, () => backRow(actions)),
+    proposals: (app, actions) => reviewPage(app, actions, () => backRow(actions)),
     fame: famePage,
   };
   const titles = {
