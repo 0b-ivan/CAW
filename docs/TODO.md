@@ -188,3 +188,20 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] DE/EN-Hilfedialog mit zwei Bereichen: SO STARTEST DU und SPIELREGELN (Juror, Pick/Draw, Punkte, Hand, Host-Einstellungen), Escape, Schließen und eigener Scrollfläche
 - [x] Playwright-Checks für DE/EN-Spielregeln, fehlende Infrastruktur-Hinweise, Dialog, ruhige Intro-Dauer und 320/390/1280 px ergänzt
 - [ ] Finale CI einschließlich Browser-Screenshots für diese Revision bestätigen
+
+## CI/CD: Hetzner Auto-Deployment (2026-11-01)
+
+- [x] Produktionskonzept: nur grüne Push-CI auf main, manuelle Wiederholung nur nach grünem SHA-Check
+- [x] GHCR-Image mit vollständigem, unveränderlichem Commit-Tag
+- [x] SSH-Deploy mit geprüftem Hostschlüssel und kurzlebigem GHCR-Token
+- [x] Nur CAW mit Compose-Projekt caw aktualisieren; DB/Redis und Tunnel nicht neu starten
+- [x] Postgres-Dump vor Änderung, Healthchecks, automatisches Git/Env/Image-Rollback
+- [x] Externer WSS-Test und Rollback bei fehlgeschlagenem Handshake
+- [x] Syntax- und Sicherheitschecks in der bestehenden GitHub-CI
+- [x] Einrichtung und Secrets/Variablen im Hetzner-Runbook dokumentiert
+- [ ] PR-CI grün prüfen und Dry-Run/Smoke auf einer Testinstanz durchführen
+- [ ] Echte Betreiberangaben und Drittanbieter-Kartenrechte klären
+- [ ] Verschlüsselte Offsite-Backups für Postgres und Redis-AOF mit Restore-Probe einrichten
+- [ ] GitHub-Environment production (SSH-Secrets, geprüfte known_hosts) einrichten
+- [ ] CAW_PRODUCTION_APPROVED und CAW_AUTO_DEPLOY nach Abnahme bewusst aktivieren
+- [ ] Erstes manuelles Deployment und danach Autodeploy mit externem HTTPS/WSS bestätigen
