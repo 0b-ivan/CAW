@@ -22,7 +22,7 @@ class LocalRestoreSafetyTests(unittest.TestCase):
         self.assertIn("--exit-on-error --no-owner --no-acl", code)
         self.assertIn("docker rm --force", code)
         self.assertIn("trap cleanup EXIT", code)
-        self.assertIn("TABLE_NAME" if False else "table_name IN ('players','winning_lines')", code)
+        self.assertIn("table_name IN ('players','winning_lines')", code)
 
     def test_restore_does_not_modify_production_services(self):
         code = SCRIPT.read_text(encoding="utf-8")
