@@ -159,3 +159,9 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Handkartenzahl standardmäßig 7, Host-Änderung 3–10 nur in der Lobby
 - [x] Protokoll, Redis-Snapshots (mit Legacy-10er-Sessions), Sprachtexte und Tests erweitert
 - [ ] CI einschließlich `ctest`, Browser und Lasttests mit Hand-Einstellung grün bestätigen
+- [x] Goldene Host-Krone als einzelne freigegebene Farb-Ausnahme im UI-Konzept
+- [x] Öffentliche Host-Rolle an authentifizierte Spielerplätze binden (ohne Token/Hand)
+- [x] Lobby auf Handy/Desktop/TV und Host-ohne-Sitz mit Krone + sichtbarem HOST-Text
+- [x] Tests: mitspielender Host, nicht spielender Host, Trennung/Reauthentifizierung
+- [ ] PR #12 mit Krone: Build, CTest, Browser-Screenshots und Lasttests grün bestätigen
+
