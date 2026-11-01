@@ -419,3 +419,36 @@ Offsite-Backups und TLS/WSS-Abnahme erledigt sind, bleiben beide
 Variablen aus. SSH-Zugangsdaten gehören ausschließlich in die geschützte
 GitHub-Environment `production`; eine manuelle Deployment-Freigabe kann
 dort durch Required Reviewers ergänzt werden.
+
+## 16. Verschlüsselte Offsite-Backups zur bestehenden Hetzner Storage Box
+
+Neben dem lokalen Postgres-Dump im Docker-Volume sichern wir sowohl einen
+frischen Custom-Format-Dump als auch die vollständige Redis-7-AOF-Dateigruppe
+verschlüsselt mit `restic` auf die **bereits vorhandene** Hetzner Storage Box.
+`restic` verwendet SFTP über den separat geprüften Storage-Box-SSH-Host;
+der Repository-Pfad ist nur für CAW reserviert. Die clientseitige Verschlüsselung
+erfolgt vor der Übertragung. Kein Passwort, SSH-Schlüssel oder Host-Fingerabdruck
+gehört in Git oder das bestehende `deploy/.env`.
+
+Der dedizierte Host-Benutzer `caw-deploy` führt die Sicherung durch. Er besitzt
+bereits Docker-Zugriff; ein täglicher systemd-Timer ruft das Skript auf.
+Die Verbindung nutzt einen separaten Storage-Box-Schlüssel mit fest geprüftem
+Hostschlüssel und einen unabhängig gespeicherten, ausreichend langen Restic-
+Repository-Schlüssel. Ohne explizite Konfiguration startet keine Offsite-Sicherung.
+
+Die Redis-AOF-Sicherung folgt der Redis-7-Empfehlung: Automatische AOF-Rewrites
+kurzzeitig deaktivieren, laufende Rewrites abwarten, die gesamte AOF-Gruppe
+mit Manifest kopieren und die vorherige Rewrite-Einstellung **auch bei Fehlern**
+wiederherstellen. Die Container und Volumes werden weder gestoppt noch
+neugestartet. Ein neu erstellter PostgreSQL-Dump wird gesondert auf Lesbarkeit
+geprüft, bevor die Daten übertragen werden.
+
+Snapshots werden täglich erstellt und auf 14 tägliche, acht wöchentliche und
+zwölf monatliche Generationen begrenzt. Die getrennte Restic-Repository-
+Struktur darf keine fremden Anwendungen enthalten. Eine Restore-Probe lädt
+die verschlüsselten Daten aus der Storage Box neu und prüft PostgreSQL sowie
+Redis ausschließlich in isolierten, kurzlebigen Docker-Containern ohne Netzwerk.
+Die Produktivdatenbanken werden dabei niemals überschrieben. Ein fehlgeschlagenes
+Backup/Restore meldet einen Fehler im systemd-Journal; Monitoring muss ihn
+sichtbar machen. Die erste erfolgreiche Übertragung und Restore-Probe sind
+explizite Go-live-Bedingungen, nicht bloß die Bereitstellung der Skripte.
