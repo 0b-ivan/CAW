@@ -21,6 +21,8 @@ const texts = {
     start: '[ START ]', needPlayers: 'NOCH {0} SPIELER', ready: 'BEREIT',
     copyLink: '[ LINK KOPIEREN ]', share: '[ TEILEN ]', copied: 'LINK KOPIERT',
     copyFailed: 'KOPIEREN NICHT MÖGLICH', qrLabel: 'QR-Code für den Session-Link',
+    inviteAddressLabel: 'ADRESSE FÜR MITSPIELER', inviteAddressNeeded: 'LAN-IP ODER ERREICHBARE URL EINTRAGEN',
+    inviteAddressInvalid: 'BITTE VOLLSTÄNDIGE HTTP(S)-ADRESSE OHNE PFAD EINGEBEN',
     offlineMark: ' · OFFLINE', youMark: ' · DU', hostMark: ' · HOST',
     hostRole: 'HOST',
 
@@ -111,6 +113,8 @@ const texts = {
     start: '[ START ]', needPlayers: '{0} MORE PLAYERS', ready: 'READY',
     copyLink: '[ COPY LINK ]', share: '[ SHARE ]', copied: 'LINK COPIED',
     copyFailed: 'COPYING NOT POSSIBLE', qrLabel: 'QR code for the session link',
+    inviteAddressLabel: 'ADDRESS FOR PLAYERS', inviteAddressNeeded: 'ENTER REACHABLE LAN IP OR URL',
+    inviteAddressInvalid: 'ENTER A FULL HTTP(S) ADDRESS WITHOUT A PATH',
     offlineMark: ' · OFFLINE', youMark: ' · YOU', hostMark: ' · HOST',
     hostRole: 'HOST',
 
