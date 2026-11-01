@@ -144,7 +144,11 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Browser-Regressionen für Materialität, Auswahl-ARIA und Big-Screen-Stil ergänzen
 - [ ] CI-Build, `ctest`, Browser- und Lasttests für PR #12 grün bestätigen
 - [x] Zweiter Durchgang nach realen Screenshots: zentrierte Fragekarten,
-  sechs/vier Karten pro Seite, Juror-Indikatoren, einspaltige Lobby und volle Hauptaktionen
+  Juror-Indikatoren, einspaltige Handy-Lobby und volle Hauptaktionen
+- [x] Alle zehn Karten ohne Pagination als durchgehendes scrollbareres Raster;
+  Scrollposition und Auswahl bleiben beim Antippen bestehen
+- [x] Playwright-Tests für die letzte Karte, die interne Scrollfläche und
+  den fest sichtbaren Abgabe-Button bei 320×568, 390×844 und 1280×800
 - [x] Zusätzliche Browser-Tests für Kartenseiten, persistente Auswahl und getrennte Rollen
 - [x] Desktop-Anordnung am MacBook: Frage links, Karten rechts,
   Host-Einladung neben Spielerliste; eigenes responsives Layout ab 900 px
