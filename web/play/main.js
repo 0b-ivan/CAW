@@ -2,7 +2,8 @@
 // The server decides everything; this page only shows the state and sends intentions.
 import { Connection, lookupSession, secrets } from './connection.js';
 import { applyStaticTexts, errorText, setTextLanguage, t } from './text.js';
-import { isRunning, isSeated, render, sessionUrl } from './views.js';
+import { isRunning, isSeated, render } from './views.js';
+import { saveInviteOrigin, shareableSessionUrl } from './invite.js';
 import { renderMenu } from './menu.js';
 
 const $ = (id) => document.getElementById(id);
@@ -236,7 +237,16 @@ const actions = {
     applyLanguage(language);
   },
   copyLink() {
-    actions.copyText(sessionUrl(code));
+    const url = shareableSessionUrl(code);
+    if (!url) return showNotice(t('inviteAddressNeeded'));
+    actions.copyText(url);
+  },
+  setInviteOrigin(value) {
+    if (!saveInviteOrigin(code, value)) {
+      $('invite-hint').textContent = t('inviteAddressInvalid');
+      return;
+    }
+    update();
   },
   copyText(text) {
     const done = (key) => showNotice(t(key));
@@ -244,7 +254,9 @@ const actions = {
     navigator.clipboard.writeText(text).then(() => done('copied'), () => done('copyFailed'));
   },
   share() {
-    navigator.share?.({ title: 'C/A/W', url: sessionUrl(code) }).catch(() => {});
+    const url = shareableSessionUrl(code);
+    if (!url) return showNotice(t('inviteAddressNeeded'));
+    navigator.share?.({ title: 'C/A/W', url }).catch(() => {});
   },
 };
 
@@ -318,6 +330,9 @@ function bindButtons() {
   on('hold-without', () => actions.host('continueWithout'));
   on('pause-button', () => actions.player('pause'));
   on('copy-link', actions.copyLink);
+  $('invite-address').addEventListener('change', (event) => {
+    actions.setInviteOrigin(event.target.value);
+  });
   on('share-link', actions.share);
   on('screen-link', () => {
     app.menu = { open: true, page: 'screen' };
