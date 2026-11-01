@@ -130,7 +130,7 @@ def write_pack(destination, cards, license_name, rights_holder):
     manifest = {"packs": [{
         "id": PACK_ID,
         "file": "cards.csv",
-        "title": "Prior99 – CAH Fullformat German (18+)",
+        "title": "NSFW",
         "language": "de",
         "license": license_name,
         "rightsHolder": rights_holder,
