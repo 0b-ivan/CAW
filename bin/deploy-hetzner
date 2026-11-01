@@ -36,7 +36,9 @@ if [[ ! -f deploy/.env ]]; then
 fi
 
 compose() {
-  docker compose -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+  # Only deploy/.env controls the running image, including during rollback.
+  env -u CAW_VERSION docker compose --env-file deploy/.env \
+    -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
 }
 
 git fetch --quiet origin main
