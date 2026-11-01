@@ -24,6 +24,7 @@ class StorageBoxSafetyTests(unittest.TestCase):
         self.assertIn("$RESTIC_PASSWORD_FILE", backup)
         self.assertIn("restic backup", backup)
         self.assertIn("restic forget", backup)
+        self.assertIn("--group-by host,tags", backup)
         self.assertIn("redis-cli CONFIG SET", backup)
         self.assertIn("auto-aof-rewrite-percentage 0", backup)
         self.assertIn("rewrite_disabled=0", backup)
