@@ -123,7 +123,16 @@ jobs:
           node-version: "22"
       - name: Verify the public HTTPS and WebSocket handshake
         id: wss
-        run: node bin/hetzner-wss-check.mjs
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if node bin/hetzner-wss-check.mjs; then
+              exit 0
+            fi
+            echo "WSS probe attempt $attempt failed"
+            sleep 5
+          done
+          exit 1
       - name: Roll back CAW if the public WebSocket handshake fails
         if: failure() && steps.wss.outcome == 'failure'
         run: |
