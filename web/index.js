@@ -80,38 +80,9 @@ function finishIntro(focusReplay = false) {
   stopIntroTimers();
   boot.hidden = true;
   boot.className = 'boot-screen';
-  boot.querySelectorAll('.zoom-card').forEach((card) => card.remove());
   landing.inert = false;
   markIntroSeen();
   if (focusReplay) replayButton.focus();
-}
-
-function zoomMiddleCard() {
-  const middleCard = boot.querySelector('.cut-card--a');
-  const from = middleCard.getBoundingClientRect();
-  const bounds = boot.getBoundingClientRect();
-  const zoomCard = document.createElement('span');
-  zoomCard.className = 'zoom-card';
-  zoomCard.textContent = 'A';
-  zoomCard.setAttribute('aria-hidden', 'true');
-  zoomCard.style.left = `${from.left - bounds.left}px`;
-  zoomCard.style.top = `${from.top - bounds.top}px`;
-  zoomCard.style.width = `${from.width}px`;
-  zoomCard.style.height = `${from.height}px`;
-  zoomCard.style.fontSize = `${from.width * 0.67}px`;
-  boot.appendChild(zoomCard);
-  void zoomCard.offsetWidth;
-
-  // A separate flat rectangle preserves the exact A-card silhouette during zoom.
-  requestAnimationFrame(() => {
-    zoomCard.style.left = '0px';
-    zoomCard.style.top = '0px';
-    zoomCard.style.width = `${boot.clientWidth}px`;
-    zoomCard.style.height = `${boot.clientHeight}px`;
-    zoomCard.style.fontSize = `${Math.min(boot.clientWidth, boot.clientHeight) * 0.75}px`;
-  });
-  later(370, () => boot.classList.add('is-completing'));
-  later(520, () => finishIntro());
 }
 
 function startIntro() {
@@ -120,19 +91,18 @@ function startIntro() {
     finishIntro();
     return;
   }
-  boot.querySelectorAll('.zoom-card').forEach((card) => card.remove());
   boot.className = 'boot-screen';
   boot.hidden = false;
   landing.inert = true;
   skipButton.focus();
 
-  // Each step is independent of the server: no game state or timers are blocked.
-  // The entire brand sequence finishes in about 1.5 seconds, not 4.2.
-  later(40, () => boot.classList.add('is-shuffling'));
-  later(380, () => boot.classList.add('is-shifted'));
-  later(620, () => boot.classList.add('has-slash'));
-  later(770, () => boot.classList.add('has-wordmark'));
-  later(1010, zoomMiddleCard);
+  // Keep the original, calm transition speeds. We shortened the intro by
+  // removing the shuffle, full-screen card zoom and idle time, not by rushing.
+  later(60, () => boot.classList.add('is-shifted'));
+  later(670, () => boot.classList.add('has-slash'));
+  later(930, () => boot.classList.add('has-wordmark'));
+  later(1400, () => boot.classList.add('is-completing'));
+  later(1700, () => finishIntro());
 }
 
 function showStatus(key) {
