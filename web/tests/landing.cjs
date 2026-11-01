@@ -16,21 +16,24 @@ async function assertFitsViewport(page) {
   assert.ok(size.height <= size.viewportHeight, 'Landing should fit without vertical scrolling');
 }
 
-async function verifyCardsHaveSquareCorners(page) {
-  const corners = await page.locator('.cut-deck--small .cut-card--w').evaluate((card) => {
-    const style = getComputedStyle(card);
-    const marker = getComputedStyle(card, '::after');
-    return {
-      radius: style.borderBottomRightRadius,
-      markerRight: marker.right,
-      markerBorderRight: marker.borderRightWidth,
-      markerBorderBottom: marker.borderBottomWidth,
-    };
-  });
-  assert.equal(corners.radius, '0px');
-  assert.equal(corners.markerRight, '3px');
-  assert.equal(corners.markerBorderRight, '1px');
-  assert.equal(corners.markerBorderBottom, '1px');
+async function verifyPhysicalDeck(page) {
+  const cards = await page.locator('.cut-deck--small .cut-card').evaluateAll((nodes) =>
+    nodes.map((card) => {
+      const style = getComputedStyle(card);
+      return {
+        radius: style.borderRadius,
+        background: style.backgroundColor,
+        transform: style.transform,
+      };
+    }));
+  assert.equal(cards.length, 3, 'the logo has two card backs and a front card');
+  assert.ok(cards.every((card) => card.radius === '5px'), 'cards have subtle paper corners');
+  assert.equal(cards[0].background, cards[1].background, 'two light paper backs');
+  assert.notEqual(cards[1].background, cards[2].background, 'contrasting black card front');
+  assert.notEqual(cards[0].transform, cards[2].transform, 'stacked cards have distinct angles');
+  const front = await page.locator('.cut-deck--small .cut-card--w')
+    .evaluate((card) => getComputedStyle(card, '::before').content);
+  assert.ok(front.includes('C/A/W'), 'the front card carries the CAW mark');
 }
 
 async function checkLanding(browser, width, height) {
@@ -42,7 +45,7 @@ async function checkLanding(browser, width, height) {
     await page.locator('#boot-screen').waitFor({ state: 'visible' });
     await page.getByRole('button', { name: /ÜBERSPRINGEN/ }).click();
     await page.locator('#boot-screen').waitFor({ state: 'hidden' });
-    await verifyCardsHaveSquareCorners(page);
+    await verifyPhysicalDeck(page);
 
     await page.getByRole('button', { name: 'DE', exact: true }).click();
     await page.getByText('[ NEUE SESSION ]', { exact: true }).waitFor();
@@ -93,7 +96,7 @@ async function checkLanding(browser, width, height) {
         fullPage: true,
       });
     }
-    console.log(`PASS ${width}x${height}: intro, DE/EN, keyboard, square cards, 48px targets, zero scroll`);
+    console.log(`PASS ${width}x${height}: intro, DE/EN, keyboard, physical cards, 48px targets, zero scroll`);
   } finally {
     await page.close();
   }
