@@ -16,6 +16,9 @@ const rounds = Number(process.argv[4] ?? 3);
 const wsBase = base.replace(/^http/, 'ws');
 const PLAYERS = 8;
 const OPEN_BATCH = 25; // rooms opened at a time, so connecting is not one burst
+const CREATE_TIMEOUT_MS = 30000;
+const SOCKET_OPEN_TIMEOUT_MS = 60000;
+const LOAD_TIMEOUT_MS = 180000; // a failing worker must not consume the whole CI job
 // People need a moment to read and choose. Real rounds take about a minute; 1–8 s per move
 // is still several times faster than people, so the server sees more load than in a party.
 const THINK_MS = [1000, 8000];
@@ -64,14 +67,29 @@ function connect(url) {
       });
     });
   tab.opened = new Promise((resolve, reject) => {
-    tab.ws.onopen = resolve;
-    tab.ws.onclose = () => reject(new Error('closed before open'));
+    const timer = setTimeout(() => {
+      reject(new Error(`WebSocket open timed out after ${SOCKET_OPEN_TIMEOUT_MS} ms: ${url}`));
+    }, SOCKET_OPEN_TIMEOUT_MS);
+    tab.ws.onopen = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    tab.ws.onclose = () => {
+      clearTimeout(timer);
+      reject(new Error(`WebSocket closed before opening: ${url}`));
+    };
   });
   return tab;
 }
 
 async function openRoom() {
-  const room = await (await fetch(`${base}/api/sessions`, { method: 'POST', body: '{}' })).json();
+  const response = await fetch(`${base}/api/sessions`, {
+    method: 'POST',
+    body: '{}',
+    signal: AbortSignal.timeout(CREATE_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`create room returned HTTP ${response.status}`);
+  const room = await response.json();
   const host = connect(`${wsBase}/ws/${room.code}`);
   const screen = connect(`${wsBase}/ws/${room.code}/screen`);
   const players = Array.from({ length: PLAYERS }, () => connect(`${wsBase}/ws/${room.code}`));
@@ -113,7 +131,9 @@ async function playMatch(room) {
 }
 
 async function metrics() {
-  const text = await (await fetch(`${base}/metrics`)).text();
+  const text = await (await fetch(`${base}/metrics`, {
+    signal: AbortSignal.timeout(CREATE_TIMEOUT_MS),
+  })).text();
   const value = (pattern) => Number(text.match(pattern)?.[1] ?? NaN);
   return {
     within10: value(/caw_action_seconds_bucket\{le="0\.01"\} (\d+)/),
@@ -133,10 +153,17 @@ async function work(share) {
   for (let i = 0; i < share; i += OPEN_BATCH) {
     const batch = Math.min(OPEN_BATCH, share - i);
     opened.push(...(await Promise.all(Array.from({ length: batch }, openRoom))));
+    console.log(`load worker ${process.pid}: connected ${opened.length}/${share} rooms`);
   }
   process.send({ connected: true });
   await new Promise((resolve) => process.once('message', resolve));
-  await Promise.all(opened.map(playMatch));
+  let completed = 0;
+  await Promise.all(opened.map(async (room) => {
+    await playMatch(room);
+    completed += 1;
+    if (completed % 25 === 0 || completed === share)
+      console.log(`load worker ${process.pid}: played ${completed}/${share} rooms`);
+  }));
   for (const room of opened) for (const tab of [room.host, room.screen, ...room.players]) tab.ws.close();
   // Exit only once the report has really left; process.exit() would drop it.
   process.send({ latencies, errors }, () => process.exit(0));
@@ -154,9 +181,24 @@ const children = Array.from({ length: workers }, (_, i) => {
   const share = Math.floor(rooms / workers) + (i < rooms % workers ? 1 : 0);
   return fork(new URL(import.meta.url), process.argv.slice(2), { env: { ...process.env, CAW_LOAD_SHARE: share } });
 });
+const watchdog = setTimeout(() => {
+  console.error(`FAIL: load test exceeded ${LOAD_TIMEOUT_MS / 1000} seconds`);
+  for (const child of children) child.kill('SIGTERM');
+  process.exit(1);
+}, LOAD_TIMEOUT_MS);
+watchdog.unref();
+
 const nextMessage = (child) => new Promise((resolve, reject) => {
-  child.once('message', resolve);
-  child.once('exit', (code) => code && reject(new Error(`worker failed with ${code}`)));
+  const onMessage = (message) => {
+    child.off('exit', onExit);
+    resolve(message);
+  };
+  const onExit = (code, signal) => {
+    child.off('message', onMessage);
+    reject(new Error(`worker exited without reporting (code ${code}, signal ${signal})`));
+  };
+  child.once('message', onMessage);
+  child.once('exit', onExit);
 });
 await Promise.all(children.map(nextMessage));
 const connected = performance.now();
