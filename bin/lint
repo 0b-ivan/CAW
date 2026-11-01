@@ -7,7 +7,8 @@ if ! find server/src server/tests -type f \( -name '*.cpp' -o -name '*.h' \) \
   # Emit machine-readable formatting suggestions in CI for precise fixes.
   for path in server/src/net/Messages.cpp server/src/packs/PackLibrary.cpp \
     server/src/session/SessionRegistry.cpp server/src/session/Session.cpp \
-    server/tests/store/test_persist.cpp server/tests/net/test_room_messages.cpp; do
+    server/tests/store/test_persist.cpp server/tests/net/test_room_messages.cpp \
+    server/tests/session/test_session.cpp; do
     echo "CAW_FORMAT_BEGIN:$path"
     clang-format --output-replacements-xml "$path"
     echo "CAW_FORMAT_END:$path"
