@@ -383,6 +383,28 @@ async function run(browser) {
   await checkFit(host, 'menu-packs', '#menu-close');
   await host.locator('#menu-close').click();
 
+  // Host-created cards are playable in this room but invisible to other visitors.
+  await openMenuPage(host, 'EIGENE KARTEN');
+  await host.locator('.editor-save').waitFor();
+  await host.getByRole('button', { name: '[ FRAGE HINZUFÜGEN ]' }).click();
+  await host.locator('#card-prompts-0').fill('Eigene Testfrage ___!');
+  await host.getByRole('button', { name: '[ ANTWORT HINZUFÜGEN ]' }).click();
+  await host.locator('#card-answers-0').fill('Eigene Testantwort');
+  await host.locator('.editor-save').click();
+  await host.locator('#menu-body', { hasText: 'KARTEN GESPEICHERT UND AKTIV.' }).waitFor();
+  assert.equal(await players[0].evaluate(async (room) =>
+    (await fetch('/api/sessions/' + room + '/cards')).status, code), 403,
+  'guests cannot read private draft cards');
+  await checkFit(host, 'menu-custom-cards', '#menu-close');
+  await host.locator('#menu-close').click();
+  await host.reload();
+  await host.locator('#view-lobby:visible').waitFor();
+  await openMenuPage(host, 'EIGENE KARTEN');
+  await host.locator('#card-prompts-0').waitFor();
+  assert.equal(await host.locator('#card-prompts-0').inputValue(), 'Eigene Testfrage ___!',
+    'the custom card editor reloads its saved room cards');
+  await host.locator('#menu-close').click();
+
   await host.locator('#start-button').click();
   for (let round = 1; round <= 3; round++) await playRound(host, players, round, screen);
 
