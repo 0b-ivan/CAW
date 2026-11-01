@@ -26,8 +26,7 @@ fi
 previous_sha="${release[1]}"
 previous_tag="${release[2]}"
 if ! [[ "$previous_sha" =~ ^[0-9a-f]{40}$ ]] ||
-   ! [[ "$previous_tag" == __unset__ || "$previous_tag" =~ ^sha-[0-9a-f]{40}$ ||
-         "$previous_tag" == latest ]]; then
+   ! [[ "$previous_tag" == __unset__ || "$previous_tag" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$ ]]; then
   echo "FAIL: invalid stored rollback target" >&2
   exit 1
 fi
