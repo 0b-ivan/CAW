@@ -1,7 +1,8 @@
 // The ≡ menu: plain rows grouped under GAME, HOST and SESSION, plus the rules
 // and players pages for the host. Dangerous rows need a second tap.
 import { t, currentLanguage } from './text.js';
-import { isRunning, isSeated, sessionUrl } from './views.js';
+import { isRunning, isSeated } from './views.js';
+import { shareableSessionUrl } from './invite.js';
 import { qrSvg } from './qr.js';
 
 const $ = (id) => document.getElementById(id);
@@ -132,7 +133,9 @@ function stepButton(symbol, labelKey, disabled, onClick) {
 // --- Big screen link: a QR for the TV's browser, or copy and open it on a laptop ---
 
 function screenPage(app, actions) {
-  const url = `${sessionUrl(app.code)}/screen`;
+  const baseUrl = shareableSessionUrl(app.code);
+  if (!baseUrl) return [backRow(actions), note(t('inviteAddressNeeded'))];
+  const url = `${baseUrl}/screen`;
   const qr = document.createElement('div');
   qr.className = 'qr menu-qr';
   qr.append(qrSvg(url, t('screenQrLabel')));
