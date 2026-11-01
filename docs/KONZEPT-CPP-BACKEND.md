@@ -419,3 +419,27 @@ Offsite-Backups und TLS/WSS-Abnahme erledigt sind, bleiben beide
 Variablen aus. SSH-Zugangsdaten gehören ausschließlich in die geschützte
 GitHub-Environment `production`; eine manuelle Deployment-Freigabe kann
 dort durch Required Reviewers ergänzt werden.
+
+## 16. GHCR Release-Kandidat vor Freigabe des Hetzner-Deployments
+
+Die Produktionsfreigabe und das Erstellen eines geprüften Container-Images
+sind getrennte Vorgänge. Um GHCR-Zugang und SHA-Image-Publishing tatsächlich
+zu prüfen, darf ein eigener Release-Kandidaten-Workflow ein Server-Image nach
+GHCR übertragen, **ohne** den Hetzner-Checkout, den laufenden Compose-Stack,
+die Datenbanken oder den Cloudflare-Tunnel zu verändern.
+
+Diese begrenzte Probe läuft einmalig beim Merge der Workflow-Datei nach
+\`main\` und kann anschließend manuell auf \`main\` wiederholt werden.
+Vor jedem Build wird dieselbe erfolgreiche komplette \`main\`-Push-CI für
+exakt den aktuellen Commit nachgewiesen wie beim echten Deployment.
+Ein fehlgeschlagener, abgelaufener oder veralteter CI-Lauf blockiert den
+Publish. Das Bild erhält ausschließlich \`sha-<40-stelliger Commit>\`.
+Ein bestehender SHA-Tag wird nicht erneut überschrieben.
+
+Der Probelauf benutzt das kurzlebige GitHub-Token mit \`packages: write\`
+nur innerhalb des GitHub-Runners; er erhält keine Produktions-SSH-Secrets,
+ändert keine GitHub-Freigabevariablen und rollt keinen Container aus.
+Die Produktion bleibt bis zur ausdrücklich bestätigten rechtlichen und
+betrieblichen Freigabe gesperrt, einschließlich der noch fehlenden
+Offsite-Backups von PostgreSQL und Redis. Ein erfolgreicher Image-Publish
+allein ist **keine** Produktionsabnahme.
