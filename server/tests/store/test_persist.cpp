@@ -150,8 +150,8 @@ TEST_CASE("a room's own card pack survives Redis restore but stays isolated") {
 }
 
 TEST_CASE("schema 4 room snapshots remain restorable without custom cards") {
-  caw::RoomRecord room{"de", "0123456789abcdef0123456789abcdef", {"test"},
-                       R"({"state":1})", {}, {}, false};
+  caw::RoomRecord room{"de", "0123456789abcdef0123456789abcdef", {"test"}, R"({"state":1})", {}, {},
+                       false};
   auto legacy = nlohmann::json::parse(caw::Messages::saveRoom(room));
   legacy["schema"] = 4;
   legacy.erase("custom");
