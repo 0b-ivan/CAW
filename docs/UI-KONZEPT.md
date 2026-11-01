@@ -111,11 +111,14 @@ bzw. rechts; die mittlere A-Karte ist weiß invertiert. Rechts folgt ein
 schräger Slash und das Wortzeichen `CAW / CARDS AGAINST WHATEVER`.
 Keine runden Karten, Zylinder oder 3D-Effekte.
 
-Beim **ersten Aufruf je Browser-Sitzung** erscheint ein einzelner Bootscreen
-mit insgesamt **ca. 1,6 Sekunden** statt der bisherigen über vier Sekunden:
-kurzer Karten-Shuffle → Deck nach links → Slash → Wortzeichen →
-A-Karte wächst bildfüllend → Startseite. Die Animation läuft nicht
-automatisch in Schleife; der Skip-Button reagiert sofort.
+Beim **ersten Aufruf je Browser-Sitzung** erscheint ein einzelner
+Bootscreen mit **ca. 1,7 Sekunden** Laufzeit. Die einzelnen Bewegungen
+behalten ihr ursprüngliches ruhiges Tempo: Deck verschiebt sich
+(ca. 520 ms) → Slash erscheint (ca. 320 ms) → Wortzeichen erscheint
+(ca. 340 ms) → kurzer Übergang zur Startseite (ca. 260 ms).
+**Kartenmischen, bildfüllender A-Karten-Zoom und unnötige Wartepausen
+entfallen**, statt die gesamte Animation schneller abzuspielen.
+Die Animation läuft nicht in Schleife; der Skip-Button reagiert sofort.
 Sie kann über das Logo auf der Startseite erneut ausgelöst und jederzeit
 übersprungen werden. `sessionStorage` merkt den einmaligen Besuch; ohne JS
 bleibt die Startseite verwendbar. Bei `prefers-reduced-motion` wird der
