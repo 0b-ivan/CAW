@@ -80,6 +80,10 @@ function splitTape(tape) {
 
   const range = document.createRange();
   const starts = [0];
+  // Rotated physical cards shift a few pixels across a *single* text row.
+  // Use a fraction of line height rather than comparing raw top coordinates.
+  const lineHeight = parseFloat(getComputedStyle(tape).lineHeight);
+  const rowThreshold = Math.max(9, lineHeight * .55);
   let previousTop = null;
   for (const word of words) {
     range.setStart(textNode, word.index);
@@ -87,7 +91,7 @@ function splitTape(tape) {
     const rects = range.getClientRects();
     if (rects.length !== 1) return; // Mid-word wraps use CSS cloning instead.
     const top = rects[0].top;
-    if (previousTop !== null && top > previousTop + 2) starts.push(word.index);
+    if (previousTop !== null && top > previousTop + rowThreshold) starts.push(word.index);
     previousTop = top;
   }
 
