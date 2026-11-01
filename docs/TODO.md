@@ -134,3 +134,13 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Lizenz für den CAW-Anwendungscode: MIT (`LICENSE`); Karten bleiben CC BY-NC-SA 2.0
 - [x] Release-Workflow: Tag `v*` → Server-Image nach GHCR, GitHub-Release mit `docs/releases/<tag>.md`
 - [ ] Tag `v1.0.0` setzen (nach Impressum, Zielserver und TLS-Prüfung)
+
+## UI-Polish: Spielkarten (PR #12)
+
+- [x] Abweichung zum strikten Flat-Look zuerst in `docs/UI-KONZEPT.md` erlauben und begrenzen
+- [x] Startseiten-Logo mit echten, versetzten CSS-Karten statt flachen Buchstaben
+- [x] Frage, Hand, Juror-Optionen und Auflösung im kontrastreichen Kartenstil
+- [x] Big-Screen-Fragen/Antwortsätze und Auflösung im selben Stil, ohne private Hände
+- [x] Browser-Regressionen für Materialität, Auswahl-ARIA und Big-Screen-Stil ergänzen
+- [ ] CI-Build, `ctest`, Browser- und Lasttests für PR #12 grün bestätigen
+- [ ] Browser-Screenshots bei 320/390 px sowie 16:9/4:3 visuell gegen Mockups abnehmen
