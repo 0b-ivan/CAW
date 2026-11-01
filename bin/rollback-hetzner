@@ -38,7 +38,9 @@ if [[ "$(git branch --show-current)" != main ||
 fi
 
 compose() {
-  docker compose -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+  # Only deploy/.env controls the running image, including during rollback.
+  env -u CAW_VERSION docker compose --env-file deploy/.env \
+    -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
 }
 
 temporary_env="$(mktemp deploy/.env.previous.XXXXXX)"
