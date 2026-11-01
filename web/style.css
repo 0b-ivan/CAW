@@ -3,6 +3,9 @@
   --ink: #fff;
   --paper: #000;
   --line: 1px solid var(--ink);
+  --card-paper: #f4f4f0;
+  --card-ink: #080808;
+  --card-edge: #777;
   font: 16px/1.4 ui-monospace, Menlo, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
   color: var(--ink);
   background: var(--paper);
@@ -617,3 +620,229 @@ div.choice { min-height: 48px; }
 .info-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
 .info .button { align-self: flex-start; }
 footer a { text-decoration: underline; }
+
+
+/* ---------- Physical playing-card treatment (UI concept section 9) ---------- */
+/* Only the game cards acquire paper, a thin edge and a stacked silhouette.
+   Navigation stays flat; the effect costs no image assets or web fonts. */
+
+/* The compact logo is a deck seen from above, rather than three loose letters.
+   The front is black; the two offset paper backs remain visible behind it. */
+.cut-deck--small {
+  --card-width: 61px;
+  --card-height: 74px;
+  --card-step: 10px;
+  height: 86px;
+}
+.cut-deck--small .cut-card {
+  top: 5px;
+  border: 2px solid var(--card-paper);
+  border-radius: 5px;
+  font-size: 0;
+  padding: 0;
+  box-shadow: 2px 3px 0 var(--card-edge);
+}
+.cut-deck--small .cut-card--c {
+  background: var(--card-paper);
+  color: var(--card-ink);
+  transform: translateX(0) rotate(-10deg);
+}
+.cut-deck--small .cut-card--a {
+  background: var(--card-paper);
+  color: var(--card-ink);
+  transform: translateX(var(--card-step)) rotate(-4deg);
+}
+.cut-deck--small .cut-card--w {
+  z-index: 4;
+  background: var(--card-ink);
+  color: var(--card-paper);
+  transform: translateX(calc(2 * var(--card-step))) rotate(4deg);
+}
+.cut-deck--small .cut-card--w::before {
+  content: "C/A/W";
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -.08em;
+}
+.cut-deck--small .cut-card::after { display: none; }
+.landing-header { min-height: 94px; }
+.create-section button {
+  background: var(--card-paper);
+  color: var(--card-ink);
+  border-color: var(--card-paper);
+  font-weight: 700;
+}
+.create-section button:disabled { background: var(--paper); color: var(--ink); }
+.create-section button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+#status { font-size: 13px; }
+
+/* Question cards retain black faces so their type is dominant. */
+.prompt {
+  max-height: 30dvh;
+  margin: 0 4px 4px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--card-paper);
+  border-radius: 5px;
+  background: var(--card-ink);
+  box-shadow: 3px 3px 0 var(--card-edge);
+}
+.prompt:focus-visible { outline: 2px solid var(--card-paper); outline-offset: 2px; }
+.prompt .sentence { overflow-wrap: break-word; }
+
+/* The hand has individual paper cards instead of a shared ruled grid.
+   Cards keep content height; if needed, only this region scrolls. */
+.hand {
+  border: 0;
+  gap: 8px;
+  padding: 2px 5px 5px 2px;
+}
+.card {
+  min-height: 68px;
+  padding: 9px 10px;
+  background: var(--card-paper);
+  color: var(--card-ink);
+  border: 1px solid var(--card-paper);
+  border-radius: 5px;
+  box-shadow: 2px 2px 0 var(--card-edge);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.card[aria-pressed="true"] {
+  background: var(--card-ink);
+  color: var(--card-paper);
+  border: 2px solid var(--card-paper);
+  box-shadow: 2px 2px 0 var(--card-paper);
+  padding: 8px 9px;
+}
+.card:focus-visible,
+.choice:focus-visible {
+  outline: 2px solid var(--card-paper);
+  outline-offset: 3px;
+}
+.slot-mark {
+  display: block;
+  margin-bottom: 3px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid currentColor;
+  font-size: 12px;
+}
+@media (hover: hover) {
+  .card:not([aria-pressed="true"]):hover { background: #fff; }
+}
+
+/* Anonymous juror options are also paper strips. An inversion indicates
+   the selected winner without revealing the player behind the cards. */
+.choices {
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 2px 5px 5px 2px;
+}
+.choices li { border: 0; }
+.choice {
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1px solid var(--card-paper);
+  border-radius: 5px;
+  color: var(--card-ink);
+  background: var(--card-paper);
+  box-shadow: 2px 2px 0 var(--card-edge);
+  font-weight: 600;
+}
+.choice mark { background: var(--card-ink); color: var(--card-paper); }
+.choice[aria-pressed="true"] {
+  background: var(--card-ink);
+  color: var(--card-paper);
+  border: 2px solid var(--card-paper);
+  padding: 9px 11px;
+  box-shadow: 2px 2px 0 var(--card-paper);
+}
+.choice[aria-pressed="true"] mark {
+  background: var(--card-paper);
+  color: var(--card-ink);
+}
+.choice-number { margin-right: .5em; }
+
+/* Reveals gain one prominent sentence card; scores remain plain text. */
+#reveal-sentence {
+  align-self: stretch;
+  margin: 4px 5px 4px 0;
+  padding: 16px;
+  border-radius: 5px;
+  border: 1px solid var(--card-paper);
+  background: var(--card-paper);
+  color: var(--card-ink);
+  box-shadow: 3px 3px 0 var(--card-edge);
+  overflow-y: auto;
+  min-height: 0;
+  flex-shrink: 1;
+}
+#reveal-sentence mark { background: var(--card-ink); color: var(--card-paper); }
+.winner-line { font-size: clamp(17px, 4.5vw, 22px); }
+.share { padding-bottom: 12px; border-bottom: var(--line); }
+.share-text .session-code { font-size: clamp(22px, 7vw, 32px); }
+
+/* TV: a black question above white anonymous response cards. Keep all
+   sentence text, as required by the privacy and Big Screen contracts. */
+#screen-answers .fit {
+  padding: 2vw;
+  border: 1px solid var(--card-paper);
+  border-radius: 5px;
+  background: var(--card-ink);
+}
+.screen-plays {
+  display: flex;
+  flex-direction: column;
+  gap: .18em;
+}
+.screen-plays li {
+  padding: .32em .4em;
+  border: 1px solid var(--card-paper);
+  border-radius: 5px;
+  color: var(--card-ink);
+  background: var(--card-paper);
+  overflow-wrap: anywhere;
+}
+.screen-plays li mark { background: var(--card-ink); color: var(--card-paper); }
+.screen-plays.two-columns {
+  columns: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .2em;
+  align-content: center;
+}
+#screen-reveal .fit {
+  padding: 2vw;
+  border: 1px solid var(--card-paper);
+  border-radius: 5px;
+  background: var(--card-paper);
+  color: var(--card-ink);
+}
+#screen-reveal .screen-prompt mark {
+  background: var(--card-ink);
+  color: var(--card-paper);
+}
+
+/* On short screens, prioritize the submit action, then let the hand scroll.
+   Rotations are reserved for the static brand so no text is clipped. */
+@media (max-width: 400px) {
+  .cut-deck--small { --card-width: 54px; --card-height: 65px; height: 76px; }
+  .cut-deck--small .cut-card--w::before { font-size: 15px; }
+  .landing-header { min-height: 82px; }
+  .card { min-height: 62px; padding: 7px 8px; }
+  .card[aria-pressed="true"] { padding: 6px 7px; }
+  .hand { gap: 6px; }
+  .prompt { padding: 9px 10px; }
+}
+@media (max-height: 640px) {
+  .prompt { max-height: 24dvh; }
+  .card { min-height: 54px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card, .choice, .cut-deck--small .cut-card { animation: none; transition: none; }
+}
