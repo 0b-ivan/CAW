@@ -29,6 +29,8 @@ class PackLibrary final {
 
   const std::vector<std::unique_ptr<CardPack>>& packs() const { return packs_; }
   const CardPack* find(const std::string& id) const;
+  // Remove a room-only pack after its active session has switched away from it.
+  void remove(const std::string& id);
 
   // Eligible packs in this language, or other eligible packs if none match.
   // Adult/optional packs are visible but are never selected by default.
