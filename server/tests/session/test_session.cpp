@@ -144,14 +144,24 @@ TEST_CASE("host commands need the host token") {
 
 TEST_CASE("a full round: answers, anonymous judging, reveal with author and points") {
   Table table;
-  table.startThree();
+  table.join(1, "Ada");
+  table.join(2, "Bert");
+  table.join(3, "Cyra");
+  table.claimHost(9);
+  // With a different hand size the shuffle can put Rando first. This test
+  // checks the human winner, so disable Rando rather than depend on RNG order.
+  Command noRando;
+  noRando.type = Command::Type::Settings;
+  noRando.settings.rando = false;
+  table.send(9, noRando);
+  table.host(9, Command::Type::Start);
   const ConnectionId juror = table.juror();
   REQUIRE(juror != 0);
   for (ConnectionId c : {1u, 2u, 3u})
     if (c != juror) table.submit(c);
   json state = table.lastState(juror);
   REQUIRE(state.at("phase") == "judging");
-  REQUIRE(state.at("plays").size() == 3);  // two answers plus Rando Cardrissian
+  REQUIRE(state.at("plays").size() == 2);  // only the two human answers
   for (const json& play : state.at("plays")) CHECK(play.contains("author") == false);
   table.judge(juror, 0);
   state = table.lastState(1);
