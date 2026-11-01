@@ -194,10 +194,8 @@ function cardButton(app, actions, card, slot) {
     button.append(mark, ' ');
     button.setAttribute('aria-label', t('slotLabel', position + 1, app.frame.pick, card));
   }
-  const tape = document.createElement('mark');
-  tape.className = 'answer-tape';
-  tape.textContent = card;
-  button.append(tape);
+  // Keep the hand card plain; embossing is reserved for answers shown in sentences.
+  button.append(card);
   button.addEventListener('click', () => actions.toggleCard(slot));
   return button;
 }
