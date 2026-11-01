@@ -122,4 +122,13 @@ jobs:
         with:
           node-version: "22"
       - name: Verify the public HTTPS and WebSocket handshake
+        id: wss
         run: node bin/hetzner-wss-check.mjs
+      - name: Roll back CAW if the public WebSocket handshake fails
+        if: failure() && steps.wss.outcome == 'failure'
+        run: |
+          set -euo pipefail
+          ssh -T -i "$HOME/.ssh/caw_deploy" \
+            -p "$CAW_SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$CAW_SSH_USER@$CAW_SSH_HOST" \
+            "cd /opt/caw && bash bin/rollback-hetzner '$DEPLOY_SHA'"
