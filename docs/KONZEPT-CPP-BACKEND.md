@@ -287,6 +287,8 @@ verbindlich.
   `Authorization: Bearer <host-token>`; PUT nur in der Lobby. PUT nimmt ein
   vollständiges Dokument aus `prompts: string[]` und `answers: string[]`
   entgegen, lehnt ungültige Daten vollständig ab und aktiviert das Pack.
+  Zwei leere Arrays entfernen das bisherige eigene Pack, sofern mindestens
+  ein anderes spielbares Pack aktiv bleibt.
 - Das Pack ist **sessionspezifisch**, nie in der globalen Packliste und nie
   für andere Sessions auswählbar. Es liegt mitsamt Kartentexten ausschließlich
   im privaten Redis-Room-Snapshot (Schema 5) und wird vor der Engine beim
