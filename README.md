@@ -64,6 +64,26 @@ Bis zu einem öffentlichen Release fehlen die Betreiberangaben, echte
 Cloudflare-HTTPS-/WSS-Abnahme und **verschlüsselte externe Backups**
 für Postgres und Redis. Die lokalen 14-Tage-Dumps bleiben bestehen.
 
+## Automatisches Deployment nach Hetzner
+
+Die Pipeline `Deploy CAW to Hetzner` veröffentlicht nach **grüner CI
+auf `main`** ein unveränderliches GHCR-Image und aktualisiert CAW per
+SSH auf dem bestehenden Hetzner-Server. Die neue Version erhält den
+Tag `sha-<Commit>`; Redis, PostgreSQL und der bestehende Cloudflare
+Tunnel werden nicht neu erstellt. Ein fehlgeschlagener Gesundheits- oder
+WebSocket-Test löst einen Rollback aus.
+
+**Die Automatik ist zunächst gesperrt.** Eine einmalige Einrichtung
+mit dediziertem SSH-Schlüssel, geprüften `known_hosts` und
+GitHub-Environment `production` ist erforderlich. Nach Freigabe der
+Kartenrechte, Betreiberangaben und externen Backups müssen die
+Repository-Variablen `CAW_PRODUCTION_APPROVED=true` und
+`CAW_AUTO_DEPLOY=true` explizit gesetzt werden. Ohne diese Freigabe
+kann auch ein Merge nach `main` keinen Produktionsserver verändern.
+
+**Vollständige Einrichtung und Rückroll-Verfahren:**
+[Hetzner + Cloudflare Tunnel, Abschnitt 7](docs/operations/HETZNER-CLOUDFLARE.md#7-automatische-updates-aus-github-actions-ohne-freigabe-zun%C3%A4chst-inaktiv).
+
 ## Spielen
 
 1. Am Laptop oder Handy http://localhost:8080 öffnen, `[ NEUE SESSION ]`.
