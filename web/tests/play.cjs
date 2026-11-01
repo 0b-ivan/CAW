@@ -102,15 +102,19 @@ async function checkTape(page, selector) {
     const style = getComputedStyle(element);
     return {
       background: style.backgroundColor,
+      sheen: style.backgroundImage,
       color: style.color,
       relief: style.textShadow,
+      edge: style.boxShadow,
       band: style.getPropertyValue('-webkit-box-decoration-break') ||
         style.getPropertyValue('box-decoration-break'),
     };
   });
   assert.equal(material.background, 'rgb(11, 11, 11)', `${selector}: black plastic band`);
-  assert.equal(material.color, 'rgb(244, 244, 240)', `${selector}: raised light letters`);
-  assert.notEqual(material.relief, 'none', `${selector}: visible embossed relief`);
+  assert.equal(material.color, 'rgb(230, 230, 226)', `${selector}: raised light letters`);
+  assert.match(material.sheen, /linear-gradient/, `${selector}: glossy plastic surface`);
+  assert.ok(material.relief.split('rgb(').length >= 5, `${selector}: layered embossing`);
+  assert.notEqual(material.edge, 'none', `${selector}: cut tape edges cast shadows`);
   assert.equal(material.band, 'clone', `${selector}: clean tape on wrapped lines`);
 }
 
