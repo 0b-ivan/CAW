@@ -157,8 +157,8 @@ TEST_CASE("legacy Redis snapshots without the new field preserve ten cards") {
   // A new snapshot cannot claim a different hand count from the game itself.
   auto invalid = saved;
   invalid["table"]["settings"]["hand"] = 7;
-  const bool loaded = Messages::loadState(invalid.dump(), restored.game, restored.table, restored.seats, 1000);
-  CHECK_FALSE(loaded);
+  CHECK_FALSE(
+      Messages::loadState(invalid.dump(), restored.game, restored.table, restored.seats, 1000));
 }
 
 TEST_CASE("snapshots reject malformed data atomically") {
