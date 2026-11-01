@@ -17,6 +17,8 @@ Details und Häkchen: [TODO.md](TODO.md). Hintergrund: [KONZEPT.md](KONZEPT.md),
 | M8 | Betrieb und Release v1.0 | Läuft auf eurem Server mit TLS, Backups, Monitoring, Datenschutzseite |
 | M9 | Eigene Karten (nach v1) | Host-Editor für private Frage- und Antwortkarten in der Lobby mit JSON-Import/-Export und Redis-Persistenz |
 
+| M10 | Gemeinsame Kartenvorschläge | Spieler schlagen Lobby-Karten vor; der Host prüft und übernimmt sie ins private Deck; Redis hält die Warteschlange |
+
 Reihenfolge mit Absicht: Die Spielregeln (M1) kommen vor jeder UI. Sie sind
 auf dem X4 schon getestet und werden samt Tests übernommen statt neu
 geschrieben (siehe KONZEPT-CPP-BACKEND.md). Der Big Screen (M4) kommt erst,

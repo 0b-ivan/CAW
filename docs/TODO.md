@@ -201,6 +201,16 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] PR-CI einschließlich CTest, Browser-/Lasttest und Docker-Smoke grün bestätigen
 - [ ] Nach CI echte Touch-Abnahme auf Android/iPhone und MacBook durchführen
 
+## M10 – Gemeinsame Kartenvorschläge (Feature-Branch)
+
+- [ ] Backend: Sitz-Ticket authentifiziert Lobby-Vorschläge; Host prüft und entscheidet
+- [ ] Dieselbe Kartenvalidierung wie im Editor, mit Queue-Limits und Deck-Grenzen
+- [ ] Offene Vorschläge im Redis-Room-Snapshot (Schema 6), Schema 4/5 bleiben lesbar
+- [ ] Spieler-/Host-Menüs für Vorschläge und Freigabe (DE/EN, mobil)
+- [ ] Synthetische C++- und Browser-Tests für Rechte, Persistenz und Freigabe
+- [ ] CTest, Browser-, Docker- und Lasttest in GitHub-CI grün
+- [ ] Echte Touch-Abnahme auf Android und iPhone
+
 ## CI/CD: Hetzner Auto-Deployment (2026-11-01)
 
 - [x] Produktionskonzept: nur grüne Push-CI auf main, manuelle Wiederholung nur nach grünem SHA-Check
