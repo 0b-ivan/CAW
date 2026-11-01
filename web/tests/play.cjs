@@ -257,6 +257,10 @@ async function run(browser) {
   await host.waitForURL(/\/s\/[A-HJKMNP-Z2-9]{6}$/);
   const code = host.url().split('/').pop();
   await host.locator('#lobby-qr svg').waitFor();
+  await host.locator('#host-badge .host-crown').waitFor();
+  assert.equal(await host.locator('#host-badge .host-crown')
+    .evaluate((crown) => getComputedStyle(crown).color), 'rgb(215, 174, 74)',
+  'a non-playing host has a gold crown in the header');
   assert.ok(await host.locator('#view-lobby').evaluate((view) => view.classList.contains('has-host')),
     'the host lobby has invite controls');
   assert.equal(await host.locator('#lobby-code').textContent(), code);
@@ -279,6 +283,10 @@ async function run(browser) {
     'the guest lobby does not show host-only share controls');
   await checkFit(players[0], 'lobby', '#lobby-status');
   await screen.locator('#screen-players li', { hasText: 'Cyra·' }).waitFor();
+  assert.equal(await players[0].locator('#lobby-players .host-crown').count(), 0,
+    'host-only organizers are never mistaken for players');
+  assert.equal(await screen.locator('#screen-players .host-crown').count(), 0,
+    'the TV does not invent a host seat');
   // Every name carries its word, and the three words differ.
   const words = await host.locator('#lobby-players li').allTextContents();
   assert.equal(new Set(words.map((label) => label.split('·')[1])).size, 3, 'three different words');
@@ -399,6 +407,26 @@ async function run(browser) {
     await checkFit(players[0], 'menu-fame', '#menu-close');
   }
   await players[0].locator('#menu-close').click();
+
+  // The organizer now joins as a player. Every device must mark only that
+  // authenticated seat, while the non-playing header badge disappears.
+  await host.locator('#host-name').fill('Ivan');
+  await host.locator('#host-join button').click();
+  await host.locator('#lobby-players li.host-player', { hasText: 'Ivan' }).waitFor();
+  await players[0].locator('#lobby-players li.host-player', { hasText: 'Ivan' }).waitFor();
+  await screen.locator('#screen-players li.host-player', { hasText: 'Ivan' }).waitFor();
+  for (const page of [host, players[0], screen]) {
+    const list = page === screen ? '#screen-players' : '#lobby-players';
+    assert.equal(await page.locator(`${list} .host-crown`).count(), 1,
+      'exactly one player wears the crown');
+    assert.match(await page.locator(`${list} li.host-player`).textContent(), /HOST/);
+    assert.equal(await page.locator(`${list} .host-crown`)
+      .evaluate((crown) => getComputedStyle(crown).color), 'rgb(215, 174, 74)');
+  }
+  assert.equal(await host.locator('#host-badge').isVisible(), false,
+    'a playing host gets the crown next to their name instead of twice');
+  await checkFit(host, 'host-player-lobby', '#start-button');
+  await checkScreen(screen, 'lobby', 'lobby-host-player');
 
   // An unknown code ends on a clear page instead of a spinner.
   const lost = await openPhone(browser);
