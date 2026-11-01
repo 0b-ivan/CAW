@@ -25,7 +25,6 @@ const app = {
   replaced: false,
   joinError: '',
   selection: [], // hand slots in play order
-  handPage: 0, // local page only; all ten server-owned cards remain in the hand
   selectionKey: '',
   judgePick: null,
   judgeKey: '',
@@ -123,7 +122,6 @@ function acceptState(frame) {
   const handKey = `${frame.round}:${(frame.me.hand ?? []).join('\n')}`;
   if (frame.phase !== 'playing' || handKey !== app.selectionKey) {
     app.selection = [];
-    app.handPage = 0;
   }
   app.selectionKey = handKey;
   const judgeKey = `${frame.round}:${frame.phase}`;
@@ -162,10 +160,6 @@ const actions = {
     const position = app.selection.indexOf(slot);
     if (position >= 0) app.selection.splice(position, 1);
     else if (app.selection.length < app.frame.pick) app.selection.push(slot);
-    update();
-  },
-  changeHandPage(page) {
-    app.handPage = page;
     update();
   },
   pickPlay(index) {
@@ -315,8 +309,6 @@ function bindButtons() {
   on('start-button', () => actions.host('start'));
   on('submit-button', () => sendPlayer('submit', { revision: app.frame.me.revision, slots: app.selection }));
   on('swap-button', () => sendPlayer('swap', { revision: app.frame.me.revision, index: app.selection[0] }));
-  on('hand-previous', () => actions.changeHandPage(app.handPage - 1));
-  on('hand-next', () => actions.changeHandPage(app.handPage + 1));
   on('judge-button', () => sendPlayer('judge', { revision: app.frame.me.revision, index: app.judgePick }));
   on('close-button', () => actions.host('close'));
   on('next-button', () => actions.host('next'));
@@ -349,11 +341,6 @@ function bindButtons() {
     closeMenu();
     update();
     $('menu-button').focus();
-  });
-  // Page size depends on the available height, not on the number of game cards.
-  // Re-render the visible slice when a phone rotates or DevTools resize the viewport.
-  window.addEventListener('resize', () => {
-    if (app.frame?.phase === 'playing') update();
   });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !app.menu.open) return;
