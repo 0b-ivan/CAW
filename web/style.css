@@ -1334,16 +1334,15 @@ mark.answer-tape,
       transparent 74%, #ffffff20 84%, transparent 93%),
     linear-gradient(180deg, #292929 0%, #141414 11%, #080808 39%,
       #0b0b0b 70%, #1d1d1d 95%, #070707 100%);
-  color: #e6e6e2;
-  font-weight: 500;
+  color: #b6b6b2;
+  font-weight: 400;
   letter-spacing: .09em;
   line-height: 1.65;
+  -webkit-text-stroke: .35px #ededeb;
   text-shadow:
-    -.8px -.8px 0 #ffffff,
-    -1.4px -1.2px 1px #7e7e7e,
-    .9px 1px 0 #919191,
-    1.6px 1.8px 1px #343434,
-    2px 2.5px 2px #050505;
+    -.65px -.65px 0 #fafaf9,
+    .6px 1px 0 #5d5d5d,
+    1.2px 1.5px 1px #060606;
   box-shadow:
     inset 0 1px 0 #777777,
     inset 0 -2px 2px #000000,
