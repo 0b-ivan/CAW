@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# Back up CAW Postgres and Redis 7 AOF to an encrypted restic Storage Box.
+# Runs as caw-deploy; it never stops or recreates a production container.
+set -Eeuo pipefail
+umask 077
+
+cd "$(dirname "$0")/.."
+config="$HOME/.config/caw/offsite.env"
+if [[ ! -r "$config" ]]; then
+  echo "FAIL: CAW offsite configuration is missing" >&2
+  exit 1
+fi
+
+# The operator-controlled file contains only restic repository settings.
+set -a
+source "$config"
+set +a
+: "$RESTIC_REPOSITORY"
+: "$RESTIC_PASSWORD_FILE"
+if [[ "$RESTIC_REPOSITORY" != sftp:* || ! -r "$RESTIC_PASSWORD_FILE" ]]; then
+  echo "FAIL: secure restic SFTP repository/password not configured" >&2
+  exit 1
+fi
+
+mkdir -p "$HOME/.cache/caw"
+exec 9>"$HOME/.cache/caw/offsite.lock"
+flock -n 9 || { echo "FAIL: another CAW backup is running" >&2; exit 1; }
+
+compose() {
+  env -u CAW_VERSION docker compose --env-file deploy/.env -p caw \
+    -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+}
+
+backup_container="$(compose ps -q backup)"
+redis_container="$(compose ps -q redis)"
+if [[ -z "$backup_container" || -z "$redis_container" ]]; then
+  echo "FAIL: CAW backup or Redis container is not running" >&2
+  exit 1
+fi
+
+stage="$(mktemp -d)"
+rewrite_disabled=0
+previous_rewrite=""
+cleanup() {
+  code=$?
+  trap - EXIT
+  if ((rewrite_disabled)); then
+    if ! docker exec "$redis_container" redis-cli CONFIG SET \
+        auto-aof-rewrite-percentage "$previous_rewrite" >/dev/null; then
+      echo "FAIL: could not restore Redis AOF rewrite setting" >&2
+      code=1
+    fi
+  fi
+  rm -rf "$stage"
+  exit "$code"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+mkdir -p "$stage/postgres" "$stage/redis"
+
+# Reuse the application's Postgres credentials without exposing them on host.
+compose exec -T backup /bin/sh /backup.sh once >/dev/null
+latest="$(docker exec "$backup_container" sh -c \
+  'ls -1 /backups/caw-*.dump 2>/dev/null | sort | tail -n 1')"
+if [[ ! "$latest" =~ ^/backups/caw-[0-9T:-]+Z\.dump$ ]]; then
+  echo "FAIL: no new PostgreSQL dump found" >&2
+  exit 1
+fi
+listing="$(docker exec "$backup_container" pg_restore --list "$latest")"
+if [[ "$listing" != *"TABLE public players"* ||
+      "$listing" != *"TABLE public winning_lines"* ]]; then
+  echo "FAIL: PostgreSQL backup does not contain CAW tables" >&2
+  exit 1
+fi
+docker cp "$backup_container:$latest" "$stage/postgres/caw.dump"
+test -s "$stage/postgres/caw.dump"
+
+redis_cli() {
+  docker exec "$redis_container" redis-cli --raw "$@"
+}
+previous_rewrite="$(redis_cli CONFIG GET auto-aof-rewrite-percentage | tail -n 1 | tr -d '\r')"
+if [[ ! "$previous_rewrite" =~ ^[0-9]+$ ]]; then
+  echo "FAIL: Redis AOF rewrite setting is unavailable" >&2
+  exit 1
+fi
+aof_dir="$(redis_cli CONFIG GET appenddirname | tail -n 1 | tr -d '\r')"
+redis_dir="$(redis_cli CONFIG GET dir | tail -n 1 | tr -d '\r')"
+if [[ ! "$aof_dir" =~ ^[a-zA-Z0-9_.-]+$ || "$redis_dir" != /data ]]; then
+  echo "FAIL: unexpected Redis AOF directory" >&2
+  exit 1
+fi
+if ! redis_cli INFO persistence | grep -q '^aof_enabled:1'; then
+  echo "FAIL: Redis AOF is not enabled" >&2
+  exit 1
+fi
+
+# Redis 7 multi-part AOF must not be copied during a rewrite.
+redis_cli CONFIG SET auto-aof-rewrite-percentage 0 >/dev/null
+rewrite_disabled=1
+ready=0
+for _ in $(seq 1 60); do
+  persistence="$(redis_cli INFO persistence)"
+  if grep -q '^aof_rewrite_in_progress:0' <<< "$persistence" &&
+     grep -q '^aof_rewrite_scheduled:0' <<< "$persistence"; then
+    ready=1
+    break
+  fi
+  sleep 1
+done
+if (( ! ready )); then
+  echo "FAIL: Redis AOF rewrite did not complete" >&2
+  exit 1
+fi
+docker cp "$redis_container:/data/$aof_dir" "$stage/redis/"
+test -s "$stage/redis/$aof_dir/appendonly.aof.manifest"
+
+# Restore the live Redis configuration before any remote network operation.
+redis_cli CONFIG SET auto-aof-rewrite-percentage "$previous_rewrite" >/dev/null
+rewrite_disabled=0
+
+# A dedicated restic repository keeps CAW retention away from other services.
+(
+  cd "$stage"
+  restic backup --tag caw --host caw-hetzner postgres redis
+)
+restic forget --tag caw --host caw-hetzner \
+  --keep-daily 14 --keep-weekly 8 --keep-monthly 12 --prune
+echo "PASS: encrypted CAW Postgres and Redis AOF snapshot uploaded"
