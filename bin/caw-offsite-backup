@@ -125,6 +125,7 @@ rewrite_disabled=0
   cd "$stage"
   restic backup --tag caw --host caw-hetzner postgres redis
 )
-restic forget --tag caw --host caw-hetzner \
+# Staging paths change daily, so retention must not group by file path.
+restic forget --tag caw --host caw-hetzner --group-by host,tags \
   --keep-daily 14 --keep-weekly 8 --keep-monthly 12 --prune
 echo "PASS: encrypted CAW Postgres and Redis AOF snapshot uploaded"
