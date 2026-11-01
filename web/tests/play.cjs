@@ -322,8 +322,11 @@ async function run(browser) {
     'all invite actions are exposed without an internally clipped QR panel');
   await host.locator('#screen-link').scrollIntoViewIfNeeded();
   const bigScreenButton = await host.locator('#screen-link').boundingBox();
+  const copyButton = await host.locator('#copy-link').boundingBox();
   assert.ok(bigScreenButton.y >= 0 && bigScreenButton.y + bigScreenButton.height <= 568,
     'Big Screen action is reachable at 320x568');
+  assert.ok(Math.abs(bigScreenButton.y - copyButton.y) <= 2,
+    'mobile invite actions use one row and leave space for the roster');
   await host.setViewportSize({ width: 390, height: 844 });
   assert.equal(await players[0].locator('#lobby-share').isVisible(), false,
     'the guest lobby does not show host-only share controls');
