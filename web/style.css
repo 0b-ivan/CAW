@@ -1184,3 +1184,46 @@ footer a { text-decoration: underline; }
   }
   #view-lobby:not(.has-host) .roster { max-width: 600px; }
 }
+
+/* Host role only: the gold crown is never used for scoring or card selection.
+   The accompanying HOST text remains visible in monochrome/low-color modes. */
+:root { --host-gold: #d7ae4a; }
+.host-crown {
+  display: inline-block;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: var(--host-gold);
+  vertical-align: middle;
+}
+.host-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.roster li.host-player::before { content: none; }
+.host-player-name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.host-role-label {
+  flex: none;
+  margin-left: auto;
+  font-size: .75em;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+.host-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+.host-badge .host-crown { width: 19px; height: 19px; }
+.screen-players li.host-player { display: flex; align-items: center; gap: .3em; }
+.screen-players .host-crown { width: 1em; height: 1em; }
+.screen-players .host-role-label { font-size: .55em; }
+@media (max-width: 400px) {
+  .host-badge { font-size: 10px; gap: 3px; }
+  .host-badge .host-crown { width: 17px; height: 17px; }
+}
