@@ -838,6 +838,11 @@ footer a { text-decoration: underline; }
   font-weight: 600;
   text-align: left;
 }
+.choice-content {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .choice mark { background: var(--card-ink); color: var(--card-paper); }
 .choice-number { flex: none; margin-right: 2px; }
 .choice-indicator {
