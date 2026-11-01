@@ -252,7 +252,7 @@ std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
       const std::string id = content.at("id").get<std::string>();
       content.erase("id");
       auto custom = readCustomCards(content.dump());
-      if (!custom) return std::nullopt;
+      if (!custom || (custom->prompts.empty() && custom->answers.empty())) return std::nullopt;
       custom->id = id;
       room.customPack = std::move(*custom);
     }
