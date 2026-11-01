@@ -100,7 +100,7 @@ TEST_CASE("the library builds one deck per choice, in a fixed order") {
 TEST_CASE("opt-in card packs remain available without joining the default deck") {
   PackLibrary library;
   auto ordinary = pack("ordinary", "de", "typ,text\nb,Frage ___.\nw,Antwort\n");
-  auto adult = pack("adult", "de", "typ,text\nb,Erwachsene Frage ___.\nw,Erwachsene Antwort\n");
+  auto adult = pack("adult", "de", "typ,text\nb,Frage 18 ___.\nw,Antwort 18\n");
   adult.defaultSelected = false;
   REQUIRE(library.add(std::move(ordinary)));
   REQUIRE(library.add(std::move(adult)));
