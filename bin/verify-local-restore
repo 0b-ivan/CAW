@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# Prove that a CAW Postgres dump restores without touching the live database.
+set -Eeuo pipefail
+umask 077
+
+cd "$(dirname "$0")/.."
+if [[ ! -r deploy/.env ]]; then
+  echo "FAIL: deploy/.env is not readable (run as caw-deploy)" >&2
+  exit 1
+fi
+
+compose() {
+  env -u CAW_VERSION docker compose --env-file deploy/.env \
+    -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+}
+
+backup_container="$(compose ps -q backup)"
+if [[ -z "$backup_container" ]]; then
+  echo "FAIL: CAW backup container is not running" >&2
+  exit 1
+fi
+
+stage="$(mktemp -d)"
+restore_container=""
+cleanup() {
+  result=$?
+  trap - EXIT
+  if [[ -n "$restore_container" ]]; then
+    docker rm --force "$restore_container" >/dev/null 2>&1 || true
+  fi
+  rm -rf "$stage"
+  exit "$result"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+dump="$(docker exec "$backup_container" sh -c \
+  'ls -1 /backups/caw-*.dump 2>/dev/null | sort | tail -n 1')"
+if [[ ! "$dump" =~ ^/backups/caw-[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6}Z\.dump$ ]]; then
+  echo "FAIL: no valid CAW dump found" >&2
+  exit 1
+fi
+
+# Read the backup volume; never connect the restore container to CAW's network.
+docker cp "$backup_container:$dump" "$stage/caw.dump"
+test -s "$stage/caw.dump"
+
+# All database files are ephemeral. No production volumes or ports are mounted.
+restore_container="$(docker run --detach --rm --network none \
+  --tmpfs /var/lib/postgresql/data:rw,size=256m \
+  --env POSTGRES_HOST_AUTH_METHOD=trust \
+  --mount "type=bind,src=$stage/caw.dump,dst=/restore/caw.dump,readonly" \
+  postgres:17-alpine)"
+ready=0
+for _ in $(seq 1 30); do
+  if docker exec "$restore_container" pg_isready -U postgres >/dev/null 2>&1; then
+    ready=1
+    break
+  fi
+  sleep 1
+done
+if (( !ready )); then
+  echo "FAIL: isolated PostgreSQL did not become ready" >&2
+  exit 1
+fi
+
+docker exec "$restore_container" createdb -U postgres caw_restore
+docker exec "$restore_container" pg_restore --username postgres \
+  --dbname caw_restore --exit-on-error --no-owner --no-acl \
+  /restore/caw.dump
+
+tables="$(docker exec "$restore_container" psql -U postgres -d caw_restore -Atqc \
+  "SELECT COUNT(*) FROM information_schema.tables
+   WHERE table_schema='public' AND table_name IN ('players','winning_lines')")"
+if [[ "$tables" != 2 ]]; then
+  echo "FAIL: restored dump lacks the expected CAW tables" >&2
+  exit 1
+fi
+
+docker exec "$restore_container" psql -U postgres -d caw_restore -Atqc \
+  "SELECT 'restored players=' || (SELECT COUNT(*) FROM players) ||
+          ', winning_lines=' || (SELECT COUNT(*) FROM winning_lines)"
+echo "PASS: local PostgreSQL dump restored in a disposable, network-isolated container"
