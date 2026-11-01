@@ -56,11 +56,17 @@
             <p class="eyebrow" data-text="session"></p>
             <p class="session-code" id="lobby-code"></p>
             <p class="share-url" id="lobby-url"></p>
-            <div class="share-buttons">
-              <button id="copy-link" type="button" data-text="copyLink"></button>
-              <button id="share-link" type="button" data-text="share" hidden></button>
-              <button id="screen-link" type="button" data-text="bigScreenButton"></button>
-            </div>
+          </div>
+          <div class="share-buttons">
+            <button id="copy-link" type="button" data-text="copyLink"></button>
+            <button id="share-link" type="button" data-text="share" hidden></button>
+            <button id="screen-link" type="button" data-text="bigScreenButton"></button>
+          </div>
+          <div id="invite-address-row" class="invite-address-row" hidden>
+            <label for="invite-address" data-text="inviteAddressLabel"></label>
+            <input id="invite-address" type="url" inputmode="url"
+              placeholder="http://192.168.1.100:8080" autocomplete="off" spellcheck="false">
+            <p id="invite-hint" class="invite-hint" role="status"></p>
           </div>
         </div>
         <p class="eyebrow" id="lobby-count"></p>
