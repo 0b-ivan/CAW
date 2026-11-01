@@ -1,0 +1,54 @@
+name: Publish CAW GHCR release candidate
+
+# One automatic proof run after this workflow lands on main.
+# Later operators may rerun it manually; it never deploys to Hetzner.
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-candidate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: caw-ghcr-release-candidate
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == '0b-ivan/CAW' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    env:
+      DEPLOY_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+          persist-credentials: false
+      - name: Require completed CI for the exact current main commit
+        run: |
+          set -euo pipefail
+          test "$DEPLOY_SHA" = "$(git rev-parse HEAD)"
+          bash bin/verify-main-ci "$DEPLOY_SHA"
+      - name: Build, publish and verify immutable SHA-tagged server image
+        run: |
+          set -euo pipefail
+          image="ghcr.io/0b-ivan/caw-server:sha-$DEPLOY_SHA"
+          printf '%s\n' "$GH_TOKEN" |
+            docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          if docker manifest inspect "$image" >/dev/null 2>&1; then
+            echo "PASS: existing GHCR image already matches requested SHA tag"
+            exit 0
+          fi
+          docker build --target runtime -t "$image" -f deploy/server.Dockerfile .
+          docker push "$image"
+          docker manifest inspect "$image" >/dev/null
+          echo "PASS: published GHCR release candidate for $DEPLOY_SHA"

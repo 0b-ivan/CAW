@@ -213,17 +213,19 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] GitHub-Actions-Workflow-Syntax mit gepinntem actionlint validieren
 - [x] Deployment nach main-Push nur mit exakter grüner main-Push-CI; fehlgeschlagene,
   ausstehende oder durch neueren Commit überholte CI blockieren; Offline-Tests dafür
-- [ ] Nach Merge prüfen, dass der neue Deploy-Workflow registriert wird und bei
-  deaktivierten Freigabevariablen keine Produktionsjobs startet
+- [x] Deploy-Workflow auf main registriert; bei deaktivierten Freigaben bleiben Produktionsjobs übersprungen
 - [x] Einrichtung und Secrets/Variablen im Hetzner-Runbook dokumentiert
 - [ ] PR-CI grün prüfen und Dry-Run/Smoke auf einer Testinstanz durchführen
 - [ ] Echte Betreiberangaben und Drittanbieter-Kartenrechte klären
 - [x] Isolierten PostgreSQL-Restore-Test aus dem bestehenden lokalen CAW-Dump
   ergänzen, ohne Produktionsdatenbank oder Container anzutasten
-- [ ] Die neue lokale Restore-Probe in CI und danach auf Hetzner erfolgreich
-  nachweisen (als caw-deploy, ohne Storage Box)
+- [x] Isolierte lokale Restore-Probe in CI und auf Hetzner erfolgreich: 1 Spieler, 2 Siegersätze
+- [x] Redis-RDB-Snapshot manuell auf Hetzner isoliert wiederhergestellt: 13 Schlüssel
+- [x] Echte GitHub-Runner-SSH-Verbindung zur Produktionsumgebung (ohne Deploy) bestanden
 - [ ] Storage-Box-Offsite-Backups sind auf Betreiberwunsch vorerst zurückgestellt
 - [ ] Verschlüsselte Offsite-Backups für Postgres und Redis-AOF mit Restore-Probe einrichten
 - [ ] GitHub-Environment production (SSH-Secrets, geprüfte known_hosts) einrichten
 - [ ] CAW_PRODUCTION_APPROVED und CAW_AUTO_DEPLOY nach Abnahme bewusst aktivieren
+- [x] Release-Kandidaten-Workflow zum separaten, CI-gesteuerten GHCR-SHA-Publish implementiert
+- [ ] GHCR-SHA-Publish auf main erfolgreich ausführen und SHA-Image in Registry verifizieren (ohne Hetzner-Deploy)
 - [ ] Erstes manuelles Deployment und danach Autodeploy mit externem HTTPS/WSS bestätigen
