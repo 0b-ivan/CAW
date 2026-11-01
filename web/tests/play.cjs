@@ -123,10 +123,21 @@ async function playRound(host, players, round, screen) {
     await checkScreen(screen, 'answers', 'answers');
     const page = answering[0];
     await checkFit(page, 'answer', '#submit-button');
-    const hand = await page.locator('#hand').evaluate((list) => list.scrollHeight <= list.clientHeight + 1);
-    assert.ok(hand, 'at 390x844 the whole hand is visible without scrolling');
-    await page.locator('#hand .card').first().click();
+    const cards = page.locator('#hand .card');
+    const paper = await cards.first().evaluate((card) => {
+      const style = getComputedStyle(card);
+      return { background: style.backgroundColor, radius: style.borderRadius };
+    });
+    assert.equal(paper.background, 'rgb(244, 244, 240)', 'answers look like paper cards');
+    assert.equal(paper.radius, '5px', 'answers have physical card corners');
+    await cards.first().click();
     await page.locator('#hand .card .slot-mark', { hasText: '<1/' }).waitFor();
+    const selected = await cards.first().evaluate((card) => ({
+      background: getComputedStyle(card).backgroundColor,
+      pressed: card.getAttribute('aria-pressed'),
+    }));
+    assert.equal(selected.background, 'rgb(8, 8, 8)', 'selected answer is dark');
+    assert.equal(selected.pressed, 'true', 'selection is accessible as text/ARIA');
     assert.equal(await page.locator('#answer-prompt mark').count(), 1, 'the chosen card fills the blank');
     await page.locator('#hand .card').first().click();
     assert.equal(await page.locator('#hand .slot-mark').count(), 0);
@@ -159,14 +170,25 @@ async function playRound(host, players, round, screen) {
   if (round === 1) {
     await checkFit(juror, 'judge', '#judge-button');
     await checkScreen(screen, 'judging', 'judging');
+    const screenPaper = await screen.locator('#screen-plays li').first()
+      .evaluate((card) => getComputedStyle(card).backgroundColor);
+    assert.equal(screenPaper, 'rgb(244, 244, 240)', 'TV shows legible paper answer cards');
   }
+  const judgePaper = await juror.locator('#judge-list .choice').first()
+    .evaluate((card) => getComputedStyle(card).backgroundColor);
+  assert.equal(judgePaper, 'rgb(244, 244, 240)', 'juror options are paper strips');
   await juror.locator('#judge-list .choice').first().click();
+  assert.equal(await juror.locator('#judge-list .choice').first().getAttribute('aria-pressed'),
+    'true', 'the chosen answer is also announced to assistive technology');
   // The pick fills the blanks of the prompt shown once on top.
   assert.ok(await juror.locator('#judge-prompt mark').count() >= 1, 'the pick appears in the prompt');
   await juror.getByRole('button', { name: '[ BESTÄTIGEN ]' }).click();
 
   for (const page of [host, ...players]) await waitView(page, 'reveal');
   assert.match(await host.locator('#reveal-winner').textContent(), /^GEWINNER: /);
+  const revealPaper = await host.locator('#reveal-sentence')
+    .evaluate((card) => getComputedStyle(card).backgroundColor);
+  assert.equal(revealPaper, 'rgb(244, 244, 240)', 'the reveal is a single large paper card');
   if (round === 1) {
     await checkScreen(screen, 'reveal', 'reveal');
     await checkFit(host, 'reveal-host', '#next-button');
