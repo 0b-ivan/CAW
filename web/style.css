@@ -930,6 +930,10 @@ footer a { text-decoration: underline; }
 #view-lobby:not(.has-host) #lobby-count { margin-top: min(7dvh, 50px); }
 #view-lobby:not(.has-host) .roster { margin-top: 16px; }
 .share {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: min(34dvh, 280px);
+  overflow-y: auto;
   padding: 8px 0 16px;
   border-bottom: var(--line);
   grid-template-columns: minmax(100px, 38%) minmax(0, 1fr);
