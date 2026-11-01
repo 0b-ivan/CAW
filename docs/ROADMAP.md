@@ -15,6 +15,7 @@ Details und Häkchen: [TODO.md](TODO.md). Hintergrund: [KONZEPT.md](KONZEPT.md),
 | M6 | Persistenz und Wall of Fame | Statistik und Siegersätze bleiben, Name·Wort pro Gerät |
 | M7 | Performance und Härtung | Lasttest erfüllt die Budgets aus KONZEPT 5a, Rate-Limits, Backpressure |
 | M8 | Betrieb und Release v1.0 | Läuft auf eurem Server mit TLS, Backups, Monitoring, Datenschutzseite |
+| M9 | Eigene Karten (nach v1) | Host-Editor für private Frage- und Antwortkarten in der Lobby mit JSON-Import/-Export und Redis-Persistenz |
 
 Reihenfolge mit Absicht: Die Spielregeln (M1) kommen vor jeder UI. Sie sind
 auf dem X4 schon getestet und werden samt Tests übernommen statt neu
