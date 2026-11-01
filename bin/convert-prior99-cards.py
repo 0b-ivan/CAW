@@ -135,6 +135,7 @@ def write_pack(destination, cards, license_name, rights_holder):
         "license": license_name,
         "rightsHolder": rights_holder,
         "sourceUrl": f"{SOURCE_URL}/tree/{SOURCE_COMMIT}",
+        "defaultSelected": False,
     }]}
     (destination / "packs.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
