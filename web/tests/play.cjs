@@ -162,13 +162,14 @@ async function playRound(host, players, round, screen) {
     await page.locator('#hand .card').first().click();
     assert.equal(await page.locator('#hand .slot-mark').count(), 0);
 
-    // Ten cards stay in one scroll area; picking the last card must preserve
-    // its server slot, scroll position and the fixed submit button.
+    // All seven cards stay in one scroll area. Use a short viewport to
+    // exercise scrolling regardless of the synthetic card text.
     const promptWidth = await page.locator('#view-answer .prompt-stack').boundingBox();
     const shellWidth = await page.locator('#shell').boundingBox();
     assert.ok(promptWidth.width < shellWidth.width * .9, 'prompt is a compact card stack');
-    assert.equal(await cards.count(), 10, 'the full hand is present without pagination');
+    assert.equal(await cards.count(), 7, 'the configured default seven cards are visible in one hand');
     assert.equal(await page.locator('#hand-pager').count(), 0, 'no paging buttons');
+    await page.setViewportSize({ width: 320, height: 568 });
     const hand = page.locator('#hand');
     const metrics = await hand.evaluate((el) => ({
       height: el.clientHeight, scrollHeight: el.scrollHeight,
@@ -184,9 +185,10 @@ async function playRound(host, players, round, screen) {
     assert.equal(await cards.last().getAttribute('aria-pressed'), 'true',
       'selected cards remain selected when the hand scrolls');
     const submitBox = await page.locator('#submit-button').boundingBox();
-    assert.ok(submitBox.y + submitBox.height <= 844, 'submit is fixed below the hand');
+    assert.ok(submitBox.y + submitBox.height <= 568, 'submit is fixed below the hand');
     await cards.last().click();
     assert.equal(await cards.last().getAttribute('aria-pressed'), 'false');
+    await page.setViewportSize({ width: 390, height: 844 });
 
     // A reload keeps the seat: the ticket is in localStorage.
     await answering[1].reload();
@@ -286,11 +288,21 @@ async function run(browser) {
   await checkFit(host, 'menu-screen', '#menu-close');
   await host.locator('#menu-close').click();
 
-  // Three rounds instead of ten: ‹ steps 10 → 8 → 5 → 3.
+  // Hand is seven by default. Check the host's new lobby control, then
+  // restore seven for the scrollable-hand match.
   await openMenuPage(host, 'SPIELREGELN');
-  const fewer = host.locator('.stepper').first().getByRole('button', { name: 'Weniger' });
+  const handRule = host.locator('.stepper', { hasText: 'HANDKARTEN' });
+  await handRule.locator('.stepper-value', { hasText: /^7$/ }).waitFor();
+  await handRule.getByRole('button', { name: 'Mehr' }).click();
+  await handRule.locator('.stepper-value', { hasText: /^8$/ }).waitFor();
+  await handRule.getByRole('button', { name: 'Weniger' }).click();
+  await handRule.locator('.stepper-value', { hasText: /^7$/ }).waitFor();
+
+  // Three rounds instead of ten: ‹ steps 10 → 8 → 5 → 3.
+  const roundsRule = host.locator('.stepper', { hasText: 'RUNDEN' });
+  const fewer = roundsRule.getByRole('button', { name: 'Weniger' });
   for (let i = 0; i < 3; i++) await fewer.click();
-  await host.locator('.stepper .stepper-value').first().filter({ hasText: /^3$/ }).waitFor();
+  await roundsRule.locator('.stepper-value', { hasText: /^3$/ }).waitFor();
   await checkFit(host, 'menu-rules', '#menu-close');
   await host.locator('#menu-close').click();
 
