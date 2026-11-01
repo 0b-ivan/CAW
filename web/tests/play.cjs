@@ -44,13 +44,20 @@ async function checkFit(page, label, mainAction) {
       const hand = await page.locator('#hand').boundingBox();
       assert.ok(prompt && hand && prompt.x + prompt.width < hand.x,
         'desktop question must be left of the answer cards');
-      assert.ok(prompt.width <= 360, 'desktop question card must not grow with the viewport');
+      assert.ok(prompt.width >= 350 && prompt.width <= 400,
+        'desktop question retains physical card proportions');
+      const font = await page.locator('#hand .card').first()
+        .evaluate((card) => parseFloat(getComputedStyle(card).fontSize));
+      assert.ok(font >= 16, 'desktop answer cards have readable text');
     }
     if (width === 1280 && label === 'judge') {
       const prompt = await page.locator('#view-judge .prompt-stack').boundingBox();
       const choices = await page.locator('#judge-list').boundingBox();
       assert.ok(prompt && choices && prompt.x + prompt.width < choices.x,
         'desktop juror question must be left of the anonymous choices');
+      const optionHeight = await page.locator('#judge-list .choice').first()
+        .evaluate((card) => card.getBoundingClientRect().height);
+      assert.ok(optionHeight >= 84, 'desktop juror choices have generous tap targets');
     }
     if (width === 1280 && label === 'lobby-host-full') {
       const invite = await page.locator('#lobby-share').boundingBox();
@@ -256,7 +263,26 @@ async function run(browser) {
   await host.getByRole('button', { name: '[ NEUE SESSION ]' }).click();
   await host.waitForURL(/\/s\/[A-HJKMNP-Z2-9]{6}$/);
   const code = host.url().split('/').pop();
+  // A localhost URL is only reachable on the host device. Require an
+  // explicitly entered LAN origin before exposing QR, Copy or Share.
+  await host.locator('#invite-address').waitFor();
+  assert.equal(await host.locator('#lobby-qr svg').count(), 0, 'no unusable localhost QR');
+  assert.equal(await host.locator('#copy-link').isDisabled(), true, 'no unusable localhost copy link');
+  const inviteOrigin = 'http://192.168.50.77:8080';
+  await host.locator('#invite-address').fill('http://127.0.0.1:8080');
+  await host.locator('#invite-address').press('Tab');
+  await host.locator('#invite-hint', { hasText: 'BITTE VOLLSTÄNDIGE' }).waitFor();
+  await host.locator('#invite-address').fill(inviteOrigin);
+  await host.locator('#invite-address').press('Tab');
   await host.locator('#lobby-qr svg').waitFor();
+  assert.equal(await host.locator('#lobby-qr').getAttribute('data-url'),
+    `${inviteOrigin}/s/${code}`, 'QR uses the explicit LAN URL');
+  assert.equal(await host.locator('#lobby-url').textContent(),
+    `192.168.50.77:8080/s/${code}`);
+  assert.equal(await host.locator('#copy-link').isDisabled(), false);
+  assert.equal(await host.evaluate(async (session) =>
+    (await import('/play/invite.js')).shareableSessionUrl(session), code),
+  `${inviteOrigin}/s/${code}`, 'Copy and Share use the same URL as the QR');
   await host.locator('#host-badge .host-crown').waitFor();
   assert.equal(await host.locator('#host-badge .host-crown')
     .evaluate((crown) => getComputedStyle(crown).color), 'rgb(215, 174, 74)',
@@ -279,6 +305,17 @@ async function run(browser) {
   for (const name of ['Ada', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
   await checkFit(host, 'lobby-host-full', '#start-button');
+  await host.setViewportSize({ width: 320, height: 568 });
+  const invitePanel = await host.locator('#lobby-share').evaluate((panel) => ({
+    scrollHeight: panel.scrollHeight, height: panel.clientHeight,
+  }));
+  assert.ok(invitePanel.scrollHeight <= invitePanel.height + 1,
+    'all invite actions are exposed without an internally clipped QR panel');
+  await host.locator('#screen-link').scrollIntoViewIfNeeded();
+  const bigScreenButton = await host.locator('#screen-link').boundingBox();
+  assert.ok(bigScreenButton.y >= 0 && bigScreenButton.y + bigScreenButton.height <= 568,
+    'Big Screen action is reachable at 320x568');
+  await host.setViewportSize({ width: 390, height: 844 });
   assert.equal(await players[0].locator('#lobby-share').isVisible(), false,
     'the guest lobby does not show host-only share controls');
   await checkFit(players[0], 'lobby', '#lobby-status');
