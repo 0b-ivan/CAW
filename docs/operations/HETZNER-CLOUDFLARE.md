@@ -401,3 +401,12 @@ GitHub-Zugang dient dabei nur zum Lesen; der GHCR-Token bleibt auf stdin.
 eine neue Session entstehen. Völlig unterbrechungsfreie Rolling Updates
 unter beliebiger Last benötigen später kontrollierte Neuanmeldungs-Sperre
 (Admission Drain) oder zwei Serverinstanzen mit Room-Affinität.
+
+**Einmalige Betreiberfreigabe für 2026-11-01:** Die verifizierte
+Legacy-Raumprüfung hat bei null WebSocket-Verbindungen genau eine als
+unfertig markierte, aber laut Betreiber verlassene Partie gefunden.
+Der bekannte Alt-Checkout `cc02372*` darf daher ausnahmsweise mit
+dieser einen Session aktualisiert werden. Vor jeder Umschaltung bleibt
+die Null-Socket-Prüfung verpflichtend, und die Redis-Snapshots bleiben
+unverändert. Mehr als eine unfertige Session blockiert weiterhin.
+Die Ausnahme greift nach dem Upgrade nicht noch einmal.
