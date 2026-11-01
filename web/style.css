@@ -729,7 +729,20 @@ footer a { text-decoration: underline; }
 
 /* Mobile hand: two columns and six cards (four on short viewports).
    The pager exposes the rest of the ten-card hand without shrinking text. */
-.hand-title { font-weight: 700; margin-top: 2px; }
+.hand-heading {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hand-title { margin: 0; font-weight: 700; }
+.hand-heading #swap-button {
+  min-height: 48px;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+.hand-heading #swap-button:disabled { opacity: .5; }
 .hand {
   display: grid;
   flex: 1 1 auto;
@@ -780,7 +793,7 @@ footer a { text-decoration: underline; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 7px;
   min-height: 48px;
   font-size: 12px;
 }
@@ -792,7 +805,8 @@ footer a { text-decoration: underline; }
   padding: 4px 6px;
 }
 .hand-pager button:disabled { opacity: .35; }
-#hand-page { text-align: center; min-width: 90px; }
+#hand-page { text-align: center; min-width: 62px; }
+#answer-count { font-size: 11px; white-space: nowrap; font-weight: 700; }
 
 /* The primary action is unmistakable; discard remains a secondary action. */
 .bar { min-height: 60px; }
@@ -807,8 +821,15 @@ footer a { text-decoration: underline; }
   background: var(--paper);
   color: var(--ink);
 }
-.bar #swap-button { background: var(--paper); color: var(--ink); }
-.bar #swap-button:disabled { opacity: .55; }
+#view-answer .bar button,
+#view-judge .bar button { width: 100%; text-align: center; }
+#view-judge .judge-count {
+  flex: none;
+  min-height: 1.4em;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
 
 /* Anonymous submissions become individual paper strips with an accessible
    circular pick indicator, as in the approved mockup. */
@@ -994,7 +1015,9 @@ footer a { text-decoration: underline; }
   .prompt-stack { margin: 1px 0 5px; }
   .prompt-stack .prompt { min-height: 86px; max-height: 20dvh; padding: 10px 12px; }
   .prompt-stack .sentence { font-size: 16px; }
-  .hand-title { margin-top: 0; }
+  .hand-heading #swap-button { padding: 4px 8px; }
+  .hand-pager { gap: 4px; }
+  #answer-count { font-size: 10px; }
   .card { min-height: 63px; }
   .hand-pager { min-height: 48px; }
   .bar { min-height: 55px; }
