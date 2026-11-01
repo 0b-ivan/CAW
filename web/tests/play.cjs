@@ -167,7 +167,9 @@ async function playRound(host, players, round, screen) {
     const promptWidth = await page.locator('#view-answer .prompt-stack').boundingBox();
     const shellWidth = await page.locator('#shell').boundingBox();
     assert.ok(promptWidth.width < shellWidth.width * .9, 'prompt is a compact card stack');
-    assert.equal(await cards.count(), 7, 'the configured default seven cards are visible in one hand');
+    const handSize = await cards.count();
+    assert.ok(handSize >= 7 && handSize <= 9,
+      'seven regular cards plus at most two optional Draw-2 cards');
     assert.equal(await page.locator('#hand-pager').count(), 0, 'no paging buttons');
     await page.setViewportSize({ width: 320, height: 568 });
     const hand = page.locator('#hand');
