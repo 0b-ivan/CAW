@@ -83,16 +83,13 @@
           </div>
         </div>
         <div class="hand-heading">
-          <p class="eyebrow hand-title" id="hand-title"></p>
+          <div class="hand-info">
+            <p class="eyebrow hand-title" id="hand-title"></p>
+            <span id="answer-count" role="status"></span>
+          </div>
           <button id="swap-button" class="mini" type="button" data-text="swap"></button>
         </div>
-        <div id="hand" class="hand" role="group" data-label="handLabel"></div>
-        <div id="hand-pager" class="hand-pager">
-          <button id="hand-previous" type="button" aria-label="Vorherige Karten">[ ‹ ]</button>
-          <span id="hand-page" role="status"></span>
-          <span id="answer-count" role="status"></span>
-          <button id="hand-next" type="button" aria-label="Nächste Karten">[ › ]</button>
-        </div>
+        <div id="hand" class="hand" role="group" tabindex="0" data-label="handLabel"></div>
         <div class="bar">
           <button id="submit-button" type="button" data-text="submit"></button>
         </div>
