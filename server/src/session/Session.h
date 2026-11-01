@@ -30,7 +30,7 @@ class Session final {
   // The library must outlive the session; `packs` must give a playable deck.
   // Time is milliseconds from a monotonic clock.
   Session(std::string hostToken, PackLibrary& library, std::vector<std::string> packs,
-          std::uint32_t seed, std::uint32_t now);
+          std::uint32_t seed, std::uint32_t now, std::string customPrefix = {});
   Session(const Session&) = delete;
   Session& operator=(const Session&) = delete;
 
@@ -55,6 +55,9 @@ class Session final {
   bool takeChanged();
 
   bool isHostToken(std::string_view token) const;
+  bool inLobby() const;
+  // Activate a just-uploaded room pack and announce the new selection.
+  bool activatePacks(const std::vector<std::string>& ids, std::uint32_t now);
   // The chosen packs, sorted: together with saveState() they restore the match.
   const std::vector<std::string>& packs() const { return packIds_; }
   // Seat identities and this match's winning sentences, for the room snapshot.
@@ -96,6 +99,7 @@ class Session final {
   void send(ConnectionId connection, std::string text, bool close = false);
 
   std::string hostToken_;
+  std::string customPrefix_;
   PackLibrary& library_;
   std::vector<std::string> packIds_;
   // A copy of the library's deck for the chosen packs; the game points at this one,
