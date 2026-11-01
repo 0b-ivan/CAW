@@ -351,9 +351,9 @@ void Messages::loadTable(const json& state, Table& table, std::uint32_t now) {
   loaded.jurorSecs = static_cast<std::uint8_t>(number(settings.at("jurorSecs"), 255));
   loaded.autoSecs = static_cast<std::uint8_t>(number(settings.at("autoSecs"), 255));
   loaded.rando = settings.at("rando").get<bool>();
-  loaded.hand = settings.contains("hand")
-                    ? static_cast<std::uint8_t>(number(settings.at("hand"), 10))
-                    : table.game_.rules_.hand;
+  loaded.hand = table.game_.rules_.hand;
+  if (settings.contains("hand"))
+    loaded.hand = static_cast<std::uint8_t>(number(settings.at("hand"), 10));
   table.settings_ = loaded;
   // Old Redis snapshots have no hand setting; retain their game's saved
   // hand size instead of silently replacing ten cards with the new default.
