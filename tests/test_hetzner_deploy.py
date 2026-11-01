@@ -1,4 +1,4 @@
-"""Static and shell-guard tests for the opt-in Hetzner CD pipeline."""
+"""Static and shell-guard tests for the automatic Hetzner CD pipeline."""
 import json
 import os
 import subprocess
@@ -60,8 +60,10 @@ class DeploymentSafetyTests(unittest.TestCase):
         self.assertIn("push:\n    branches: [main]", workflow)
         self.assertNotIn("workflow_run:", workflow)
         self.assertIn("workflow_dispatch:", workflow)
-        self.assertIn("vars.CAW_PRODUCTION_APPROVED == 'true'", workflow)
-        self.assertIn("vars.CAW_AUTO_DEPLOY == 'true'", workflow)
+        self.assertNotIn("vars.CAW_PRODUCTION_APPROVED", workflow)
+        self.assertNotIn("vars.CAW_AUTO_DEPLOY", workflow)
+        self.assertIn("github.repository == '0b-ivan/CAW'", workflow)
+        self.assertIn("github.event_name == 'push'", workflow)
         self.assertIn("github.ref == 'refs/heads/main'", workflow)
         self.assertIn('bash bin/verify-main-ci "$DEPLOY_SHA"', workflow)
         self.assertIn("environment: production", workflow)
