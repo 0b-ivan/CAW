@@ -357,9 +357,8 @@ void Session::roundWon(const PublicView& view) {
   matchLines_.push_back({seated ? playerName(view.winner) : "Rando", sentence});
   // A private deck might appear in any composed winner: never publish it to the public fame.
   if (!customPrefix_.empty() &&
-      std::any_of(packIds_.begin(), packIds_.end(), [this](const std::string& id) {
-        return id.starts_with(customPrefix_);
-      }))
+      std::any_of(packIds_.begin(), packIds_.end(),
+                  [this](const std::string& id) { return id.starts_with(customPrefix_); }))
     return;
   if (!seated || identities_[view.winner].playerId.empty()) return;
   const Identity& winner = identities_[view.winner];
