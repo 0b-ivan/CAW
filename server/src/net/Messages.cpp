@@ -113,6 +113,7 @@ std::string Messages::fame(const std::vector<FamePlayer>& players,
 std::string Messages::packCatalog(const std::vector<std::unique_ptr<CardPack>>& packs) {
   json list = json::array();
   for (const auto& pack : packs) {
+    if (pack->id.starts_with("custom-")) continue;  // room packs are private
     list.push_back({{"id", pack->id},
                     {"title", pack->title},
                     {"language", pack->language},
@@ -160,7 +161,7 @@ std::optional<CardPack> Messages::readCustomCards(std::string_view body) {
     const json& prompts = request.at("prompts");
     const json& answers = request.at("answers");
     if (!prompts.is_array() || !answers.is_array() || prompts.size() > 100 ||
-        answers.size() > 100 || prompts.empty() && answers.empty()) return std::nullopt;
+        answers.size() > 100 || (prompts.empty() && answers.empty())) return std::nullopt;
     std::string csv = "typ,text\n";
     const auto append = [&csv](const json& cards, char type) {
       for (const json& item : cards) {
