@@ -229,7 +229,7 @@ nav button { min-width: 48px; }
 }
 .boot-logo .cut-deck {
   transform: translateX(99px);
-  transition: transform 230ms cubic-bezier(.2,.7,.25,1);
+  transition: transform 520ms cubic-bezier(.2,.7,.25,1);
 }
 .boot-screen.is-shifted .boot-logo .cut-deck { transform: translateX(0); }
 .boot-slash {
@@ -237,36 +237,18 @@ nav button { min-width: 48px; }
   height: 78px;
   transform: skew(-13deg) scaleY(0);
   transform-origin: center;
-  transition: transform 180ms ease-out, opacity 120ms;
+  transition: transform 320ms ease-out, opacity 160ms;
 }
 .boot-screen.has-slash .boot-slash { opacity: 1; transform: skew(-13deg) scaleY(1); }
 .boot-wordmark {
   width: 165px;
   opacity: 0;
   transform: translateX(14px);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition: opacity 340ms ease, transform 340ms ease;
 }
 .boot-wordmark strong { font-size: 49px; }
 .boot-wordmark > span { font-size: 11px; }
 .boot-screen.has-wordmark .boot-wordmark { opacity: 1; transform: translateX(0); }
-.boot-screen.is-shuffling .cut-card--c { animation: shuffle-c 420ms ease-in-out 1; }
-.boot-screen.is-shuffling .cut-card--a { animation: shuffle-a 420ms ease-in-out 1; }
-.boot-screen.is-shuffling .cut-card--w { animation: shuffle-w 420ms ease-in-out 1; }
-@keyframes shuffle-c {
-  0%, 100% { transform: translateX(0) rotate(-7deg); }
-  30% { transform: translateX(calc(2 * var(--card-step))) translateY(-17px) rotate(12deg); }
-  65% { transform: translateX(var(--card-step)) translateY(9px) rotate(-12deg); }
-}
-@keyframes shuffle-a {
-  0%, 100% { transform: translateX(var(--card-step)); }
-  30% { transform: translateX(0) translateY(14px) rotate(-14deg); }
-  65% { transform: translateX(calc(2 * var(--card-step))) translateY(-9px) rotate(11deg); }
-}
-@keyframes shuffle-w {
-  0%, 100% { transform: translateX(calc(2 * var(--card-step))) rotate(7deg); }
-  30% { transform: translateX(var(--card-step)) translateY(-16px) rotate(-10deg); }
-  65% { transform: translateX(0) translateY(9px) rotate(13deg); }
-}
 .skip-intro {
   position: absolute;
   right: 16px;
@@ -275,27 +257,7 @@ nav button { min-width: 48px; }
   padding: 9px 14px;
   z-index: 2;
 }
-.zoom-card {
-  position: absolute;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--ink);
-  background: var(--ink);
-  color: var(--paper);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -.1em;
-  overflow: hidden;
-  border-radius: 0;
-  transition: left 360ms cubic-bezier(.55,0,.22,1),
-    top 360ms cubic-bezier(.55,0,.22,1),
-    width 360ms cubic-bezier(.55,0,.22,1),
-    height 360ms cubic-bezier(.55,0,.22,1),
-    font-size 360ms cubic-bezier(.55,0,.22,1);
-}
-.boot-screen.is-completing { opacity: 0; transition: opacity 140ms linear; }
+.boot-screen.is-completing { opacity: 0; transition: opacity 260ms linear; }
 .boot-screen.is-completing .skip-intro { pointer-events: none; }
 
 /* Keep all landing controls visible without a vertical scroll at target sizes. */
