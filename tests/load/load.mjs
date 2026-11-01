@@ -106,7 +106,7 @@ async function playRound(room, round) {
 }
 
 async function playMatch(room) {
-  room.host.send({ type: 'settings', settings: { rounds, answerSecs: 0, extensionSecs: 0,
+  room.host.send({ type: 'settings', settings: { hand: 7, rounds, answerSecs: 0, extensionSecs: 0,
     jurorSecs: 0, autoSecs: 0, rando: false } });
   room.host.send({ type: 'start' });
   for (let round = 1; round <= rounds; ++round) await playRound(room, round);
