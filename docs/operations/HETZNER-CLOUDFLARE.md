@@ -185,7 +185,9 @@ das Skript stoppt absichtlich Postgres und Redis.
 - Vor dem öffentlichen Betrieb müssen **verschlüsselte Offsite-Backups**
   von Postgres-Dumps und Redis-AOF mit regelmäßiger Restore-Probe
   eingerichtet werden. Hetzner-Snapshots sind nur eine Ergänzung.
-  Der Ziel-Speicher und Zugangsdaten fehlen noch.
+  Die Storage Box ist vorhanden; SFTP-Schlüssel, Restic-Passwort, erste
+  Übertragung und isolierte Restore-Abnahme müssen noch eingerichtet bzw.
+  nachgewiesen werden.
 - Ein Update muss im CAW-Compose-Projekt stattfinden, nicht mit einem
   Host-weiten Docker-Cleanup. Vorher Datenbank/Redis sichern.
 - Monitoring über das bestehende Monitoring des Hosts oder optional
@@ -310,3 +312,109 @@ Postgres **und Redis-AOF** mit Restore-Test sowie die externe
 HTTPS-/WSS-Abnahme bleiben Pflicht. Ein lokaler Postgres-Dump vor
 Deploy ersetzt kein Offsite-Backup. Die Pipeline bestätigt diese
 rechtlichen Freigaben nicht selbst.
+
+
+## 8. Verschlüsseltes Offsite-Backup auf die vorhandene Hetzner Storage Box
+
+Der lokale CAW-Backup-Dienst legt bereits einen lesbaren PostgreSQL-Custom-Dump
+mit `players`, `winning_lines` und Sequenz an. Der **Offsite-Job ist separat**
+und erfordert keine Änderungen an den laufenden Compose-Diensten. Gesichert
+werden ein frisch erzeugter PostgreSQL-Dump und die **gesamte** mehrteilige
+Redis-7-AOF-Gruppe, einschließlich Manifest. Restic verschlüsselt die Daten
+clientseitig vor der Übertragung zur vorhandenen Storage Box.
+
+**Einrichtung als `caw-deploy`, nicht als `obivan`:**
+
+1. Auf Hetzner als Administrator `restic` installieren, soweit noch nicht
+   vorhanden: `sudo apt-get update && sudo apt-get install -y restic`.
+2. In der Hetzner-Konsole für die bereits vorhandene Storage Box
+   **SSH Support (Port 23)** aktivieren. Idealerweise einen eigenen Unteraccount
+   nur für `caw-restic` mit getrenntem Schlüssel verwenden. Die vom Anbieter
+   angezeigten Storage-Box-SSH-Hostkey-Fingerabdrücke **vor** dem ersten Verbindungs-
+   aufbau prüfen; kein `StrictHostKeyChecking=no`.
+3. Mit `sudo -u caw-deploy -H` die folgenden Dateien erstellen; Besitzer
+   `caw-deploy`, Rechte auf Verzeichnissen `0700`, auf Schlüssel-, Konfigurations-
+   und Passwortdateien `0600`. Erforderliche SSH-Konfiguration unter
+   `/home/caw-deploy/.ssh/config` (bestehende Einträge beibehalten):
+
+   ```sshconfig
+   Host caw-storagebox
+       HostName uXXXXX.your-storagebox.de
+       User uXXXXX
+       Port 23
+       IdentityFile /home/caw-deploy/.ssh/id_ed25519_caw_storagebox
+       IdentitiesOnly yes
+       BatchMode yes
+       StrictHostKeyChecking yes
+       ServerAliveInterval 60
+       ServerAliveCountMax 5
+   ```
+
+   Den dedizierten ED25519-Public-Key nur beim passenden Storage-Box-
+   (Unter-)Account als `authorized_keys` hinterlegen. Das Passwort für
+   Restic **separat und offline** sichern, sonst ist der Restore unmöglich.
+   Der öffentliche SSH-Hostkey gehört erst nach unabhängiger Prüfung in
+   `/home/caw-deploy/.ssh/known_hosts`.
+
+4. Konfiguration unter `/home/caw-deploy/.config/caw/offsite.env`:
+
+   ```sh
+   RESTIC_REPOSITORY=sftp:caw-storagebox:caw-restic
+   RESTIC_PASSWORD_FILE=/home/caw-deploy/.config/caw/restic-password
+   ```
+
+   Das Repository `caw-restic` ist **nur für CAW**, damit die Aufbewahrung
+   keine fremden Backups löscht. Die Datei `restic-password` enthält ein
+   mit einem sicheren Zufallsgenerator erzeugtes, langes Passwort. Es wird
+   weder in `deploy/.env` noch im GitHub-Repo abgelegt.
+
+5. Verbindung testen und Repository **einmalig** initialisieren:
+
+   ```sh
+   sudo -u caw-deploy -H ssh caw-storagebox ls
+   sudo -u caw-deploy -H sh -c '
+     set -a
+     . ~/.config/caw/offsite.env
+     set +a
+     restic snapshots || restic init
+   '
+   ```
+
+   `restic init` nur ausführen, wenn wirklich noch **kein** CAW-Repository
+   existiert. Ein Verbindungs- oder Authentifizierungsfehler darf nicht als
+   fehlendes Repository interpretiert werden.
+
+6. Nach Review/Merge der Skripte eine manuelle Erstsicherung ausführen und
+   unmittelbar den **isolierten Restore** überprüfen:
+
+   ```sh
+   sudo -u caw-deploy -H bash /opt/caw/bin/caw-offsite-backup
+   sudo -u caw-deploy -H bash /opt/caw/bin/caw-offsite-restore-check
+   ```
+
+   Erst wenn beide Befehle mit `PASS` enden, täglichen systemd-Timer
+   einrichten:
+
+   ```sh
+   sudo install -m 644 deploy/systemd/caw-offsite-backup.service /etc/systemd/system/
+   sudo install -m 644 deploy/systemd/caw-offsite-backup.timer /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now caw-offsite-backup.timer
+   systemctl list-timers caw-offsite-backup.timer
+   journalctl -u caw-offsite-backup.service -n 30 --no-pager
+   ```
+
+Die Sicherung läuft täglich um ca. 03:30 Uhr (mit zufälliger Verzögerung)
+und behält 14 tägliche, acht wöchentliche und zwölf monatliche Stände.
+Redis bleibt online. Für die AOF-Kopie wird ausschließlich dessen automatische
+Rewrite-Funktion kurzzeitig ausgesetzt und danach zurückgesetzt.
+Die Restore-Probe lädt die Daten von SFTP herunter, spielt den PostgreSQL-Dump
+in einer **neuen, netzwerkisolierten** Testdatenbank ein und startet einen
+**netzwerkisolierten** Redis-Testprozess aus der kopierten AOF-Gruppe. Das
+Produktionssystem wird nicht wiederhergestellt oder neu gestartet.
+
+**Abnahme:** Erste Upload- und Restore-Ausgaben dokumentieren; danach regelmäßig
+(einmal im Monat und nach Schemaänderungen) die Restore-Probe ausführen und
+Fehler des systemd-Jobs überwachen. Das Restic-Passwort außerhalb des
+Servers sicher verwahren. Speicherverlust, kompromittierter Backup-Benutzer
+oder fehlendes Passwort sind sonst weiterhin Single Points of Failure.
