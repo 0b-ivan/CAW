@@ -128,12 +128,19 @@ async function checkTape(page, selector) {
   assert.equal(material.band, 'clone', `${selector}: clean fallback wrapping`);
 }
 
-// A plastic surface may be narrow enough while its text still spills out.
+// Check the letters, not scrollWidth: transformed glare layers deliberately
+// extend a few pixels beyond the band but must never clip the card wording.
 async function checkTapeNotClipped(page, selector) {
   const overflow = await page.locator(selector).evaluateAll((elements) =>
-    elements.filter((element) =>
-      getComputedStyle(element).display !== 'inline' &&
-      element.scrollWidth > element.clientWidth + 1).length);
+    elements.filter((element) => {
+      if (getComputedStyle(element).display === 'inline') return false;
+      const letters = element.querySelector('.answer-tape__letters');
+      const range = document.createRange();
+      range.selectNodeContents(letters);
+      const band = element.getBoundingClientRect();
+      return [...range.getClientRects()].some((rect) =>
+        rect.left < band.left - 4 || rect.right > band.right + 4);
+    }).length);
   assert.equal(overflow, 0, `${selector}: no letters escape the plastic strip`);
 }
 
