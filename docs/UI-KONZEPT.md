@@ -9,15 +9,20 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
 ## 1. Gestaltungsprinzipien
 
 - **Monochrom.** Schwarz `#000` als Grund, Weiß `#fff` als Schrift und Linie.
-  Keine Farben, keine Grautöne, keine Verläufe, Schatten, Rundungen, Glows
-  oder Animations-Effekte, außer den ausdrücklich beschriebenen CAW-Intros,
-  Gewinner- und Timer-Signalen.
+  Bedienelemente bleiben flach und kontrastreich. **Ausnahme: physische
+  Spielkarten** dürfen gebrochenes Weiß (`#f4f4f0`), eine feine neutrale
+  Papierkante, bis zu 6 px Eckradius und einen dezenten schwarzen/weißen
+  Versatzschatten bekommen. Keine Akzentfarben, Glows oder Verläufe.
+  Animationen nur für die bereits vorgesehenen CAW-Intros, Gewinner- und
+  Timer-Signale.
 - **Monospace für alles.** `ui-monospace, Menlo, SFMono-Regular, Consolas,
   Liberation Mono` – keine Webfont-Pflicht (Performance-Budget).
 - **Typografie trägt die Hierarchie:** kurze Labels in GROSSBUCHSTABEN mit
   Sperrung, Fließtext normal geschrieben, Fragen groß.
-- **Linien statt Kästen:** 1 px weiße Trennlinien; Auswahl = invertiert
-  (weißer Grund, schwarze Schrift); deaktiviert = gestrichelter Rahmen.
+- **Linien statt Kästen:** 1 px weiße Trennlinien für Navigation und
+  Struktur; echte Frage-/Antwortkarten sind die bewusste Ausnahme. Auswahl
+  erhält eine klar unterscheidbare invertierte Kartenfläche plus
+  Positionskennzeichnung; deaktivierte Aktionen bleiben gestrichelt.
 - **Befehle in eckigen Klammern:** `[ ABGEBEN ]`, `[ PAUSE ]`, `[ START ]`.
 - **Touch zuerst:** Tippziele mindestens 48 px hoch, wichtige Aktionen
   unten in der Fußleiste, Daumenreichweite.
@@ -148,8 +153,9 @@ GESPERRT · FRAG DEN HOST“.
 ### 4.5 Antworten
 
 Frage oben in eigenem Scroll-Bereich (max. 30 % Höhe), darunter die Hand
-als Raster aus Karten mit Trennlinien (zwei Spalten am Handy, vier am
-Laptop), damit zehn Karten ohne Scrollen sichtbar sind. Antippen wählt in
+als Raster echter, flacher Spielkarten (zwei Spalten am Handy, vier am
+Laptop). Zehn kurze Karten passen ohne Scrollen; bei langen Texten darf
+nur die Hand intern scrollen, damit keine Karte abgeschnitten wird. Antippen wählt in
 Reihenfolge; die Position steht vor der Karte (`<1/3>`). Die Frage ist
 zugleich die Vorschau: gewählte Karten stehen invertiert in ihren Lücken,
 keine eigene Vorschauzeile. Fußleiste: `[ ABWERFEN ]` (1× pro Runde, genau
@@ -296,3 +302,39 @@ Farbthemes, Sounds, Konfetti, Avatare, Emojis in der UI, Chat sowie
 laufende dekorative Animationen. Die oben definierten Ausnahmen gelten.
 Wenn eines
 davon gewünscht wird, kommt es zuerst ins Konzept.
+
+## 9. Freigegebene Kartenoptik (Mockup-Abgleich 2026-11-01)
+
+Die Mockups mit realistischer Spielkartenoptik sind für ein eigenes UI-Polish-PR
+freigegeben. Diese Entscheidung präzisiert die strikten Flat-Design-Regeln in
+Abschnitt 1; **nur Spielkarten** erhalten Materialität. Sie ändert keine
+Spielregel und kein Client-/Server-Protokoll.
+
+- **Marke und Startseite:** Das CUT-DECK-Logo bleibt aus CSS aufgebaut,
+  zeigt aber 3–4 sichtbar versetzte, nahezu rechteckige Kartenrücken und
+  eine schwarze Vorderkarte mit `C/A/W`. Keine Bilddateien oder Fonts nötig.
+  Die primäre Aktion `NEUE SESSION` darf eine helle, invertierte Fläche
+  erhalten; Nebenaktionen bleiben eckig und zurückhaltend.
+- **Frage:** Die schwarze Fragekarte sitzt auf einer minimal versetzten
+  Kartenkante, mit großzügigem Text und ruhiger Hierarchie. Auf kleinen
+  Handys muss sie im vorgesehenen Fragebereich vollständig scrollbar bleiben.
+- **Antworten:** Antwortkarten sind papierweiß mit schwarzer Schrift,
+  sichtbar von der schwarzen Fragekarte unterscheidbar. Gewählte Karten
+  invertieren wieder zu Schwarz mit weißer Schrift, erhalten eine starke
+  weiße Kontur und die sichtbare Pick-Position. Die Auswahl bleibt zusätzlich
+  über `aria-pressed` lesbar, nicht nur über Farbe oder Schatten.
+- **Juror:** Antwortoptionen erscheinen als einzelne, gut lesbare
+  Kartenstreifen. Die Frage steht weiterhin nur einmal oben und zeigt
+  die gewählte Kombination. Keine fremden Hände oder Zuordnungen.
+- **Auflösung:** Der Siegersatz erhält die Materialität einer großen
+  hellen Karte; Name und Punktestand bleiben typografisch darunter.
+  Keine Krone oder Konfetti als zwingender Bestandteil.
+- **Big Screen:** In der Jurorphase werden die **ganzen** eingesetzten
+  Sätze in papierhellen Kartenreihen angezeigt, ab fünf Optionen in zwei
+  Spalten. Der Inhalt wird weiterhin an 16:9 und 4:3 angepasst und nie
+  abgeschnitten. Bei hohen Textmengen geht Lesbarkeit vor einer dekorativen
+  Kartenrotation.
+- **Performance/Accessibility:** Karten sind CSS, keine Bild-Assets oder
+  zusätzlichen Abhängigkeiten. Keine Daueranimationen; `prefers-reduced-motion`
+  und die Mindest-Tippflächen bleiben erhalten. Testmatrix 320×568,
+  390×844, 1280×800, Big Screen 1920×1080 und 1024×768.
