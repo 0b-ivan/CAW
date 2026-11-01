@@ -627,10 +627,10 @@ footer a { text-decoration: underline; }
    No images, downloaded fonts, moving textures or constant animations. */
 
 .cut-deck--small {
-  --card-width: 61px;
-  --card-height: 74px;
-  --card-step: 10px;
-  height: 86px;
+  --card-width: 72px;
+  --card-height: 93px;
+  --card-step: 13px;
+  height: 105px;
 }
 .cut-deck--small .cut-card {
   top: 5px;
@@ -658,12 +658,19 @@ footer a { text-decoration: underline; }
 }
 .cut-deck--small .cut-card--w::before {
   content: "C/A/W";
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 900;
   letter-spacing: -.08em;
 }
 .cut-deck--small .cut-card::after { display: none; }
-.landing-header { min-height: 94px; }
+.landing-header {
+  min-height: 144px;
+  padding-top: 18px;
+  justify-content: center;
+}
+.landing-header .brand-trigger { gap: 14px; }
+.landing-header .brand-wordmark strong { font-size: 30px; }
+.landing-header .brand-wordmark > span { font-size: 11px; width: 116px; }
 .create-section button {
   background: var(--card-paper);
   color: var(--card-ink);
@@ -745,8 +752,9 @@ footer a { text-decoration: underline; }
 .hand-heading #swap-button:disabled { opacity: .5; }
 .hand {
   display: grid;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   width: 100%;
+  max-height: min(43dvh, 420px);
   min-height: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: max-content;
@@ -995,16 +1003,20 @@ footer a { text-decoration: underline; }
 
 @media (max-width: 400px) {
   .cut-deck--small {
-    --card-width: 54px;
-    --card-height: 65px;
-    height: 76px;
+    --card-width: 64px;
+    --card-height: 82px;
+    --card-step: 11px;
+    height: 94px;
   }
-  .cut-deck--small .cut-card--w::before { font-size: 15px; }
-  .landing-header { min-height: 82px; }
+  .cut-deck--small .cut-card--w::before { font-size: 18px; }
+  .landing-header { min-height: 130px; padding-top: 12px; }
+  .landing-header .brand-trigger { gap: 9px; }
+  .landing-header .brand-wordmark strong { font-size: 27px; }
+  .landing-header .brand-wordmark > span { font-size: 9px; width: 105px; }
   .prompt-stack { width: min(83%, 320px); margin: 3px 0 8px; }
   .prompt-stack .prompt { min-height: 112px; padding: 12px 13px; }
   .prompt-stack .sentence { font-size: 17px; }
-  .card { padding: 8px; font-size: 13px; min-height: 70px; }
+  .card { padding: 8px; font-size: 13px; min-height: clamp(76px, 11dvh, 103px); }
   .card[aria-pressed="true"] { padding: 7px; }
   .hand { gap: 7px; }
   .share { grid-template-columns: minmax(90px, 36%) minmax(0, 1fr); gap: 8px; }
