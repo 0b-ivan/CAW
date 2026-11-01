@@ -188,8 +188,8 @@ TEST_CASE("pending proposals survive Redis restore and remain private") {
     if (frame.at("type") == "welcome") ticket = frame.at("token").get<std::string>();
   }
   REQUIRE(ticket.size() == 32);
-  const auto proposal = caw::Messages::readProposal(
-      R"({"type":"prompt","text":"Private Testfrage ___?"})");
+  const auto proposal =
+      caw::Messages::readProposal(R"({"type":"prompt","text":"Private Testfrage ___?"})");
   REQUIRE(proposal);
   CHECK_FALSE(first.submitProposal(other.code, ticket, *proposal));
   CHECK_FALSE(first.submitProposal(room.code, room.hostToken, *proposal));

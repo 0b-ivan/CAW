@@ -54,13 +54,13 @@ TEST_CASE("custom cards use the same syntax limits as CSV packs") {
 }
 
 TEST_CASE("player proposals reuse card validation and strict review decisions") {
-  const auto prompt = caw::Messages::readProposal(
-      R"({"type":"prompt","text":"Synthese ___ und ___ und ___."})");
+  const auto prompt =
+      caw::Messages::readProposal(R"({"type":"prompt","text":"Synthese ___ und ___ und ___."})");
   REQUIRE(prompt);
   CHECK(prompt->type == "prompt");
   CHECK(prompt->text == "Synthese ___ und ___ und ___.");
-  const auto answer = caw::Messages::readProposal(
-      R"({"type":"answer","text":"Ein synthetischer Vorschlag."})");
+  const auto answer =
+      caw::Messages::readProposal(R"({"type":"answer","text":"Ein synthetischer Vorschlag."})");
   REQUIRE(answer);
   CHECK(answer->type == "answer");
   CHECK_FALSE(caw::Messages::readProposal(R"({"type":"prompt","text":"___ ___ ___ ___"})"));
@@ -69,8 +69,7 @@ TEST_CASE("player proposals reuse card validation and strict review decisions") 
   CHECK_FALSE(caw::Messages::readProposal(R"({"type":"answer","text":"Test","token":"x"})"));
   CHECK_FALSE(caw::Messages::readProposal(R"({"type":"prompt","text":42})"));
   CHECK_FALSE(caw::Messages::readProposal("[]"));
-  const std::string oversized =
-      R"({"type":"answer","text":")" + std::string(301, 'a') + R"("})";
+  const std::string oversized = R"({"type":"answer","text":")" + std::string(301, 'a') + R"("})";
   CHECK_FALSE(caw::Messages::readProposal(oversized));
 
   auto queueItem = *prompt;

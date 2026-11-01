@@ -212,9 +212,9 @@ std::string Messages::customCards(const CardPack* pack) {
 std::optional<CardProposal> Messages::readProposal(std::string_view body) {
   try {
     const json request = json::parse(body);
-    if (!request.is_object() || request.size() != 2 ||
-        !request.contains("type") || !request.contains("text") ||
-        !request.at("type").is_string() || !request.at("text").is_string())
+    if (!request.is_object() || request.size() != 2 || !request.contains("type") ||
+        !request.contains("text") || !request.at("type").is_string() ||
+        !request.at("text").is_string())
       return std::nullopt;
     CardProposal proposal;
     proposal.type = request.at("type").get<std::string>();
@@ -224,7 +224,8 @@ std::optional<CardProposal> Messages::readProposal(std::string_view body) {
     cards[proposal.type == "prompt" ? "prompts" : "answers"].push_back(proposal.text);
     const auto valid = readCustomCards(cards.dump());
     if (!valid) return std::nullopt;
-    proposal.text = proposal.type == "prompt" ? valid->prompts.front().text : valid->answers.front();
+    proposal.text =
+        proposal.type == "prompt" ? valid->prompts.front().text : valid->answers.front();
     return proposal;
   } catch (const json::exception&) {
     return std::nullopt;
@@ -251,8 +252,8 @@ std::optional<ProposalDecision> Messages::readProposalDecision(std::string_view 
 std::string Messages::proposalQueue(const std::vector<CardProposal>& proposals) {
   json items = json::array();
   for (const CardProposal& item : proposals)
-    items.push_back({{"id", item.id}, {"author", item.author},
-                     {"type", item.type}, {"text", item.text}});
+    items.push_back(
+        {{"id", item.id}, {"author", item.author}, {"type", item.type}, {"text", item.text}});
   return json{{"proposals", items}}.dump();
 }
 
@@ -270,12 +271,15 @@ std::string Messages::saveRoom(const RoomRecord& room) {
   }
   json proposals = json::array();
   for (const CardProposal& item : room.proposals)
-    proposals.push_back({{"id", item.id}, {"author", item.author}, {"type", item.type},
-                         {"text", item.text}, {"seat", item.seat}});
+    proposals.push_back({{"id", item.id},
+                         {"author", item.author},
+                         {"type", item.type},
+                         {"text", item.text},
+                         {"seat", item.seat}});
   const std::string head =
       json{{"schema", 6},           {"language", room.language}, {"hostToken", room.hostToken},
            {"packs", room.packs},   {"identities", identities},  {"lines", lines},
-           {"locked", room.locked}, {"custom", custom}, {"proposals", proposals}}
+           {"locked", room.locked}, {"custom", custom},          {"proposals", proposals}}
           .dump();
   // room.state is already JSON text (saveState); spliced in rather than parsed again.
   return head.substr(0, head.size() - 1) + ",\"state\":" + room.state + "}";

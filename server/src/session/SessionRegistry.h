@@ -12,8 +12,8 @@
 #include <vector>
 
 #include "packs/PackLibrary.h"
-#include "session/Session.h"
 #include "session/RoomExtras.h"
+#include "session/Session.h"
 
 namespace caw {
 

@@ -7,8 +7,8 @@
 #include <utility>
 
 #include "Codes.h"
-#include "packs/CsvPack.h"
 #include "net/Messages.h"
+#include "packs/CsvPack.h"
 
 namespace caw {
 namespace {
@@ -200,7 +200,8 @@ std::string SessionRegistry::snapshot(const std::string& code) {
   const Session& session = *room.session;
   return Messages::saveRoom({room.language, room.hostToken, session.packs(),
                              session.saveState(millisNow()), session.identities(),
-                             session.matchLines(), session.locked(), room.customPack, room.proposals});
+                             session.matchLines(), session.locked(), room.customPack,
+                             room.proposals});
 }
 
 bool SessionRegistry::restore(const std::string& code, std::string_view snapshot, Time now) {
