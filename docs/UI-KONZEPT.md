@@ -205,9 +205,10 @@ Die Frage steht **einmal oben**, darunter nur die Antworten, nummeriert und
 anonym (`[2] ANTWORT A / ANTWORT B`). Lange Fragen würden sonst in jedem
 Eintrag wiederholt und die Liste etwa verdoppeln. Juror: antippen = auswählen;
 die gewählte Antwort erscheint als geprägtes Band in den Lücken der Frage oben,
-so liest er den ganzen Satz vor dem `[ BESTÄTIGEN ]`. Auch die Antworttexte
-in den anonymen Optionen erhalten den Prägeband-Look, ohne die Auswahl-
-Markierung oder die Tastaturbedienung zu verändern. Alle anderen:
+so liest er den ganzen Satz vor dem `[ BESTÄTIGEN ]`. Die anonymen
+Antwortoptionen darunter bleiben als normaler, gut lesbarer Text auf weißen
+Karten (ausgewählt: invertiert). Ausschließlich die in die obere Frage
+eingesetzten Antworten erhalten das Prägeband. Alle anderen:
 „JUROR ENTSCHEIDET“ und dieselbe Liste zum Mitlesen (ohne Auswahl). Der Big
 Screen zeigt weiterhin ganze eingesetzte Sätze (Abschnitt 5).
 
