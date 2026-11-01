@@ -3,6 +3,7 @@
 
 #include <libusockets.h>
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <stdexcept>
@@ -73,7 +74,8 @@ Server::Server(SessionRegistry& sessions, const PackLibrary& packs, const FameCa
       fame_(fame),
       persist_(persist),
       metrics_(metrics),
-      createLimit_(requestsPerMinute / 10, 5),
+      // Keep the production burst at five; a raised test limit must also raise capacity.
+      createLimit_(requestsPerMinute / 10, std::max(5.0, requestsPerMinute / 60)),
       roomLimit_(requestsPerMinute, requestsPerMinute / 2),
       stop_(stop) {}
 
