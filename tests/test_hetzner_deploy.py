@@ -6,12 +6,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "bin" / "deploy-hetzner"
+ROLLBACK = ROOT / "bin" / "rollback-hetzner"
 WORKFLOW = ROOT / ".github" / "workflows" / "deploy-hetzner.yml"
 
 
 class DeploymentSafetyTests(unittest.TestCase):
     def test_deployment_script_parses_as_bash(self):
         subprocess.run(["bash", "-n", str(SCRIPT)], check=True)
+        subprocess.run(["bash", "-n", str(ROLLBACK)], check=True)
 
     def test_invalid_image_tag_is_rejected_before_any_changes(self):
         result = subprocess.run(
@@ -20,6 +22,14 @@ class DeploymentSafetyTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("immutable image tag", result.stderr)
+
+    def test_rollback_rejects_bad_commit_without_changes(self):
+        result = subprocess.run(
+            ["bash", str(ROLLBACK), "not-a-commit"],
+            cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("invalid expected deployment SHA", result.stderr)
 
     def test_script_never_downs_database_or_removes_volumes(self):
         content = SCRIPT.read_text()
@@ -33,6 +43,11 @@ class DeploymentSafetyTests(unittest.TestCase):
         self.assertNotIn("docker compose down", content)
         self.assertNotIn("--volumes", content)
         self.assertNotIn("bin/smoke", content)
+        rollback = ROLLBACK.read_text()
+        self.assertIn("flock -n", rollback)
+        self.assertIn("git reset --hard", rollback)
+        self.assertIn("up --no-deps --no-build", rollback)
+        self.assertNotIn("--volumes", rollback)
 
     def test_pipeline_gates_real_production_access(self):
         workflow = WORKFLOW.read_text()
@@ -45,6 +60,8 @@ class DeploymentSafetyTests(unittest.TestCase):
         self.assertIn("github.event.workflow_run.conclusion == 'success'", workflow)
         self.assertIn("environment: production", workflow)
         self.assertIn("StrictHostKeyChecking=yes", workflow)
+        self.assertIn("steps.wss.outcome == 'failure'", workflow)
+        self.assertIn("bin/rollback-hetzner", workflow)
         self.assertIn("github.event.workflow_run.head_sha", workflow)
         self.assertIn("ghcr.io/0b-ivan/caw-server:sha-$DEPLOY_SHA", workflow)
         self.assertNotIn("StrictHostKeyChecking=no", workflow)
