@@ -11,7 +11,8 @@ fi
 
 compose() {
   env -u CAW_VERSION docker compose --env-file deploy/.env \
-    -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+    -p "${CAW_RESTORE_PROJECT:-caw}" \
+    -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
 }
 
 backup_container="$(compose ps -q backup)"
