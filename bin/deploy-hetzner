@@ -75,9 +75,23 @@ requireIdle() {
     echo "FAIL: cannot establish an unambiguous CAW idle state" >&2
     return 1
   fi
-  # The initial Hetzner version lacks this gauge. Wait for zero rooms on
-  # that version; new servers can distinguish games from abandoned lobbies.
-  if [[ -z "$in_progress" ]]; then in_progress="$sessions"; fi
+  # The first server version lacks this gauge. Check its Redis snapshots
+  # instead: empty lobbies and finished games must not block a release.
+  if [[ -z "$in_progress" ]]; then
+    if (( sockets != 0 )); then
+      echo "DEFER: CAW has $sockets connected sockets; no rollout" >&2
+      return 75
+    fi
+    local redis_container
+    redis_container="$(compose ps -q redis)"
+    if [[ -z "$redis_container" ]]; then
+      echo "FAIL: Redis container not found for legacy room check" >&2
+      return 1
+    fi
+    git show "$sha:bin/verify-legacy-rooms-idle.py" |
+      python3 - "$redis_container" "$sessions"
+    return $?
+  fi
   if [[ ! "$in_progress" =~ ^[0-9]+$ ]]; then
     echo "FAIL: invalid active match count" >&2
     return 1
