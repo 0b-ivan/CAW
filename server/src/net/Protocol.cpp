@@ -211,7 +211,8 @@ json playersJson(const StateFrame& frame) {
                        {"name", player.name},
                        {"word", frame.words[seat] ? frame.words[seat] : ""},
                        {"points", player.points},
-                       {"connected", player.connected}});
+                       {"connected", player.connected},
+                       {"isHost", frame.hostSeats[seat]}});
   }
   return players;
 }
