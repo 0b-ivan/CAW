@@ -325,8 +325,10 @@ davon gewünscht wird, kommt es zuerst ins Konzept.
   angeboten und keine solche Einladung kopiert/geteilt. Nach Eingabe
   verwenden QR, Kopieren und Teilen dieselbe bestätigte URL, ohne
   Host-Token. Die Eingabe wird nur im lokalen Browser gespeichert.
-  Bei einem bereits erreichbaren Hostnamen oder einer LAN-IP ist kein
-  zusätzlicher Schritt erforderlich. Der Host kann die Adresse ändern.
+  Nach dem Speichern klappt das Feld zu, damit die Spielerliste auch bei
+  320×568 Platz erhält; ein Tipp auf die angezeigte URL öffnet die
+  Adressbearbeitung erneut. Bei einem bereits erreichbaren Hostnamen
+  oder einer LAN-IP ist kein zusätzlicher Schritt erforderlich.
 - **MacBook ab 900 px:** Frage links, Hand rechts und Hauptaktion unten
   rechts. Frage- und Antwortkarten dürfen den verfügbaren Raum besser
   nutzen (lesbarere Schrift, größere Karten), ohne aus dem Viewport zu
