@@ -280,6 +280,13 @@ async function run(browser) {
   assert.equal(await host.locator('#lobby-url').textContent(),
     `192.168.50.77:8080/s/${code}`);
   assert.equal(await host.locator('#copy-link').isDisabled(), false);
+  assert.equal(await host.locator('#invite-address-row').isVisible(), false,
+    'the configured address editor collapses to leave space for players');
+  await host.locator('#lobby-url').click();
+  assert.equal(await host.locator('#invite-address-row').isVisible(), true,
+    'the URL is an accessible toggle for editing the address');
+  await host.locator('#lobby-url').click();
+  assert.equal(await host.locator('#invite-address-row').isVisible(), false);
   assert.equal(await host.evaluate(async (session) =>
     (await import('/play/invite.js')).shareableSessionUrl(session), code),
   `${inviteOrigin}/s/${code}`, 'Copy and Share use the same URL as the QR');
@@ -306,6 +313,7 @@ async function run(browser) {
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
   await checkFit(host, 'lobby-host-full', '#start-button');
   await host.setViewportSize({ width: 320, height: 568 });
+  assert.equal(await host.locator('#invite-address-row').isVisible(), false);
   const invitePanel = await host.locator('#lobby-share').evaluate((panel) => ({
     scrollHeight: panel.scrollHeight, height: panel.clientHeight,
   }));
