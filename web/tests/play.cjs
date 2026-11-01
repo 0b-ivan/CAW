@@ -243,6 +243,7 @@ async function run(browser) {
   const players = [];
   for (const name of ['Ada', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
+  await checkFit(host, 'lobby-host-full', '#start-button');
   assert.equal(await players[0].locator('#lobby-share').isVisible(), false,
     'the guest lobby does not show host-only share controls');
   await checkFit(players[0], 'lobby', '#lobby-status');
