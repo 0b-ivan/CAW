@@ -201,14 +201,23 @@ Cloudflare-Token automatisiert angelegt.
 
 ## 7. Automatische Updates aus GitHub Actions (ohne Freigabe zunächst inaktiv)
 
-Der Workflow `.github/workflows/deploy-hetzner.yml` reagiert nur auf die
-**erfolgreiche Push-CI von `main`** (nicht auf erfolgreiche PR-CI).
-Er baut und veröffentlicht den getesteten Git-Stand als
-`ghcr.io/0b-ivan/caw-server:sha-<commit>`. Anschließend aktualisiert
-er ausschließlich das vorhandene Compose-Projekt `caw` über SSH.
+Der Workflow `.github/workflows/deploy-hetzner.yml` startet bei
+**Pushes auf `main`** und kann manuell gestartet werden. Ein Job darf
+allerdings **erst nach erfolgreicher `main`-Push-CI für genau denselben
+Commit** das Image bauen und deployen. Dafür fragt er die GitHub-Actions-
+Run-API ab (bis zu 15 Minuten); eine PR-CI genügt nicht. Schlägt die
+Push-CI fehl, läuft die Abfrage ab oder ist der Commit nicht mehr auf
+`main`, bleibt Hetzner unverändert. Diese Form umgeht die beobachteten
+`BuildFailed`/`startup_failure`-Starts des `workflow_run`-Triggers.
+Die Ausführung ist bis zur ausdrücklich gesetzten Produktionsfreigabe
+weiterhin vollständig gesperrt.
+
+Nach bestätigter Push-CI baut er
+`ghcr.io/0b-ivan/caw-server:sha-<commit>` und aktualisiert
+ausschließlich das vorhandene Compose-Projekt `caw` über SSH.
 Ein manueller Start ist über **Actions → Deploy CAW to Hetzner → Run
-workflow** möglich, aber auch dann muss `main` für genau diesen Commit
-eine erfolgreiche CI besitzen.
+workflow** möglich, muss aber dieselbe erfolgreiche `main`-Push-CI
+nachweisen.
 
 **Einmalig auf dem Hetzner-Host:**
 
