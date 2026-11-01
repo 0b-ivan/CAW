@@ -155,6 +155,95 @@ void Server::registerSessionRoutes(uWS::App& app) {
       jsonReply(response, "200 OK", Messages::customCards(sessions_.customCards(code)));
     });
   });
+  // A seated player can propose one private card; the host alone can review it.
+  app.post("/api/sessions/:code/proposals", [this](auto* response, auto* request) {
+    if (!admitted(roomLimit_, response, request)) return;
+    const std::string code(request->getParameter(0));
+    const std::string_view authorization = request->getHeader("authorization");
+    if (!authorization.starts_with("Bearer ") ||
+        sessions_.find(code) == nullptr ||
+        !sessions_.find(code)->playerForTicket(authorization.substr(7))) {
+      jsonReply(response, "403 Forbidden", Messages::errorResponse("not_player"));
+      return;
+    }
+    auto body = std::make_shared<RequestBody>();
+    response->onAborted([body]() { body->content.clear(); });
+    response->onData([this, response, body, code, ticket = std::string(authorization.substr(7))](
+                         std::string_view chunk, bool final) {
+      constexpr std::size_t kMaxBytes = 1024;
+      if (!body->tooLarge) {
+        if (chunk.size() > kMaxBytes - body->content.size())
+          body->tooLarge = true;
+        else
+          body->content.append(chunk);
+      }
+      if (!final) return;
+      if (body->tooLarge) {
+        jsonReply(response, "413 Payload Too Large", Messages::errorResponse("body_too_large"));
+        return;
+      }
+      auto proposal = Messages::readProposal(body->content);
+      if (!proposal) {
+        jsonReply(response, "400 Bad Request", Messages::errorResponse("invalid_cards"));
+        return;
+      }
+      if (!sessions_.submitProposal(code, ticket, std::move(*proposal))) {
+        jsonReply(response, "409 Conflict", Messages::errorResponse("proposal_unavailable"));
+        return;
+      }
+      persist(code);
+      jsonReply(response, "201 Created", R"({"ok":true})");
+    });
+  });
+  app.get("/api/sessions/:code/proposals", [this](auto* response, auto* request) {
+    if (!admitted(roomLimit_, response, request)) return;
+    const std::string code(request->getParameter(0));
+    const std::string_view authorization = request->getHeader("authorization");
+    if (!authorization.starts_with("Bearer ") ||
+        !sessions_.authenticatedHost(code, authorization.substr(7))) {
+      jsonReply(response, "403 Forbidden", Messages::errorResponse("not_host"));
+      return;
+    }
+    jsonReply(response, "200 OK", Messages::proposalQueue(sessions_.proposals(code)));
+  });
+  app.post("/api/sessions/:code/proposals/review", [this](auto* response, auto* request) {
+    if (!admitted(roomLimit_, response, request)) return;
+    const std::string code(request->getParameter(0));
+    const std::string_view authorization = request->getHeader("authorization");
+    if (!authorization.starts_with("Bearer ") ||
+        !sessions_.authenticatedHost(code, authorization.substr(7))) {
+      jsonReply(response, "403 Forbidden", Messages::errorResponse("not_host"));
+      return;
+    }
+    auto body = std::make_shared<RequestBody>();
+    response->onAborted([body]() { body->content.clear(); });
+    response->onData([this, response, body, code](std::string_view chunk, bool final) {
+      constexpr std::size_t kMaxBytes = 1024;
+      if (!body->tooLarge) {
+        if (chunk.size() > kMaxBytes - body->content.size())
+          body->tooLarge = true;
+        else
+          body->content.append(chunk);
+      }
+      if (!final) return;
+      if (body->tooLarge) {
+        jsonReply(response, "413 Payload Too Large", Messages::errorResponse("body_too_large"));
+        return;
+      }
+      auto decision = Messages::readProposalDecision(body->content);
+      if (!decision) {
+        jsonReply(response, "400 Bad Request", Messages::errorResponse("invalid_request"));
+        return;
+      }
+      if (!sessions_.reviewProposal(code, decision->id, decision->approve)) {
+        jsonReply(response, "409 Conflict", Messages::errorResponse("proposal_unavailable"));
+        return;
+      }
+      if (Session* session = sessions_.find(code)) deliver(code, *session);
+      persist(code);
+      jsonReply(response, "200 OK", Messages::proposalQueue(sessions_.proposals(code)));
+    });
+  });
   auto createHandler = [this](auto* response, auto* request) {
     if (admitted(createLimit_, response, request)) createRoom(response, sessions_, persist_);
   };

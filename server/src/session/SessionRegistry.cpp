@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "Codes.h"
+#include "packs/CsvPack.h"
 #include "net/Messages.h"
 
 namespace caw {
@@ -108,6 +109,55 @@ bool SessionRegistry::updateCustomCards(std::string_view code, CardPack pack) {
   return true;
 }
 
+const std::vector<CardProposal>& SessionRegistry::proposals(std::string_view code) const {
+  static const std::vector<CardProposal> empty;
+  const auto found = rooms_.find(std::string(code));
+  return found == rooms_.end() ? empty : found->second.proposals;
+}
+
+bool SessionRegistry::submitProposal(std::string_view code, std::string_view ticket,
+                                     CardProposal proposal) {
+  Session* session = find(code);
+  if (session == nullptr || !session->inLobby()) return false;
+  const auto seat = session->playerForTicket(ticket);
+  if (!seat) return false;
+  auto& queue = rooms_.at(std::string(code)).proposals;
+  if (queue.size() >= 24) return false;
+  const auto count = std::count_if(queue.begin(), queue.end(),
+                                   [seat](const CardProposal& item) { return item.seat == *seat; });
+  if (count >= 3) return false;
+  proposal.id = Codes::sessionCode();
+  if (std::any_of(queue.begin(), queue.end(),
+                  [&proposal](const CardProposal& item) { return item.id == proposal.id; }))
+    return false;
+  proposal.seat = *seat;
+  proposal.author = session->nameForSeat(*seat);
+  queue.push_back(std::move(proposal));
+  return true;
+}
+
+bool SessionRegistry::reviewProposal(std::string_view code, std::string_view id, bool approve) {
+  Session* session = find(code);
+  if (session == nullptr || !session->inLobby()) return false;
+  Room& room = rooms_.at(std::string(code));
+  const auto found = std::find_if(room.proposals.begin(), room.proposals.end(),
+                                  [id](const CardProposal& item) { return item.id == id; });
+  if (found == room.proposals.end()) return false;
+  if (approve) {
+    CardPack pack = room.customPack.value_or(CardPack{});
+    if (found->type == "prompt") {
+      if (pack.prompts.size() >= 100) return false;
+      pack.prompts.push_back(CsvPack::prompt(found->text));
+    } else {
+      if (pack.answers.size() >= 100) return false;
+      pack.answers.push_back(found->text);
+    }
+    if (!updateCustomCards(code, std::move(pack))) return false;
+  }
+  room.proposals.erase(found);
+  return true;
+}
+
 std::size_t SessionRegistry::activeCount(Time now) const {
   std::size_t count = 0;
   for (const auto& [code, room] : rooms_) {
@@ -150,7 +200,7 @@ std::string SessionRegistry::snapshot(const std::string& code) {
   const Session& session = *room.session;
   return Messages::saveRoom({room.language, room.hostToken, session.packs(),
                              session.saveState(millisNow()), session.identities(),
-                             session.matchLines(), session.locked(), room.customPack});
+                             session.matchLines(), session.locked(), room.customPack, room.proposals});
 }
 
 bool SessionRegistry::restore(const std::string& code, std::string_view snapshot, Time now) {
@@ -181,7 +231,7 @@ bool SessionRegistry::restore(const std::string& code, std::string_view snapshot
   // Restored is not a change: it is already saved exactly like this.
   session->takeChanged();
   rooms_.emplace(code, Room{record->language, record->hostToken, now + ttl_, std::move(session),
-                            record->customPack});
+                            record->customPack, record->proposals});
   return true;
 }
 

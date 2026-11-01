@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -55,6 +56,9 @@ class Session final {
   bool takeChanged();
 
   bool isHostToken(std::string_view token) const;
+  // REST proposals prove a current seat ticket; the host credential is not a seat.
+  std::optional<std::uint8_t> playerForTicket(std::string_view token) const;
+  std::string nameForSeat(std::uint8_t seat) const;
   bool inLobby() const;
   // Activate a just-uploaded room pack and announce the new selection.
   bool activatePacks(const std::vector<std::string>& ids, std::uint32_t now);
