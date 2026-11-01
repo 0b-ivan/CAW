@@ -209,7 +209,7 @@ const actions = {
     const cards = { prompts: trim(app.editor.prompts), answers: trim(app.editor.answers) };
     const valid = [...cards.prompts, ...cards.answers].every((text) =>
       new TextEncoder().encode(text).length <= 300);
-    if (!valid || cards.prompts.length + cards.answers.length === 0) {
+    if (!valid || (cards.prompts.length + cards.answers.length === 0 && !app.editor.id)) {
       app.editor.status = t('customInvalid');
       update();
       return;
@@ -223,7 +223,8 @@ const actions = {
       });
       if (!response.ok) throw new Error(String(response.status));
       const saved = await response.json();
-      app.editor = { ...saved, dirty: false, status: t('customSaved') };
+      app.editor = { ...saved, dirty: false,
+        status: saved.id ? t('customSaved') : t('customCleared') };
       app.catalog = null;
     } catch (error) {
       app.editor.status = error.message === '409' ? t('customUnavailable') : t('customSaveFailed');
