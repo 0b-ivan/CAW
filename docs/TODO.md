@@ -239,7 +239,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 - [x] Gezielte DYMO-Prägeband-Ausnahme im UI-Konzept für eingesetzte Antworten festhalten
 - [x] Schwarze Kunststoffstreifen mit erhabenen hellen Buchstaben als reines CSS, ohne Bilder/Webfonts
-- [x] Antworttexte in Handkarten, Juror-Auswahl, Satzvorschau, Auflösung und Big Screen einheitlich darstellen
+- [x] Weiße Handkarten mit normalem Text belassen; Prägebänder nur für eingesetzte Antworten, Juror-Auswahl, Auflösung und Big Screen
 - [x] Zeilenumbruch mit einzeln fortgeführten Bändern und synthetische Browser-Regressionstests
 - [ ] PR-CI inklusive Browser-Tests, CTest, Docker-Smoke und Lasttest grün bestätigen
 - [ ] Auf iPhone/Android und Big Screen mit realen langen Antworten visuell abnehmen
