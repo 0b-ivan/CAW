@@ -92,3 +92,12 @@ TEST_CASE("the rate limit allows a burst, then refills over time, per client") {
   CHECK(limit.allow("a", 1600));
   CHECK_FALSE(limit.allow("a", 1600));
 }
+
+TEST_CASE("active game metric is independent from retained room count") {
+  caw::Metrics metrics;
+  metrics.sessions = 12;
+  metrics.activeGames = 2;
+  const auto text = metrics.render();
+  CHECK(text.find("caw_sessions 12\n") != std::string::npos);
+  CHECK(text.find("caw_active_games 2\n") != std::string::npos);
+}

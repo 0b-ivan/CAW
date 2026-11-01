@@ -579,3 +579,14 @@ TEST_CASE("settings from a player are refused") {
   table.send(1, settings(5, 0));
   CHECK(table.last(1).at("code") == "not_host");
 }
+
+TEST_CASE("deployment gate treats an unfinished match as active even after disconnect") {
+  Table table;
+  CHECK_FALSE(table.session.inProgress());
+  table.startThree();
+  CHECK(table.session.inProgress());
+  table.session.connectionClosed(1, table.now);
+  CHECK(table.session.inProgress());
+  table.host(9, Command::Type::End);
+  CHECK_FALSE(table.session.inProgress());
+}

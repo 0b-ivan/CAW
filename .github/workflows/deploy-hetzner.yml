@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Retry deferred releases while existing games are in progress.
+  schedule:
+    - cron: '*/30 * * * *'
 
 permissions:
   contents: read
@@ -22,7 +25,8 @@ jobs:
       github.repository == '0b-ivan/CAW' &&
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'workflow_dispatch' ||
-       github.event_name == 'push')
+       github.event_name == 'push' ||
+       github.event_name == 'schedule')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -56,8 +60,12 @@ jobs:
           set -euo pipefail
           image="ghcr.io/0b-ivan/caw-server:sha-$DEPLOY_SHA"
           echo "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-          docker build --target runtime -t "$image" -f deploy/server.Dockerfile .
-          docker push "$image"
+          if docker manifest inspect "$image" >/dev/null 2>&1; then
+            echo "PASS: immutable GHCR image already exists"
+          else
+            docker build --target runtime -t "$image" -f deploy/server.Dockerfile .
+            docker push "$image"
+          fi
 
   deploy:
     needs: publish
@@ -92,21 +100,33 @@ jobs:
           printf '%s\n' "$CAW_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/caw_deploy" "$HOME/.ssh/known_hosts"
           ssh-keygen -y -f "$HOME/.ssh/caw_deploy" >/dev/null
-      - name: Back up and update only the CAW Compose services
+      - name: Deploy only when no CAW games or sockets are active
+        id: rollout
         run: |
           set -euo pipefail
-          # The short-lived GHCR token is sent only as SSH stdin; no persistent
-          # server-side Docker login, credentials file, or command-line secret.
+          # The old production checkout does not yet have bin/deploy-hetzner.
+          # Read the tested script from Git without changing tracked files.
+          # GHCR_TOKEN remains on stdin, never in the host filesystem.
+          set +e
           printf '%s\n' "$GHCR_TOKEN" |
             ssh -T -i "$HOME/.ssh/caw_deploy" \
               -p "$CAW_SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
               "$CAW_SSH_USER@$CAW_SSH_HOST" \
-              "cd /opt/caw && bash bin/deploy-hetzner '$DEPLOY_TAG' '$GITHUB_ACTOR'"
+              "set -e; cd /opt/caw; git fetch --quiet origin main; bootstrap=\$(mktemp .git/caw-deploy-bootstrap.XXXXXX); trap 'rm -f \"\$bootstrap\"' EXIT; git show '$DEPLOY_SHA:bin/deploy-hetzner' > \"\$bootstrap\"; bash \"\$bootstrap\" '$DEPLOY_TAG' '$GITHUB_ACTOR'"
+          result=$?
+          set -e
+          if [[ "$result" == 75 ]]; then
+            echo "deferred=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Active games detected: deployment postponed until a scheduled retry"
+            exit 0
+          fi
+          exit "$result"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
       - name: Verify the public HTTPS and WebSocket handshake
         id: wss
+        if: steps.rollout.outputs.deferred != 'true'
         run: |
           set -euo pipefail
           for attempt in 1 2 3; do

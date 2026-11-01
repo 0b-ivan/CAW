@@ -228,4 +228,9 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] CAW_PRODUCTION_APPROVED und CAW_AUTO_DEPLOY nach Abnahme bewusst aktivieren
 - [x] Release-Kandidaten-Workflow zum separaten, CI-gesteuerten GHCR-SHA-Publish implementiert
 - [ ] GHCR-SHA-Publish auf main erfolgreich ausführen und SHA-Image in Registry verifizieren (ohne Hetzner-Deploy)
+- [x] GHCR-SHA-Image veröffentlicht; GitHub SSH und öffentliche HTTPS-/WSS-Tests nachgewiesen
+- [x] Technisches Auto-Deployment nach grüner main-CI aktiviert (PR #24)
+- [x] Ursache des ersten gescheiterten Deploys gefunden: altem Hetzner-Checkout fehlt bin/deploy-hetzner
+- [x] Sicheren Leerlauf-Gate und regelmäßige Wiederholung für laufende Spiele implementiert
+- [ ] Ersten echten Hetzner-Deploy nach neuem Idle-Gate und WSS-Test abnehmen
 - [ ] Erstes manuelles Deployment und danach Autodeploy mit externem HTTPS/WSS bestätigen

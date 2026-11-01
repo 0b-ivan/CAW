@@ -117,6 +117,15 @@ std::size_t SessionRegistry::activeCount(Time now) const {
   return count;
 }
 
+std::size_t SessionRegistry::inProgressCount(Time now) const {
+  std::size_t count = 0;
+  for (const auto& [code, room] : rooms_) {
+    (void)code;
+    if (now < room.expiresAt && room.session->inProgress()) ++count;
+  }
+  return count;
+}
+
 void SessionRegistry::expire(Time now) {
   for (auto room = rooms_.begin(); room != rooms_.end();) {
     if (now >= room->second.expiresAt) {

@@ -56,6 +56,8 @@ class Session final {
 
   bool isHostToken(std::string_view token) const;
   bool inLobby() const;
+  // In-progress rounds must finish before a single-instance server restart.
+  bool inProgress() const;
   // Activate a just-uploaded room pack and announce the new selection.
   bool activatePacks(const std::vector<std::string>& ids, std::uint32_t now);
   // The chosen packs, sorted: together with saveState() they restore the match.
