@@ -60,7 +60,7 @@ fi
 # A live room (including a temporarily disconnected one) must finish before
 # this single-instance server can be replaced without disturbing its players.
 requireIdle() {
-  local server_container metrics sessions sockets
+  local server_container metrics sessions sockets in_progress
   server_container="$(compose ps -q server)"
   if [[ -z "$server_container" ]]; then
     echo "FAIL: CAW server container not found" >&2
@@ -70,12 +70,20 @@ requireIdle() {
     http://127.0.0.1:8080/metrics)"
   sessions="$(awk '$1 == "caw_sessions" {print $2}' <<< "$metrics")"
   sockets="$(awk '$1 == "caw_sockets" {print $2}' <<< "$metrics")"
+  in_progress="$(awk '$1 == "caw_active_games" {print $2}' <<< "$metrics")"
   if [[ ! "$sessions" =~ ^[0-9]+$ || ! "$sockets" =~ ^[0-9]+$ ]]; then
     echo "FAIL: cannot establish an unambiguous CAW idle state" >&2
     return 1
   fi
-  if (( sessions != 0 || sockets != 0 )); then
-    echo "DEFER: CAW is busy ($sessions rooms, $sockets sockets); no rollout" >&2
+  # The initial Hetzner version lacks this gauge. Wait for zero rooms on
+  # that version; new servers can distinguish games from abandoned lobbies.
+  if [[ -z "$in_progress" ]]; then in_progress="$sessions"; fi
+  if [[ ! "$in_progress" =~ ^[0-9]+$ ]]; then
+    echo "FAIL: invalid active match count" >&2
+    return 1
+  fi
+  if (( in_progress != 0 || sockets != 0 )); then
+    echo "DEFER: CAW is busy ($in_progress active matches, $sockets sockets); no rollout" >&2
     return 75
   fi
 }
