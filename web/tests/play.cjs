@@ -207,7 +207,8 @@ async function playRound(host, players, round, screen) {
     assert.equal(selected.background, 'rgb(8, 8, 8)', 'selected answer is dark');
     assert.equal(selected.color, 'rgb(244, 244, 240)', 'selected hand text is light and readable');
     assert.equal(selected.pressed, 'true', 'selection is accessible as text/ARIA');
-    assert.equal(await page.locator('#answer-prompt mark').count(), 1, 'the chosen card fills the blank');
+    assert.ok(await page.locator('#answer-prompt mark.answer-tape').count() >= 1,
+      'the chosen answer fills the blank with one or more physical strips');
     await page.locator('#hand .card').first().click();
     assert.equal(await page.locator('#hand .slot-mark').count(), 0);
 
