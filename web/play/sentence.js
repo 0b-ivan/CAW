@@ -73,10 +73,7 @@ function splitTape(tape) {
 
   const text = textNode.textContent;
   const words = [...text.matchAll(/\S+/gu)];
-  if (words.length < 2) {
-    tape.classList.remove('answer-tape--measuring');
-    return;
-  }
+  if (words.length < 2) return; // Keep native wrapping for a long single word.
 
   const range = document.createRange();
   const starts = [0];
@@ -95,10 +92,7 @@ function splitTape(tape) {
     previousTop = top;
   }
 
-  if (starts.length === 1) {
-    tape.classList.remove('answer-tape--measuring');
-    return;
-  }
+  if (starts.length === 1) return; // Never force an unmeasured answer into nowrap.
 
   const pieces = document.createDocumentFragment();
   const variant = Number(tape.className.match(/answer-tape--(\d)/)?.[1] ?? 0);
