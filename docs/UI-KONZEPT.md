@@ -309,6 +309,35 @@ laufende dekorative Animationen. Die oben definierten Ausnahmen gelten.
 Wenn eines
 davon gewünscht wird, kommt es zuerst ins Konzept.
 
+## 11. UI-Abnahme: kleine Lobby, erreichbare Einladungen und Desktop (2026-11-01)
+
+- **Host-Lobby bei 320×568:** QR, Code und alle Einladungsaktionen
+  einschließlich `BIG SCREEN` sind direkt bedienbar, ohne einen zweiten
+  verschachtelten Scrollbereich für die Einladungsaktionen. Nur die
+  Teilnehmerliste darf bei vielen Spielern intern scrollen; die
+  Start-Aktion bleibt fixiert. Die Buttons bleiben mindestens 48 px hoch.
+- **Einladungslinks im Heimnetz:** Wird die Host-Seite über
+  `localhost`, `127.0.0.1` oder `[::1]` geöffnet, gibt es keine
+  automatisch ermittelbare Adresse, die andere Geräte erreichen können.
+  Deshalb bietet die Host-Lobby ein explizites Eingabefeld für die
+  erreichbare Basisadresse (etwa `http://192.168.1.10:8080`).
+  Bis zur gültigen Eingabe wird kein irreführender Loopback-QR-Code
+  angeboten und keine solche Einladung kopiert/geteilt. Nach Eingabe
+  verwenden QR, Kopieren und Teilen dieselbe bestätigte URL, ohne
+  Host-Token. Die Eingabe wird nur im lokalen Browser gespeichert.
+  Bei einem bereits erreichbaren Hostnamen oder einer LAN-IP ist kein
+  zusätzlicher Schritt erforderlich. Der Host kann die Adresse ändern.
+- **MacBook ab 900 px:** Frage links, Hand rechts und Hauptaktion unten
+  rechts. Frage- und Antwortkarten dürfen den verfügbaren Raum besser
+  nutzen (lesbarere Schrift, größere Karten), ohne aus dem Viewport zu
+  ragen. Die Juror-Auswahl wird im rechten Bereich bei wenigen Antworten
+  vertikal zentriert und erhält größere Tippflächen; bei vielen Antworten
+  bleibt sie intern scrollbar. Diese Anpassungen gelten nicht für den
+  eigenständigen Big Screen.
+- **Regression:** Geometrie-Tests bei 320×568 und 390×844 für QR/
+  Einladungsaktionen, Copy/Share-URL und Host-Link-Eingabe sowie
+  Desktop-Checks bei 1280×800 für Kartentextgröße und Juror-Position.
+
 ## 10. Host-Krone (Mockup-Abgleich 2026-11-01)
 
 Als **einzige neue Akzentfarbe** ist für die Host-Krone ein gedämpftes Gold
