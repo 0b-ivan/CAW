@@ -1,0 +1,65 @@
+name: Hetzner SSH read-only preflight
+
+# Run once on its merge to main, and allow safe manual diagnostics later.
+# Production environment secrets are intentionally usable only from main.
+# Never deploys anything.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ssh-preflight:
+    if: github.repository == '0b-ivan/CAW' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    environment: production
+    env:
+      CAW_SSH_HOST: ${{ secrets.CAW_SSH_HOST }}
+      CAW_SSH_USER: ${{ secrets.CAW_SSH_USER }}
+      CAW_SSH_KEY: ${{ secrets.CAW_SSH_PRIVATE_KEY }}
+      CAW_SSH_KNOWN_HOSTS: ${{ secrets.CAW_SSH_KNOWN_HOSTS }}
+      CAW_SSH_PORT: ${{ vars.CAW_SSH_PORT || '22' }}
+    steps:
+      - name: Verify SSH secrets and pinned host key
+        run: |
+          set -euo pipefail
+          test -n "$CAW_SSH_HOST" && test -n "$CAW_SSH_KEY"
+          test -n "$CAW_SSH_KNOWN_HOSTS" && test -n "$CAW_SSH_USER"
+          if [[ "$CAW_SSH_USER" != caw-deploy ]]; then
+            echo "FAIL: CAW_SSH_USER must be the dedicated caw-deploy account" >&2
+            exit 1
+          fi
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$CAW_SSH_KEY" > "$HOME/.ssh/caw_deploy"
+          printf '%s\n' "$CAW_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/caw_deploy" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/caw_deploy" >/dev/null
+
+      - name: Check live Hetzner access without any writes
+        run: |
+          set -euo pipefail
+          ssh -T -i "$HOME/.ssh/caw_deploy" \
+            -p "$CAW_SSH_PORT" -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes -o ConnectTimeout=15 \
+            "$CAW_SSH_USER@$CAW_SSH_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          test "$(id -un)" = caw-deploy
+          cd /opt/caw
+          test "$(git branch --show-current)" = main
+          test -z "$(git status --porcelain --untracked-files=no)"
+          test -r deploy/.env && test -w deploy/.env
+          test -r web/operator.json
+          test -w .git
+          docker info >/dev/null
+          python3 bin/hetzner-preflight.py
+          curl --fail --silent --show-error --max-time 10 \
+            http://127.0.0.1:18081/healthz | grep -qx ok
+          echo "PASS: GitHub runner can SSH as caw-deploy; repo, config, Docker and local health OK"
+          echo "Production checkout commit: $(git rev-parse --short HEAD)"
+          REMOTE

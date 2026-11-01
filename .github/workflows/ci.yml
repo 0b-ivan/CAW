@@ -52,7 +52,7 @@ jobs:
         run: |
           # Validate workflow structure and expressions, not only shell syntax.
           docker run --rm -v "$PWD:/repo:ro" -w /repo rhysd/actionlint:1.7.12 \
-            -shellcheck= -pyflakes= .github/workflows/ci.yml .github/workflows/deploy-hetzner.yml
+            -shellcheck= -pyflakes= .github/workflows/ci.yml .github/workflows/deploy-hetzner.yml .github/workflows/hetzner-ssh-preflight.yml
       - name: Build C++20 and run CTest in Debian
         run: |
           docker build --target build -t caw-build -f deploy/server.Dockerfile .
