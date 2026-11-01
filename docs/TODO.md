@@ -218,7 +218,15 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Einrichtung und Secrets/Variablen im Hetzner-Runbook dokumentiert
 - [ ] PR-CI grün prüfen und Dry-Run/Smoke auf einer Testinstanz durchführen
 - [ ] Echte Betreiberangaben und Drittanbieter-Kartenrechte klären
-- [ ] Verschlüsselte Offsite-Backups für Postgres und Redis-AOF mit Restore-Probe einrichten
+- [x] Vorhandene Hetzner Storage Box als Offsite-Ziel und Restic/SFTP-Verschlüsselung konzipieren
+- [x] Host-Skripte für aktuellen PostgreSQL-Dump, konsistente Redis-7-AOF-Kopie,
+  verschlüsselte Storage-Box-Übertragung und isolierte Restore-Probe ergänzen
+- [x] Täglichen systemd-Timer, Aufbewahrung und statische CI-Sicherheitstests ergänzen
+- [ ] Nach PR-CI und Merge: SFTP-Hostkey verifizieren, eigenen Storage-Box-Key
+  und Restic-Passwort auf Hetzner unter caw-deploy konfigurieren
+- [ ] Erste verschlüsselte Offsite-Übertragung, Restic-Prüfung und isolierte
+  PostgreSQL-/Redis-Wiederherstellung **tatsächlich** erfolgreich nachweisen
+- [ ] Erst nach bestätigtem Restore täglichen Timer aktivieren und Backup-Fehler überwachen
 - [ ] GitHub-Environment production (SSH-Secrets, geprüfte known_hosts) einrichten
 - [ ] CAW_PRODUCTION_APPROVED und CAW_AUTO_DEPLOY nach Abnahme bewusst aktivieren
 - [ ] Erstes manuelles Deployment und danach Autodeploy mit externem HTTPS/WSS bestätigen
