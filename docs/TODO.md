@@ -218,6 +218,11 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Einrichtung und Secrets/Variablen im Hetzner-Runbook dokumentiert
 - [ ] PR-CI grün prüfen und Dry-Run/Smoke auf einer Testinstanz durchführen
 - [ ] Echte Betreiberangaben und Drittanbieter-Kartenrechte klären
+- [x] Isolierten PostgreSQL-Restore-Test aus dem bestehenden lokalen CAW-Dump
+  ergänzen, ohne Produktionsdatenbank oder Container anzutasten
+- [ ] Die neue lokale Restore-Probe in CI und danach auf Hetzner erfolgreich
+  nachweisen (als caw-deploy, ohne Storage Box)
+- [ ] Storage-Box-Offsite-Backups sind auf Betreiberwunsch vorerst zurückgestellt
 - [ ] Verschlüsselte Offsite-Backups für Postgres und Redis-AOF mit Restore-Probe einrichten
 - [ ] GitHub-Environment production (SSH-Secrets, geprüfte known_hosts) einrichten
 - [ ] CAW_PRODUCTION_APPROVED und CAW_AUTO_DEPLOY nach Abnahme bewusst aktivieren
