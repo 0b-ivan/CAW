@@ -1,0 +1,16 @@
+[Unit]
+Description=Encrypted CAW Postgres and Redis backup to Hetzner Storage Box
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=caw-deploy
+Group=caw-deploy
+SupplementaryGroups=docker
+WorkingDirectory=/opt/caw
+Environment=HOME=/home/caw-deploy
+ExecStart=/bin/bash /opt/caw/bin/caw-offsite-backup
+NoNewPrivileges=true
+Nice=10
