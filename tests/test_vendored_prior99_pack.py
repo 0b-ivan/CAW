@@ -36,6 +36,7 @@ class Prior99PackTests(unittest.TestCase):
         self.assertEqual(len(manifest["packs"]), 1)
         pack = manifest["packs"][0]
         self.assertEqual(pack["id"], "prior99-fullformat-german")
+        self.assertEqual(pack["title"], "NSFW")
         self.assertEqual(pack["file"], "cards.csv")
         self.assertEqual(pack["language"], "de")
         self.assertIs(pack["defaultSelected"], False)
