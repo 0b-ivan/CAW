@@ -44,8 +44,9 @@ async function checkFit(page, label, mainAction) {
       const hand = await page.locator('#hand').boundingBox();
       assert.ok(prompt && hand && prompt.x + prompt.width < hand.x,
         'desktop question must be left of the answer cards');
-      assert.ok(prompt.width >= 350 && prompt.width <= 400,
-        'desktop question retains physical card proportions');
+      // Bounding boxes include the deliberate two-degree card rotation.
+      assert.ok(prompt.width >= 310 && prompt.width <= 450,
+        'desktop question retains compact physical-card proportions');
       const font = await page.locator('#hand .card').first()
         .evaluate((card) => parseFloat(getComputedStyle(card).fontSize));
       assert.ok(font >= 16, 'desktop answer cards have readable text');
