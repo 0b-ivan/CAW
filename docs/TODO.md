@@ -188,3 +188,15 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] DE/EN-Hilfedialog mit zwei Bereichen: SO STARTEST DU und SPIELREGELN (Juror, Pick/Draw, Punkte, Hand, Host-Einstellungen), Escape, Schließen und eigener Scrollfläche
 - [x] Playwright-Checks für DE/EN-Spielregeln, fehlende Infrastruktur-Hinweise, Dialog, ruhige Intro-Dauer und 320/390/1280 px ergänzt
 - [ ] Finale CI einschließlich Browser-Screenshots für diese Revision bestätigen
+
+## M9 – Eigene Karten im Host-Editor (Feature-Branch)
+
+- [x] Konzept und UI-Layout für sessionspezifische eigene Karten festgelegt
+- [x] Host-authentifizierter REST-Endpunkt zum Laden/Speichern eigener Frage- und Antwortkarten
+- [x] Gemeinsame Validierung mit CSV-Lader: UTF-8, 300 Bytes, Pick/Draw, höchstens 100 pro Art
+- [x] Eigene Packs von öffentlichen/globalen Packs und anderen Spielräumen isoliert
+- [x] Private Karten im versionierten Redis-Room-Snapshot; Schema-4-Kompatibilität
+- [x] Host-Menü: Karten hinzufügen, bearbeiten, entfernen, speichern, JSON importieren/exportieren (DE/EN)
+- [x] Synthetische C++-Unit- und Browser-Regressionstests ergänzt
+- [ ] PR-CI einschließlich CTest, Browser-/Lasttest und Docker-Smoke grün bestätigen
+- [ ] Nach CI echte Touch-Abnahme auf Android/iPhone und MacBook durchführen
