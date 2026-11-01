@@ -4,13 +4,14 @@ import { t } from './text.js';
 import { fillSentence } from './sentence.js';
 import { qrSvg } from './qr.js';
 import { hostCrown, markHost } from './crown.js';
+import { configuredInviteOrigin, isLoopback, shareableSessionUrl } from './invite.js';
 
 const NO_SEAT = 255;
 const $ = (id) => document.getElementById(id);
 const VIEWS = ['connecting', 'missing', 'join', 'lobby', 'answer', 'waiting', 'judge', 'reveal',
   'finished', 'hold', 'removed', 'replaced'];
 
-export const sessionUrl = (code) => `${location.origin}/s/${code}`;
+export { sessionUrl } from './invite.js';
 
 export function isSeated(app) {
   return !!app.frame && app.frame.me.seat !== NO_SEAT;
@@ -126,14 +127,24 @@ function rosterItems(app) {
 
 // The QR Code is drawn once per link; redrawing it on every frame would be wasted work.
 function renderShare(app) {
-  const url = sessionUrl(app.code);
+  const url = shareableSessionUrl(app.code);
   $('lobby-code').textContent = app.code;
-  $('lobby-url').textContent = url.replace(/^https?:\/\//, '');
+  $('lobby-url').textContent = url ? url.replace(/^https?:\/\//, '') : t('inviteAddressNeeded');
   $('share-link').hidden = typeof navigator.share !== 'function';
+  $('copy-link').disabled = !url;
+  $('share-link').disabled = !url;
+  const row = $('invite-address-row');
+  row.hidden = !isLoopback(location.hostname) && !configuredInviteOrigin(app.code);
+  const input = $('invite-address');
+  if (document.activeElement !== input) {
+    input.value = configuredInviteOrigin(app.code) ?? '';
+    $('invite-hint').textContent = url ? '' : t('inviteAddressNeeded');
+  }
   const box = $('lobby-qr');
-  if (box.dataset.url === url) return;
-  box.dataset.url = url;
-  box.replaceChildren(qrSvg(url, t('qrLabel')));
+  box.hidden = !url;
+  if (box.dataset.url === (url ?? '')) return;
+  box.dataset.url = url ?? '';
+  box.replaceChildren(...(url ? [qrSvg(url, t('qrLabel'))] : []));
 }
 
 // --- Answers ---
