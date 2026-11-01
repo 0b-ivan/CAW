@@ -125,8 +125,9 @@ void Session::claimHost(ConnectionId connection, const Command& command, std::ui
   if (!isHostToken(command.token)) return send(connection, Protocol::error("not_host"));
   hosts_.insert(connection);
   send(connection, Protocol::notice("host"));
-  // A host page needs the table at once, not after the next change.
-  sendState(connection, seats_.seatOf(connection), now);
+  // Notify everyone: a host who already plays must receive the crown on
+  // other clients without waiting for the next round or player action.
+  publishAll(now);
 }
 
 bool Session::playerMove(ConnectionId connection, const Command& command, std::uint32_t now) {
@@ -385,8 +386,11 @@ StateFrame Session::publicFrame(std::uint32_t now) const {
   frame.settings = table_.settings();
   frame.requestedRounds = game_.requestedRounds();
   for (const std::string& id : packIds_) frame.packs.push_back(library_.find(id));
-  for (std::uint8_t seat = 0; seat < kPlayers; ++seat)
+  for (std::uint8_t seat = 0; seat < kPlayers; ++seat) {
     if (!identities_[seat].playerId.empty()) frame.words[seat] = playerWord(identities_[seat].word);
+    const ConnectionId connection = seatConnection_[seat];
+    frame.hostSeats[seat] = connection != kNoConnection && hosts_.count(connection) != 0;
+  }
   frame.lines = &matchLines_;
   frame.locked = locked_;
   return frame;
