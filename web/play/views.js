@@ -131,14 +131,16 @@ function renderShare(app) {
   $('lobby-share').classList.toggle('needs-address', !url);
   $('lobby-code').textContent = app.code;
   $('lobby-url').textContent = url ? url.replace(/^https?:\/\//, '') : t('inviteAddressNeeded');
+  $('lobby-url').setAttribute('aria-label', t('editInvite'));
   $('share-link').hidden = typeof navigator.share !== 'function';
   $('copy-link').disabled = !url;
   $('share-link').disabled = !url;
   const row = $('invite-address-row');
-  row.hidden = !isLoopback(location.hostname) && !configuredInviteOrigin(app.code);
+  row.hidden = !!url && !app.editInvite;
   const input = $('invite-address');
   if (document.activeElement !== input) {
-    input.value = configuredInviteOrigin(app.code) ?? '';
+    input.value = configuredInviteOrigin(app.code) ??
+      (isLoopback(location.hostname) ? '' : location.origin);
     $('invite-hint').textContent = url ? '' : t('inviteAddressNeeded');
   }
   const box = $('lobby-qr');
