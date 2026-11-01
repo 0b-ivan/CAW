@@ -376,13 +376,13 @@ clientseitig vor der Übertragung zur vorhandenen Storage Box.
      set -a
      . ~/.config/caw/offsite.env
      set +a
-     restic snapshots || restic init
+     restic snapshots
    '
    ```
 
-   `restic init` nur ausführen, wenn wirklich noch **kein** CAW-Repository
-   existiert. Ein Verbindungs- oder Authentifizierungsfehler darf nicht als
-   fehlendes Repository interpretiert werden.
+   Ist `caw-restic` ausdrücklich noch nicht initialisiert, `restic init` in
+   einem separaten Schritt ausführen. Niemals `restic snapshots || restic init`:
+   Ein Verbindungsfehler ist kein Beleg für ein leeres Repository.
 
 6. Nach Review/Merge der Skripte eine manuelle Erstsicherung ausführen und
    unmittelbar den **isolierten Restore** überprüfen:
