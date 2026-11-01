@@ -197,3 +197,107 @@ das Skript stoppt absichtlich Postgres und Redis.
 
 Es wird kein zusätzlicher Hetzner-Server, kein Tunnel und kein
 Cloudflare-Token automatisiert angelegt.
+
+
+## 7. Automatische Updates aus GitHub Actions (ohne Freigabe zunächst inaktiv)
+
+Der Workflow `.github/workflows/deploy-hetzner.yml` reagiert nur auf die
+**erfolgreiche Push-CI von `main`** (nicht auf erfolgreiche PR-CI).
+Er baut und veröffentlicht den getesteten Git-Stand als
+`ghcr.io/0b-ivan/caw-server:sha-<commit>`. Anschließend aktualisiert
+er ausschließlich das vorhandene Compose-Projekt `caw` über SSH.
+Ein manueller Start ist über **Actions → Deploy CAW to Hetzner → Run
+workflow** möglich, aber auch dann muss `main` für genau diesen Commit
+eine erfolgreiche CI besitzen.
+
+**Einmalig auf dem Hetzner-Host:**
+
+```sh
+cd /opt/caw
+git switch main
+git pull --ff-only
+# Es muss die bestehende Produktionskonfiguration geben:
+test -f deploy/.env
+test -f web/operator.json
+python3 bin/hetzner-preflight.py
+docker compose -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml ps
+```
+
+Der Checkout muss auf `main` ohne Änderungen an versionierten Dateien
+liegen. Die ignorierten Dateien `deploy/.env` und `web/operator.json`
+werden nicht verändert oder hochgeladen. Einen **eigenen Deploy-SSH-User**
+mit Zugriff auf `/opt/caw` und die Docker-Engine einrichten. Docker-Zugriff
+ist praktisch Root-Zugriff auf den Host: den Schlüssel nur für diese
+Automatisierung verwenden und alle GitHub-Environment-Rechte beschränken.
+
+**GitHub-Einstellungen:** Im Repository unter **Settings → Environments**
+die Environment `production` anlegen. Darin als **Secrets** hinterlegen:
+
+| Secret | Zweck |
+|---|---|
+| `CAW_SSH_HOST` | öffentliche DNS-Adresse oder IP des Hetzner-SSH-Servers |
+| `CAW_SSH_USER` | dedizierter Deploy-Benutzer mit Docker-Rechten |
+| `CAW_SSH_PRIVATE_KEY` | privater, passwortloser SSH-Deploy-Schlüssel |
+| `CAW_SSH_KNOWN_HOSTS` | geprüfte SSH-`known_hosts`-Zeile für exakt diesen Host |
+
+Die Host-Key-Zeile z. B. per `ssh-keyscan -p 22 -t ed25519 HOST`
+erfassen, aber **Fingerabdruck unabhängig am Hetzner-Server** mit
+`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` vergleichen.
+Niemals `StrictHostKeyChecking=no` verwenden. Schlüssel und Passwörter
+weder committen noch in Chat-/CI-Logs kopieren. Optional als
+GitHub-**Environment-Variable** `CAW_SSH_PORT` setzen (sonst 22).
+Ggf. im GHCR-Package `caw-server` den Zugriff der Repository-Actions
+zulassen; es wird kein dauerhafter GHCR-Token auf Hetzner gespeichert.
+Ein SSH-Deploy aus GitHub Actions setzt voraus, dass der konfigurierte
+SSH-Port für GitHub-Runner erreichbar ist; **am Cloudflare-Tunnel
+selbst wird nichts geändert**.
+
+**Scharfschalten nach rechtlicher und betrieblicher Freigabe:**
+Unter **Settings → Secrets and variables → Actions → Variables**
+die beiden Repository-Variablen setzen:
+
+| Variable | Wert | Wirkung |
+|---|---|---|
+| `CAW_PRODUCTION_APPROVED` | `true` | Deployment nach ausdrücklich bestätigter rechtlicher/operativer Freigabe überhaupt zulassen |
+| `CAW_AUTO_DEPLOY` | `true` | Nach erfolgreicher `main`-CI automatisch deployen |
+
+Solange `CAW_PRODUCTION_APPROVED` fehlt oder `false` ist, führt auch
+`workflow_dispatch` kein Produktionsdeployment aus.
+Wenn nur `CAW_AUTO_DEPLOY` fehlt, sind nach Freigabe weiterhin manuelle
+Deployments möglich. Optional in der Environment `production`
+**Required reviewers** für die erste Phase konfigurieren; dies hält
+auch automatische Läufe bis zur GitHub-Freigabe an.
+
+**Pipeline im Betrieb:**
+
+1. `main` besteht sämtliche C++-, Web-, Last- und Compose-Tests.
+2. GitHub erstellt und pusht das SHA-getaggte Container-Image nach GHCR.
+3. Der SSH-Deploy prüft Commit/Checkout/Compose, erzeugt einen
+   zusätzlichen lokalen Postgres-Dump und bewahrt die bisherige
+   `CAW_VERSION` auf.
+4. Nur `server` und `caddy` werden per
+   `docker compose ... up --no-deps --no-build --wait` aktualisiert.
+   Redis-/Postgres-Volumes, Backup-Dienst und der bestehende
+   `cloudflared` werden **nicht** neu erstellt.
+5. Lokales `/healthz`, öffentliches HTTPS und die
+   `/metrics`-404-Sperre werden geprüft. Danach folgt ein echter
+   WSS-Handshake von GitHub Actions aus.
+6. Bei Fehler vor Abschluss der HTTP-Prüfungen rollt das Skript selbst
+   zurück. Scheitert erst WSS, führt die CI
+   `bin/rollback-hetzner` per SSH aus. Ein fehlgeschlagener Rollback
+   bleibt in Actions sichtbar und erfordert einen Betreiber-Eingriff.
+
+Die bisherige `CAW_VERSION` bleibt im lokalen `deploy/.env` erhalten
+bzw. wird auf einen vollständigen SHA-Tag geändert. Dadurch verwenden
+spätere manuelle `docker compose up`-Aufrufe nicht versehentlich
+`:latest`. Das vorherige Image bleibt auf Hetzner für einen Rollback
+lokal vorhanden. Docker-Images dürfen nicht durch automatische
+Host-weite `docker image prune -a`-Jobs während eines Deployments
+entfernt werden.
+
+**Wichtig vor dem Aktivieren:** Impressums-/Betreiberdaten,
+Kartenrechte insbesondere Prior99, verschlüsselte Offsite-Backups für
+Postgres **und Redis-AOF** mit Restore-Test sowie die externe
+HTTPS-/WSS-Abnahme bleiben Pflicht. Ein lokaler Postgres-Dump vor
+Deploy ersetzt kein Offsite-Backup. Die Pipeline bestätigt diese
+rechtlichen Freigaben nicht selbst.

@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Restore the last CAW image when the public WebSocket probe fails.
+set -Eeuo pipefail
+cd "$(dirname "$0")/.."
+
+expected_sha="${1:?Usage: bin/rollback-hetzner <failed-commit-sha>}"
+if ! [[ "$expected_sha" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "FAIL: invalid expected deployment SHA" >&2
+  exit 1
+fi
+
+exec 9>.git/caw-deploy.lock
+flock -n 9 || { echo "FAIL: CAW deployment is locked" >&2; exit 1; }
+
+state=.git/caw-previous-deploy
+if [[ ! -f "$state" ]]; then
+  echo "FAIL: no previous release state available" >&2
+  exit 1
+fi
+mapfile -t release < "$state"
+if [[ "${#release[@]}" -ne 3 || "${release[0]}" != "$expected_sha" ]]; then
+  echo "FAIL: previous-release record does not match the failed deployment" >&2
+  exit 1
+fi
+
+previous_sha="${release[1]}"
+previous_tag="${release[2]}"
+if ! [[ "$previous_sha" =~ ^[0-9a-f]{40}$ ]] ||
+   ! [[ "$previous_tag" == __unset__ || "$previous_tag" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$ ]]; then
+  echo "FAIL: invalid stored rollback target" >&2
+  exit 1
+fi
+if [[ "$(git branch --show-current)" != main ||
+      "$(git rev-parse HEAD)" != "$expected_sha" ||
+      -n "$(git status --porcelain --untracked-files=no)" ]]; then
+  echo "FAIL: checkout has moved or changed; refusing automatic rollback" >&2
+  exit 1
+fi
+
+compose() {
+  # Only deploy/.env controls the running image, including during rollback.
+  env -u CAW_VERSION docker compose --env-file deploy/.env \
+    -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+}
+
+temporary_env="$(mktemp deploy/.env.previous.XXXXXX)"
+trap 'rm -f "$temporary_env"' EXIT
+awk -v tag="$previous_tag" '
+  /^CAW_VERSION=/ { next }
+  { print }
+  END { if (tag != "__unset__") print "CAW_VERSION=" tag }
+' deploy/.env > "$temporary_env"
+chmod 600 "$temporary_env"
+mv "$temporary_env" deploy/.env
+
+# Repository was clean and is still the exact release under test. Local image
+# for the previous version was intentionally retained by the deploy script.
+git reset --hard "$previous_sha" >/dev/null
+compose up --no-deps --no-build --detach --wait --wait-timeout 180 server caddy
+
+port="$(sed -n 's/^CAW_ORIGIN_PORT=//p' deploy/.env | tail -1)"
+port="${port:-18081}"
+curl --fail --silent --show-error "http://127.0.0.1:${port}/healthz" | grep -q ok
+rm -f "$state"
+echo "PASS: rolled CAW back to ${previous_sha}; data volumes unchanged"

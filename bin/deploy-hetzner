@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# Roll out one CI-tested Git commit on the existing Hetzner CAW Compose stack.
+# Run as the dedicated SSH deploy user; never call this on the development stack.
+set -Eeuo pipefail
+
+cd "$(dirname "$0")/.."
+
+tag="${1:?Usage: bin/deploy-hetzner sha-<40-hex-commit> github-actor}"
+actor="${2:?Missing GHCR login user}"
+if ! [[ "$tag" =~ ^sha-[0-9a-f]{40}$ ]]; then
+  echo "FAIL: expected an immutable image tag containing a full Git SHA" >&2
+  exit 1
+fi
+
+sha="${tag#sha-}"
+umask 077
+
+# The lock is local to this checkout. It also prevents overlapping manual runs.
+exec 9>.git/caw-deploy.lock
+if ! flock -n 9; then
+  echo "FAIL: another CAW deployment is already running" >&2
+  exit 1
+fi
+
+if [[ "$(git branch --show-current)" != main ]]; then
+  echo "FAIL: /opt/caw must be checked out on main" >&2
+  exit 1
+fi
+if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+  echo "FAIL: tracked files have local changes; refusing to overwrite them" >&2
+  exit 1
+fi
+if [[ ! -f deploy/.env ]]; then
+  echo "FAIL: missing deploy/.env" >&2
+  exit 1
+fi
+
+compose() {
+  # Only deploy/.env controls the running image, including during rollback.
+  env -u CAW_VERSION docker compose --env-file deploy/.env \
+    -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+}
+
+git fetch --quiet origin main
+if ! git merge-base --is-ancestor "$sha" origin/main; then
+  echo "FAIL: requested commit is not on main" >&2
+  exit 1
+fi
+
+previous_sha="$(git rev-parse HEAD)"
+if ! git merge-base --is-ancestor "$previous_sha" "$sha"; then
+  if git merge-base --is-ancestor "$sha" "$previous_sha"; then
+    echo "SKIP: newer main commit is already checked out"
+    exit 0
+  fi
+  echo "FAIL: deployed checkout diverged from the requested commit" >&2
+  exit 1
+fi
+
+# Validate the existing host configuration before making any changes.
+python3 bin/hetzner-preflight.py
+
+docker_config="$(mktemp -d)"
+saved_env="$(mktemp deploy/.env.rollback.XXXXXX)"
+cp -p deploy/.env "$saved_env"
+changed=0
+
+cleanup() {
+  result=$?
+  trap - EXIT
+  if [[ "$result" -ne 0 && "$changed" -eq 1 ]]; then
+    echo "WARN: deployment failed; rolling back CAW only" >&2
+    cp -p "$saved_env" deploy/.env
+    git reset --hard "$previous_sha" >/dev/null
+    compose up --no-deps --no-build --detach --wait --wait-timeout 180 server caddy ||
+      echo "FAIL: automatic rollback also failed; operator intervention required" >&2
+  fi
+  rm -rf "$docker_config"
+  rm -f "$saved_env"
+  exit "$result"
+}
+trap cleanup EXIT
+
+# GITHUB_TOKEN arrives over the SSH standard input. It is never put in
+# deploy/.env, the Git repository or the persistent Docker credential store.
+if ! IFS= read -r registry_token || [[ -z "$registry_token" ]]; then
+  echo "FAIL: missing short-lived GHCR token on standard input" >&2
+  exit 1
+fi
+export DOCKER_CONFIG="$docker_config"
+printf '%s\n' "$registry_token" |
+  docker login ghcr.io --username "$actor" --password-stdin >/dev/null
+unset registry_token
+
+# This dumps Postgres to the pre-existing CAW backup volume. Redis continues
+# with its existing AOF; encrypted offsite backups remain a separate gate.
+compose exec -T backup /bin/sh /backup.sh once
+
+changed=1
+git merge --ff-only --quiet "$sha"
+
+# A stable tag in deploy/.env makes later manual compose invocations
+# use the exact same image instead of silently reverting to :latest.
+temporary_env="$(mktemp deploy/.env.next.XXXXXX)"
+awk -v tag="$tag" '
+  BEGIN { found = 0 }
+  /^CAW_VERSION=/ { if (!found) print "CAW_VERSION=" tag; found = 1; next }
+  { print }
+  END { if (!found) print "CAW_VERSION=" tag }
+' deploy/.env > "$temporary_env"
+chmod 600 "$temporary_env"
+mv "$temporary_env" deploy/.env
+
+python3 bin/hetzner-preflight.py
+compose pull server
+# Do not recreate Redis, Postgres, backups or any other host services.
+compose up --no-deps --no-build --detach --wait --wait-timeout 180 server caddy
+
+port="$(sed -n 's/^CAW_ORIGIN_PORT=//p' deploy/.env | tail -1)"
+port="${port:-18081}"
+curl --fail --silent --show-error --retry 3 --retry-delay 2 \
+  "http://127.0.0.1:${port}/healthz" | grep -q ok
+curl --fail --silent --show-error --retry 3 --retry-delay 2 \
+  https://caw.obivan.org/healthz | grep -q ok
+metrics_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+  https://caw.obivan.org/metrics)"
+if [[ "$metrics_status" != 404 ]]; then
+  echo "FAIL: /metrics must return 404 via Cloudflare" >&2
+  exit 1
+fi
+
+# Allow the CI runner to undo this release if the final WSS handshake
+# fails after the local/HTTP checks. No credentials are stored here.
+previous_tag="$(sed -n 's/^CAW_VERSION=//p' "$saved_env" | tail -1)"
+previous_tag="${previous_tag:-__unset__}"
+printf '%s\n%s\n%s\n' "$sha" "$previous_sha" "$previous_tag" > .git/caw-previous-deploy
+chmod 600 .git/caw-previous-deploy
+echo "PASS: deployed ${sha} to CAW; database volumes and host Tunnel unchanged"

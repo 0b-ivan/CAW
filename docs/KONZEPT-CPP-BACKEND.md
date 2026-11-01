@@ -360,3 +360,52 @@ verbindlich.
   Packs muss ein Platz frei sein; anderenfalls informiert die UI den Host.
   Das Format und die UI müssen ohne Framework, Build-Schritt oder Datenbank
   auf dem synchronen Spiel-Thread auskommen.
+
+## 15. Deployment nach erfolgreichem main-CI-Lauf (geplant)
+
+Die GitHub-Actions-CI bleibt alleiniger Qualitäts-Gate. Ein separater
+Workflow reagiert auf einen **erfolgreichen Push-CI-Lauf auf `main`**, nicht
+auf Pull-Request-CI. Ein manueller Wiederanlauf über `workflow_dispatch`
+muss denselben grünen Check für den konkreten Commit nachweisen.
+
+Der CD-Workflow baut ein immutables Server-Image
+`ghcr.io/0b-ivan/caw-server:sha-<40-stelliger Git-Commit>` und überträgt
+es erst nach grüner CI zum bestehenden Hetzner-Host. Kein Tag `latest`,
+keine neue VM, kein zweiter Cloudflare-Tunnel. Der Host hat weiterhin
+`/opt/caw` auf `main`; `web/` wird von Caddy direkt eingebunden.
+GitHub Actions verbindet sich per dediziertem SSH-Schlüssel mit
+fest geprüftem Hostschlüssel und sendet ein nur für diesen Lauf
+gültiges GHCR-Token über die SSH-Standardeingabe. Das Docker-Login
+verwendet einen kurzlebigen Docker-Konfigurationsordner, der danach
+gelöscht wird. Die Secrets werden nicht ins Repo oder in `deploy/.env`
+geschrieben.
+
+Das Produktionsskript:
+1. sperrt parallele Deployments mit `flock`, prüft den sauberen
+   `main`-Checkout und die exakte Commit-SHA;
+2. erstellt unmittelbar vorher einen Postgres-Dump im CAW-Backup-Volume
+   und sichert die bisherige `deploy/.env` lokal;
+3. aktualisiert `main` ausschließlich per Fast-Forward auf diesen Commit,
+   setzt `CAW_VERSION=sha-<Commit>` für die reproduzierbare Imagewahl;
+4. zieht ausschließlich das CAW-Server-Image und startet nur `server`
+   und `caddy` mit `--no-deps --no-build` und Gesundheitsprüfung,
+   also **ohne** Redis/Postgres/Backup-Dienst neu zu erstellen;
+5. kontrolliert lokale Bereitschaft, öffentliches HTTPS und die
+   Sperre von `/metrics`; GitHub Actions prüft anschließend WSS;
+6. stellt bei einem Fehler vorherige Git-/Env-/Container-Version wieder
+   her und meldet einen fehlgeschlagenen Workflow.
+
+Das bestehende Compose-Projekt `caw`, Datenvolumes, Tunnel und andere
+Anwendungen auf dem Hetzner-Host bleiben unangetastet. Niemals `down -v`
+oder `bin/smoke` auf Produktion ausführen. Das lokale Postgres-Backup
+ersetzt **nicht** die noch fehlende verschlüsselte externe Sicherung von
+Postgres und Redis.
+
+Die Pipeline wird aus Sicherheitsgründen erst nach **expliziter**
+Produktionsfreigabe (`CAW_PRODUCTION_APPROVED=true`) scharfgeschaltet.
+Automatische Deployments nach Merge auf `main` brauchen zusätzlich
+`CAW_AUTO_DEPLOY=true`. Bis die Betreiberangaben, Kartenrechte,
+Offsite-Backups und TLS/WSS-Abnahme erledigt sind, bleiben beide
+Variablen aus. SSH-Zugangsdaten gehören ausschließlich in die geschützte
+GitHub-Environment `production`; eine manuelle Deployment-Freigabe kann
+dort durch Required Reviewers ergänzt werden.
