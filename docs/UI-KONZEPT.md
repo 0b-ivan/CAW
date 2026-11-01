@@ -156,7 +156,7 @@ Die Hand enthält standardmäßig **7 Karten** (Host-Einstellung **3–10** im M
 
 Frage oben in eigenem Scroll-Bereich (max. 30 % Höhe), darunter die Hand
 als durchgängiges Raster echter Spielkarten (zwei Spalten am Handy, auf dem
-Desktop rechts neben der Frage). **Alle zehn Karten sind zugleich im DOM**
+Desktop rechts neben der Frage). **Alle aktuell zugeteilten Handkarten (standardmäßig sieben) sind zugleich im DOM**
 und ohne Seitenwechsel erreichbar. Nur die Kartenhand scrollt vertikal;
 Frage, Kopfzeile und `[ ABGEBEN ]` bleiben stehen. Lange Kartentexte dürfen
 nicht abgeschnitten oder durch Verkleinern unlesbar werden. Antippen wählt
@@ -329,7 +329,7 @@ Spielregel und kein Client-/Server-Protokoll.
   bildschirmbreites Panel dargestellt.
 - **Antworten:** Antwortkarten sind papierweiß mit schwarzer Schrift,
   sichtbar von der schwarzen Fragekarte unterscheidbar. Die Handy-Hand zeigt
-  **immer zwei Spalten**, ohne Paginierung: Alle zehn Karten werden in einer
+  **immer zwei Spalten**, ohne Paginierung: Alle zugeteilten Karten werden in einer
   zusammenhängenden Liste gerendert. Die Kartenhand besitzt einen eigenen
   vertikalen Touch-/Maus-/Tastatur-Scrollbereich mit sichtbarem Scrollbalken.
   Die Auswahlreihenfolge und der Scrollstand bleiben beim Antippen erhalten;
@@ -375,5 +375,5 @@ Spielregel und kein Client-/Server-Protokoll.
   zusätzlichen Abhängigkeiten. Keine Daueranimationen; `prefers-reduced-motion`
   und die Mindest-Tippflächen bleiben erhalten. Testmatrix 320×568,
   390×844, 1280×800, Big Screen 1920×1080 und 1024×768. Die Browser-Tests
-  prüfen bei zehn Karten auch scrollbaren Zugriff auf die letzte Karte,
+  prüfen bei einer vollen Hand auch scrollbaren Zugriff auf die letzte Karte,
   Auswahl aus dem unteren Teil der Hand und feste Hauptaktion.
