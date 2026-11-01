@@ -100,10 +100,11 @@ bool option(const json& value, std::initializer_list<std::uint8_t> options, std:
 }
 
 bool readSettings(const json& value, Settings& settings) {
-  if (!value.is_object() || value.size() != 6 || !value.at("rando").is_boolean()) return false;
+  if (!value.is_object() || value.size() != 7 || !value.at("rando").is_boolean()) return false;
   settings.rando = value.at("rando").get<bool>();
-  // The same choices the X4 offers on its rules screen.
-  return option(value.at("rounds"), {3, 5, 8, 10, 12, 15, 20, 30}, settings.rounds) &&
+  // Hand size is a new lobby rule; all other choices come from the X4.
+  return option(value.at("hand"), {3, 4, 5, 6, 7, 8, 9, 10}, settings.hand) &&
+         option(value.at("rounds"), {3, 5, 8, 10, 12, 15, 20, 30}, settings.rounds) &&
          option(value.at("answerSecs"), {0, 30, 45, 60, 90, 120}, settings.answerSecs) &&
          option(value.at("extensionSecs"), {0, 10, 15, 20, 30}, settings.extensionSecs) &&
          option(value.at("jurorSecs"), {0, 30, 60, 90}, settings.jurorSecs) &&
@@ -243,9 +244,13 @@ json playsJson(const StateFrame& frame) {
 
 json settingsJson(const StateFrame& frame) {
   const Settings& settings = frame.settings;
-  return {{"rounds", frame.requestedRounds},         {"answerSecs", settings.answerSecs},
-          {"extensionSecs", settings.extensionSecs}, {"jurorSecs", settings.jurorSecs},
-          {"autoSecs", settings.autoSecs},           {"rando", settings.rando}};
+  return {{"hand", settings.hand},
+          {"rounds", frame.requestedRounds},
+          {"answerSecs", settings.answerSecs},
+          {"extensionSecs", settings.extensionSecs},
+          {"jurorSecs", settings.jurorSecs},
+          {"autoSecs", settings.autoSecs},
+          {"rando", settings.rando}};
 }
 
 // Title, license and rights holder of every pack in play: shown wherever cards are shown.
