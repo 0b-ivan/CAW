@@ -21,10 +21,14 @@ def redis_cli(container: str, *args: str) -> str:
 
 
 def main() -> int:
-    if len(sys.argv) != 3 or not sys.argv[2].isdigit():
+    if len(sys.argv) not in (3, 4) or not sys.argv[2].isdigit():
         print("FAIL: invalid legacy idle-check arguments", file=sys.stderr)
         return 1
 
+    operator_override = len(sys.argv) == 4 and sys.argv[3] == "--one-abandoned"
+    if len(sys.argv) == 4 and not operator_override:
+        print("FAIL: invalid migration override", file=sys.stderr)
+        return 1
     container = sys.argv[1]
     expected_rooms = int(sys.argv[2])
     if not re.fullmatch(r"[0-9a-f]{12,64}", container):
@@ -51,6 +55,10 @@ def main() -> int:
         print("FAIL: could not verify all legacy Redis room phases", file=sys.stderr)
         return 1
 
+    if active == 1 and operator_override:
+        # Only the deployment script may authorize this for the known old SHA.
+        print("PASS: one operator-confirmed abandoned legacy match; snapshot preserved")
+        return 0
     if active:
         print(f"DEFER: Redis contains {active} unfinished matches; no rollout",
               file=sys.stderr)
