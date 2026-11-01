@@ -57,7 +57,7 @@ class DeploymentSafetyTests(unittest.TestCase):
 
     def test_pipeline_gates_real_production_access(self):
         workflow = WORKFLOW.read_text()
-        self.assertIn("push:\\n    branches: [main]".replace("\n", "\n"), workflow)
+        self.assertIn("push:\n    branches: [main]", workflow)
         self.assertNotIn("workflow_run:", workflow)
         self.assertIn("workflow_dispatch:", workflow)
         self.assertIn("vars.CAW_PRODUCTION_APPROVED == 'true'", workflow)
