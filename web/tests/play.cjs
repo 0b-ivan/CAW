@@ -94,6 +94,26 @@ async function checkScreen(page, view, label) {
   }
 }
 
+// The raised tape is a real text element: readable, high-contrast and asset-free.
+async function checkTape(page, selector) {
+  const tape = page.locator(selector).first();
+  await tape.waitFor({ state: 'visible' });
+  const material = await tape.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      background: style.backgroundColor,
+      color: style.color,
+      relief: style.textShadow,
+      band: style.getPropertyValue('-webkit-box-decoration-break') ||
+        style.getPropertyValue('box-decoration-break'),
+    };
+  });
+  assert.equal(material.background, 'rgb(11, 11, 11)', `${selector}: black plastic band`);
+  assert.equal(material.color, 'rgb(244, 244, 240)', `${selector}: raised light letters`);
+  assert.notEqual(material.relief, 'none', `${selector}: visible embossed relief`);
+  assert.equal(material.band, 'clone', `${selector}: clean tape on wrapped lines`);
+}
+
 const visible = (page, view) => page.locator(`#view-${view}`).isVisible();
 
 // Waits for a view; on timeout says which view is shown instead and what the notice line says.
@@ -158,7 +178,9 @@ async function playRound(host, players, round, screen) {
     });
     assert.equal(paper.background, 'rgb(244, 244, 240)', 'answers look like paper cards');
     assert.equal(paper.radius, '6px', 'answers have physical card corners');
+    await checkTape(page, '#hand .card mark.answer-tape');
     await cards.first().click();
+    await checkTape(page, '#answer-prompt mark.answer-tape');
     await page.locator('#hand .card .slot-mark', { hasText: '<1/' }).waitFor();
     const selected = await cards.first().evaluate((card) => ({
       background: getComputedStyle(card).backgroundColor,
@@ -233,15 +255,18 @@ async function playRound(host, players, round, screen) {
     const screenPaper = await screen.locator('#screen-plays li').first()
       .evaluate((card) => getComputedStyle(card).backgroundColor);
     assert.equal(screenPaper, 'rgb(244, 244, 240)', 'TV shows legible paper answer cards');
+    await checkTape(screen, '#screen-plays li mark.answer-tape');
   }
   const judgePaper = await juror.locator('#judge-list .choice').first()
     .evaluate((card) => getComputedStyle(card).backgroundColor);
   assert.equal(judgePaper, 'rgb(244, 244, 240)', 'juror options are paper strips');
+  await checkTape(juror, '#judge-list mark.answer-tape');
   await juror.locator('#judge-list .choice').first().click();
   assert.equal(await juror.locator('#judge-list .choice').first().getAttribute('aria-pressed'),
     'true', 'the chosen answer is also announced to assistive technology');
   // The pick fills the blanks of the prompt shown once on top.
   assert.ok(await juror.locator('#judge-prompt mark').count() >= 1, 'the pick appears in the prompt');
+  await checkTape(juror, '#judge-prompt mark.answer-tape');
   await juror.getByRole('button', { name: '[ BESTÄTIGEN ]' }).click();
 
   for (const page of [host, ...players]) await waitView(page, 'reveal');
@@ -249,6 +274,8 @@ async function playRound(host, players, round, screen) {
   const revealPaper = await host.locator('#reveal-sentence')
     .evaluate((card) => getComputedStyle(card).backgroundColor);
   assert.equal(revealPaper, 'rgb(244, 244, 240)', 'the reveal is a single large paper card');
+  await checkTape(host, '#reveal-sentence mark.answer-tape');
+  await checkTape(screen, '#screen-sentence mark.answer-tape');
   if (round === 1) {
     await checkScreen(screen, 'reveal', 'reveal');
     await checkFit(host, 'reveal-host', '#next-button');
@@ -536,23 +563,35 @@ async function checkLongCards(browser) {
   await page.evaluate(() => {
     for (const view of document.querySelectorAll('.view')) view.hidden = view.id !== 'view-answer';
     const long = 'Testantwort mit einem sehr langen Kartentext, der auf dem Handy über mehrere Zeilen läuft';
-    document.querySelector('#answer-prompt').textContent =
-      'Testfrage mit einem langen Satz, der so lang ist wie die längsten Fragen der echten Packs: ___ und ___.';
+    import('/play/sentence.js').then(({ fillSentence }) => {
+      fillSentence(document.querySelector('#answer-prompt'),
+        'Testfrage mit einem langen Satz, der so lang ist wie die längsten Fragen der echten Packs: ___ und ___.',
+        [long, long]);
+    });
     const hand = document.querySelector('#hand');
     for (let i = 0; i < 12; i++) {
       const card = document.createElement('button');
       card.className = 'card';
-      card.textContent = i % 2 ? long : `Kurz ${i}`;
+      const tape = document.createElement('mark');
+      tape.className = 'answer-tape';
+      tape.textContent = i % 2 ? long : `Kurz ${i}`;
+      card.append(tape);
       hand.append(card);
     }
   });
+  await checkTape(page, '#answer-prompt mark.answer-tape');
+  await checkTape(page, '#hand .card mark.answer-tape');
   for (const [width, height] of SIZES) {
     await page.setViewportSize({ width, height });
     const clipped = await page.locator('#hand .card').evaluateAll((cards) =>
       cards.filter((card) => card.scrollHeight > card.clientHeight + 1).length);
     assert.equal(clipped, 0, `${width}x${height}: ${clipped} cards cut their text`);
-    const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
-    assert.ok(pageHeight <= height, `${width}x${height}: long cards make the page scroll`);
+    const dimensionsOfPage = await page.evaluate(() => ({
+      height: document.documentElement.scrollHeight,
+      width: document.documentElement.scrollWidth,
+    }));
+    assert.ok(dimensionsOfPage.height <= height, `${width}x${height}: long cards make the page scroll`);
+    assert.ok(dimensionsOfPage.width <= width, `${width}x${height}: long tape overflows horizontally`);
     const hand = page.locator('#hand');
     const dimensions = await hand.evaluate((el) => ({
       scrollHeight: el.scrollHeight, clientHeight: el.clientHeight,
