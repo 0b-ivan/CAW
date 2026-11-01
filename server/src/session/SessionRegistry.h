@@ -58,7 +58,7 @@ class SessionRegistry final {
     std::string hostToken;
     Time expiresAt;
     std::unique_ptr<Session> session;
-    std::optional<CardPack> customPack;
+    std::optional<CardPack> customPack = std::nullopt;
   };
 
   std::chrono::hours ttl_;
