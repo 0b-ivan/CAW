@@ -194,7 +194,10 @@ function cardButton(app, actions, card, slot) {
     button.append(mark, ' ');
     button.setAttribute('aria-label', t('slotLabel', position + 1, app.frame.pick, card));
   }
-  button.append(card);
+  const tape = document.createElement('mark');
+  tape.className = 'answer-tape';
+  tape.textContent = card;
+  button.append(tape);
   button.addEventListener('click', () => actions.toggleCard(slot));
   return button;
 }
@@ -248,6 +251,7 @@ function playItem(app, actions, play, index, canJudge) {
   sentence.append(number);
   play.cards.forEach((card, i) => {
     const mark = document.createElement('mark');
+    mark.className = 'answer-tape';
     mark.textContent = card;
     sentence.append(i === 0 ? ' ' : ' / ', mark);
   });
