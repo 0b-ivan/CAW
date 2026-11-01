@@ -128,6 +128,7 @@ function rosterItems(app) {
 // The QR Code is drawn once per link; redrawing it on every frame would be wasted work.
 function renderShare(app) {
   const url = shareableSessionUrl(app.code);
+  $('lobby-share').classList.toggle('needs-address', !url);
   $('lobby-code').textContent = app.code;
   $('lobby-url').textContent = url ? url.replace(/^https?:\/\//, '') : t('inviteAddressNeeded');
   $('share-link').hidden = typeof navigator.share !== 'function';
