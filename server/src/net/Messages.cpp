@@ -134,6 +134,10 @@ std::optional<std::vector<PackEntry>> Messages::readPackManifest(std::string_vie
       for (const std::string* field : {&entry.id, &entry.file, &entry.title, &entry.language,
                                        &entry.license, &entry.rightsHolder, &entry.sourceUrl})
         if (field->empty()) return std::nullopt;
+      if (item.contains("defaultSelected")) {
+        if (!item.at("defaultSelected").is_boolean()) return std::nullopt;
+        entry.defaultSelected = item.at("defaultSelected").get<bool>();
+      }
       // A file name, never a path: a manifest only reaches its own directory.
       if (entry.file.find('/') != std::string::npos || entry.file.find("..") != std::string::npos)
         return std::nullopt;
