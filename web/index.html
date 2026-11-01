@@ -55,12 +55,21 @@
 
   <dialog id="guide-dialog" class="guide-dialog" aria-labelledby="guide-title">
     <h2 id="guide-title" data-text="guideTitle"></h2>
-    <ol>
+    <h3 data-text="guideOpeningTitle"></h3>
+    <ol class="guide-steps">
       <li data-text="guideHost"></li>
       <li data-text="guidePlayers"></li>
-      <li data-text="guideNetwork"></li>
       <li data-text="guideScreen"></li>
     </ol>
+    <h3 data-text="guideRulesTitle"></h3>
+    <ul class="guide-rules">
+      <li data-text="rulePlayers"></li>
+      <li data-text="ruleJudge"></li>
+      <li data-text="ruleAnswers"></li>
+      <li data-text="rulePoints"></li>
+      <li data-text="ruleHand"></li>
+      <li data-text="ruleOptions"></li>
+    </ul>
     <button id="close-guide" type="button" data-text="closeGuide"></button>
   </dialog>
 
