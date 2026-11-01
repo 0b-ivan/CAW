@@ -1,11 +1,10 @@
 name: Deploy CAW to Hetzner
 
-# Deploy only a successful *push to main* CI result. A manual rerun must
-# target main and prove that the very same commit passed the validate check.
+# Push starts the gate, but no image is published until that exact main push
+# completes its full CI successfully. Manual dispatch uses the same gate.
 on:
-  workflow_run:
-    workflows: ["C++ build and Compose smoke"]
-    types: [completed]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -19,23 +18,17 @@ jobs:
   publish:
     if: >-
       vars.CAW_PRODUCTION_APPROVED == 'true' &&
-      (
-        (github.event_name == 'workflow_run' &&
-         vars.CAW_AUTO_DEPLOY == 'true' &&
-         github.event.workflow_run.conclusion == 'success' &&
-         github.event.workflow_run.event == 'push' &&
-         github.event.workflow_run.head_branch == 'main' &&
-         github.event.workflow_run.head_repository.full_name == github.repository) ||
-        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
-      )
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && vars.CAW_AUTO_DEPLOY == 'true'))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: read
-      checks: read
+      actions: read
       packages: write
     env:
-      DEPLOY_SHA: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
+      DEPLOY_SHA: ${{ github.sha }}
     outputs:
       sha: ${{ steps.commit.outputs.sha }}
       tag: ${{ steps.commit.outputs.tag }}
@@ -51,18 +44,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$DEPLOY_SHA" = "$(git rev-parse HEAD)"
-          case "$DEPLOY_SHA" in
-            *[!0-9a-f]*|'') echo "Invalid commit SHA"; exit 1 ;;
-          esac
-          test "${#DEPLOY_SHA}" -eq 40
-          result="$(gh api "repos/$GITHUB_REPOSITORY/compare/$DEPLOY_SHA...main" --jq .status)"
-          case "$result" in
-            identical|ahead) ;;
-            *) echo "Commit is no longer on main"; exit 1 ;;
-          esac
-          passed="$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEPLOY_SHA/check-runs" \
-            --jq '[.check_runs[] | select(.name == "validate" and .conclusion == "success")] | length')"
-          test "$passed" -ge 1 || { echo "The commit has no successful CI validate check"; exit 1; }
+          bash bin/verify-main-ci "$DEPLOY_SHA"
           echo "sha=$DEPLOY_SHA" >> "$GITHUB_OUTPUT"
           echo "tag=sha-$DEPLOY_SHA" >> "$GITHUB_OUTPUT"
       - name: Build and publish an immutable GHCR image

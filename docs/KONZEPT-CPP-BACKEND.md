@@ -364,9 +364,19 @@ verbindlich.
 ## 15. Deployment nach erfolgreichem main-CI-Lauf (geplant)
 
 Die GitHub-Actions-CI bleibt alleiniger Qualitäts-Gate. Ein separater
-Workflow reagiert auf einen **erfolgreichen Push-CI-Lauf auf `main`**, nicht
-auf Pull-Request-CI. Ein manueller Wiederanlauf über `workflow_dispatch`
-muss denselben grünen Check für den konkreten Commit nachweisen.
+Workflow startet bei einem Push auf `main`, wartet aber **vor jedem
+Image-Build** auf die erfolgreiche vollständige `main`-Push-CI für
+**exakt denselben Commit**. Die Bestätigung kommt über die GitHub-Actions-
+Run-API und wird bei Zeitüberschreitung oder fehlgeschlagener CI abgelehnt.
+PR-CI gilt ausdrücklich nicht als Produktionsnachweis. Ein manueller
+Wiederanlauf über `workflow_dispatch` muss dieselbe grüne Push-CI für
+den konkreten Commit nachweisen.
+
+Begründung: `workflow_run` lieferte wiederholt anonyme `BuildFailed`-
+Starts mit `startup_failure` vor der Job-Erstellung, obwohl die eigentliche
+`main`-CI funktionierte und die Workflow-Dateien `actionlint` bestanden.
+Der direkte Push-Trigger beseitigt die Abhängigkeit von diesem fehlerhaften
+Dispatch-Pfad, **nicht** die Qualitäts- oder Produktionsfreigabe.
 
 Der CD-Workflow baut ein immutables Server-Image
 `ghcr.io/0b-ivan/caw-server:sha-<40-stelliger Git-Commit>` und überträgt

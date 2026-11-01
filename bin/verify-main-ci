@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Deploy only the exact commit whose full push-to-main CI passed.
+# Using the runs endpoint excludes successful pull_request checks on the same SHA.
+set -euo pipefail
+
+sha="${1:-}"
+if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "Invalid deployment commit SHA" >&2
+  exit 1
+fi
+: "${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
+
+attempts="${CAW_CI_WAIT_ATTEMPTS:-60}"
+interval="${CAW_CI_WAIT_SECONDS:-15}"
+if [[ ! "$attempts" =~ ^[1-9][0-9]*$ || ! "$interval" =~ ^[0-9]+$ ]]; then
+  echo "Invalid CI gate retry configuration" >&2
+  exit 1
+fi
+
+for ((attempt = 1; attempt <= attempts; ++attempt)); do
+  # A superseded commit must never deploy after a newer merge.
+  current="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+  if [[ "$current" != "$sha" ]]; then
+    echo "Deployment SHA is not the current main HEAD" >&2
+    exit 1
+  fi
+
+  runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=main&event=push&head_sha=$sha&per_page=100")"
+  status="$(jq -r --arg sha "$sha" '
+    [.workflow_runs[] | select(.head_sha == $sha and .event == "push" and
+      .head_branch == "main" and .name == "C++ build and Compose smoke")] |
+    if any(.[]; .conclusion == "success") then "success"
+    elif any(.[]; .status == "completed" and .conclusion != "success") then "failed"
+    else "pending" end
+  ' <<< "$runs")"
+  case "$status" in
+    success)
+      echo "PASS: full main push CI succeeded for $sha"
+      exit 0 ;;
+    failed)
+      echo "The main push CI failed for $sha" >&2
+      exit 1 ;;
+  esac
+
+  echo "Waiting for main push CI ($attempt/$attempts)"
+  if ((attempt < attempts)); then sleep "$interval"; fi
+done
+
+echo "The main push CI did not succeed before the deployment gate timed out" >&2
+exit 1

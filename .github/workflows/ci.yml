@@ -47,6 +47,11 @@ jobs:
           docker run --rm --entrypoint caddy \
             -v "$PWD/deploy/Caddyfile.hetzner:/etc/caddy/Caddyfile:ro" \
             caddy:2.11.2-alpine validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Validate GitHub Actions workflows with actionlint
+        run: |
+          # Validate workflow structure and expressions, not only shell syntax.
+          docker run --rm -v "$PWD:/repo:ro" -w /repo rhysd/actionlint:1.7.12 \
+            -shellcheck= -pyflakes= .github/workflows/ci.yml .github/workflows/deploy-hetzner.yml
       - name: Build C++20 and run CTest in Debian
         run: |
           docker build --target build -t caw-build -f deploy/server.Dockerfile .
