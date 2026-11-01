@@ -160,9 +160,9 @@ void Server::registerSessionRoutes(uWS::App& app) {
     if (!admitted(roomLimit_, response, request)) return;
     const std::string code(request->getParameter(0));
     const std::string_view authorization = request->getHeader("authorization");
-    if (!authorization.starts_with("Bearer ") ||
-        sessions_.find(code) == nullptr ||
-        !sessions_.find(code)->playerForTicket(authorization.substr(7))) {
+    Session* session = sessions_.find(code);
+    if (!authorization.starts_with("Bearer ") || session == nullptr ||
+        !session->playerForTicket(authorization.substr(7))) {
       jsonReply(response, "403 Forbidden", Messages::errorResponse("not_player"));
       return;
     }

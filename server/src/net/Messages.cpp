@@ -298,7 +298,7 @@ std::optional<RoomRecord> Messages::loadRoom(std::string_view text) {
     room.packs = record.at("packs").get<std::vector<std::string>>();
     room.state = record.at("state").dump();
     room.locked = record.at("locked").get<bool>();
-    if (record.at("schema") == 5 && !record.at("custom").is_null()) {
+    if (record.at("schema") >= 5 && !record.at("custom").is_null()) {
       json content = record.at("custom");
       if (!content.is_object() || !content.contains("id") || !content.at("id").is_string())
         return std::nullopt;
