@@ -359,3 +359,42 @@ und ausdrücklich **kein** Rollout oder Freigabeersatz.
 Vor dem ersten echten Release weiterhin Betreiberangaben/Kartenrechte sowie
 externe Backup-Wiederherstellung klären. Die lokal erfolgreich getesteten
 PostgreSQL-Dumps und Redis-RDB-Snapshots schützen nicht vor Hostverlust.
+
+## 9. Ohne Spielunterbrechung aktualisieren – Leerlauf-Gate
+
+Der bestehende CAW-C++-Server läuft nur einmal. Ein Compose-Recreate trennt
+alle offenen WebSockets; Redis-Resume stellt den Spielzustand wieder her,
+macht den Neustart aber nicht transparent. Deshalb darf der automatische
+Deploy **nur bei Leerlauf** die Instanz ersetzen.
+
+- Der interne Metrik-Endpunkt wird im vorhandenen Server-Container gelesen.
+  \`caw_sockets\` muss \`0\` sein; \`caw_active_games\` muss \`0\` sein.
+  Playing, Judging und Reveal zählen auch dann als aktiv, wenn alle Spieler
+  gerade offline sind. Lobbys oder beendete Partien ohne Clients blockieren
+  hingegen nicht.
+- Der alte Hetzner-Server hat \`caw_active_games\` noch nicht. Für dessen
+  **erste** Aktualisierung wird vorsichtshalber \`caw_sessions == 0\` verlangt.
+  Das kann wegen der 24-Stunden-Gültigkeit zuletzt angelegter Test-Lobbys
+  die Auslieferung verzögern; das ist beabsichtigt.
+- Vor jeder Änderung am laufenden Checkout wird zweimal kontrolliert,
+  unmittelbar nach dem GHCR-Image-Pull noch einmal mit kurzer Stabilitätszeit.
+  Bei belegter Instanz meldet GitHub Actions einen zurückgestellten Rollout
+  und lässt alle Container und die getrackten Dateien unverändert.
+- Ein wiederkehrender GitHub-Actions-Lauf alle 30 Minuten probiert den
+  aktuellen, CI-geprüften \`main\`-Commit erneut. Ein vorhandener SHA-Tag
+  wird nicht neu gebaut; bereits installierte Versionen werden nicht
+  erneut gestartet. Erhaltene Environment-Freigaben bleiben wirksam.
+- Bei einem unlesbaren internen Metrik-Endpunkt wird **nicht** deployt.
+  Ein Ausfall von \`/healthz\` bzw. der öffentliche WSS-Test wird wie
+  bisher als Deployment-Fehler behandelt.
+
+Der erste Rollout am 2026-11-01 schlug vor einem Containerwechsel fehl,
+weil der ältere Host-Checkout noch keine \`bin/deploy-hetzner\` besaß.
+GitHub Actions liest das Skript jetzt direkt aus dem erfolgreich getesteten
+SHA-Commit in eine temporäre Datei unter \`.git\` ein. Der bereits gesicherte
+GitHub-Zugang dient dabei nur zum Lesen; der GHCR-Token bleibt auf stdin.
+
+**Grenze:** Zwischen letzter Leerlaufkontrolle und Compose-Recreate kann
+eine neue Session entstehen. Völlig unterbrechungsfreie Rolling Updates
+unter beliebiger Last benötigen später kontrollierte Neuanmeldungs-Sperre
+(Admission Drain) oder zwei Serverinstanzen mit Room-Affinität.
