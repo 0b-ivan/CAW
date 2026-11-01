@@ -201,7 +201,9 @@ std::string Messages::customCards(const CardPack* pack) {
     for (const PromptCard& card : pack->prompts) prompts.push_back(card.text);
     for (const std::string& card : pack->answers) answers.push_back(card);
   }
-  return json{{"prompts", prompts}, {"answers", answers}}.dump();
+  json response = {{"prompts", prompts}, {"answers", answers}};
+  if (pack != nullptr) response["id"] = pack->id;
+  return response.dump();
 }
 
 std::string Messages::saveRoom(const RoomRecord& room) {
