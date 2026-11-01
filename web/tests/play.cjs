@@ -143,7 +143,7 @@ async function playRound(host, players, round, screen) {
     assert.equal(await page.locator('#hand .slot-mark').count(), 0);
 
     // The ten cards are paged while their original server indices stay intact.
-    const promptWidth = await page.locator('.prompt-stack').boundingBox();
+    const promptWidth = await page.locator('#view-answer .prompt-stack').boundingBox();
     const shellWidth = await page.locator('#shell').boundingBox();
     assert.ok(promptWidth.width < shellWidth.width * .9, 'prompt is a compact card stack');
     assert.equal(await page.locator('#hand .card').count(), 6, 'six cards on a normal phone');
