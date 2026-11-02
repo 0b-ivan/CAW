@@ -411,6 +411,18 @@ die Null-Socket-Prüfung verpflichtend, und die Redis-Snapshots bleiben
 unverändert. Mehr als eine unfertige Session blockiert weiterhin.
 Die Ausnahme greift nach dem Upgrade nicht noch einmal.
 
+**Zusätzliche Einmalfreigabe am 02.11.2026:** Der produktive Checkout
+`fc59685e124a00c4666c53947fd2e0f174848b30` hat bereits die Metrik
+`caw_active_games`. Ihr Wert ist 2 bei 0 WebSockets. Der Betreiber bestätigt,
+dass keine Partie gespielt wird. Nur auf exakt diesem Checkout und bei genau
+zwei als aktiv gespeicherten Partien greift die zusätzliche Ausnahme im
+**Metrik-Pfad**. Die frühere Ein-Partie-Ausnahme für `cc02372*` bleibt
+unverändert. Vor jeder Prüfung muss der unabhängig laufende Backup-Worker
+gesund sein; der jüngste Redis-Snapshot muss isoliert wiederherstellbar sein.
+Alle gespeicherten Räume werden mit der aktuellen Metrik abgeglichen.
+Kein Spielstand wird beendet oder gelöscht. Bei jeder Abweichung bleibt
+der Wechsel gesperrt. Nach dem Fast-Forward greift die Ausnahme nicht erneut.
+
 ## 10. Tägliche lokale Redis-Sicherung und Restore-Audit
 
 `redis-backup` läuft als unabhängiger Container aus dem vorhandenen

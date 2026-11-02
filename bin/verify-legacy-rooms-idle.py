@@ -25,10 +25,14 @@ def main() -> int:
         print("FAIL: invalid legacy idle-check arguments", file=sys.stderr)
         return 1
 
-    operator_override = len(sys.argv) == 4 and sys.argv[3] == "--one-abandoned"
-    if len(sys.argv) == 4 and not operator_override:
-        print("FAIL: invalid migration override", file=sys.stderr)
-        return 1
+    # Only deploy-hetzner may supply these scoped, operator-approved limits.
+    abandoned_limit = 0
+    if len(sys.argv) == 4:
+        abandoned_limit = {"--one-abandoned": 1, "--two-abandoned": 2}.get(
+            sys.argv[3], -1)
+        if abandoned_limit < 0:
+            print("FAIL: invalid migration override", file=sys.stderr)
+            return 1
     container = sys.argv[1]
     expected_rooms = int(sys.argv[2])
     if not re.fullmatch(r"[0-9a-f]{12,64}", container):
@@ -55,9 +59,9 @@ def main() -> int:
         print("FAIL: could not verify all legacy Redis room phases", file=sys.stderr)
         return 1
 
-    if active == 1 and operator_override:
-        # Only the deployment script may authorize this for the known old SHA.
-        print("PASS: one operator-confirmed abandoned legacy match; snapshot preserved")
+    if 0 < active <= abandoned_limit:
+        # The caller also checks the exact old commit, zero sockets and backup.
+        print(f"PASS: {active} operator-confirmed abandoned legacy matches; snapshots preserved")
         return 0
     if active:
         print(f"DEFER: Redis contains {active} unfinished matches; no rollout",

@@ -105,6 +105,30 @@ requireIdle() {
     return 1
   fi
   if (( in_progress != 0 || sockets != 0 )); then
+    # The operator confirmed two abandoned saved matches and zero players.
+    # This exception is only for the exact, observed production checkout.
+    # It expires automatically after the first successful fast-forward.
+    if [[ "$previous_sha" == fc59685e124a00c4666c53947fd2e0f174848b30 ]] &&
+       (( in_progress == 2 && sockets == 0 )); then
+      local redis_container backup_container
+      redis_container="$(compose ps -q redis)"
+      backup_container="$(docker ps --filter label=com.docker.compose.project=caw \
+        --filter label=com.docker.compose.service=redis-backup \
+        --format '{{.ID}}' | head -n 1)"
+      if [[ -z "$redis_container" || -z "$backup_container" ]] ||
+         [[ "$(docker inspect --format '{{.State.Health.Status}}' "$backup_container")" != healthy ]]; then
+        echo "FAIL: healthy Redis backup required for abandoned-match migration" >&2
+        return 1
+      fi
+      # Restore the latest snapshot in a networkless Redis before migrating.
+      git show "$sha:bin/verify-local-redis-restore" |
+        CAW_REPO_ROOT="$PWD" bash
+      # Verify that every session snapshot matches the live room count.
+      # No Redis keys are removed, expired or rewritten by this check.
+      git show "$sha:bin/verify-legacy-rooms-idle.py" |
+        python3 - "$redis_container" "$sessions" --two-abandoned
+      return $?
+    fi
     echo "DEFER: CAW is busy ($in_progress active matches, $sockets sockets); no rollout" >&2
     return 75
   fi
