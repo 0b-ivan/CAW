@@ -28,11 +28,14 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   barrierefrei lesbarer Text im DOM; keine Kartentexte, Webfonts, externen
   Ressourcen oder fremden Assets werden in die Oberfläche eingebettet.
   Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
-  schmale, metallisch hell umrandete **Versalien** in einer schmalen
-  mechanischen Systemschrift (bevorzugt DIN Condensed / Roboto Condensed,
-  ohne externen Font). Die Prägung hat ein dunkles Zentrum und leicht
-  unterschiedlich kräftige helle Kanten statt einer gleichmäßig weißen
-  Beschriftung. Die Großschreibung ist ausschließlich visuell;
+  **gut lesbare, hell gefüllte Versalien** in einer mechanisch wirkenden
+  Systemschrift (DIN Condensed / Roboto Condensed mit Sans-Serif-Fallback,
+  ohne externen Font). Die Buchstaben dürfen weder hohl noch ultradünn
+  sein: ein breiter, fast weißer Buchstabenkörper hat Vorrang vor dem
+  plastischen Schatten. Die metallische Prägung entsteht nur an den Kanten
+  durch feine Hell-/Dunkelversätze. Zeichenabstand und Spiegelungen müssen
+  zurückhaltend bleiben, besonders auf dem Handy und dem Big Screen.
+  Die Großschreibung ist ausschließlich visuell;
   der originale Kartentext bleibt im DOM und im Spielzustand unverändert.
   Die Bänder wirken wie echtes, leicht zerknittertes schwarzes Kunststoffband:
   wechselnde harte Glanzreflexe, diagonale Knicklinien, unruhige Oberflächen
