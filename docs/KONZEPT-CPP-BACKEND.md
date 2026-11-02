@@ -568,6 +568,35 @@ Die Prüfung gibt ausschließlich anonyme Zahlen aus, keine Raumcodes,
 Kartentexte, Tickets oder Tokens. Die Ein-Partie-Ausnahme des alten
 Checkouts und alle regulären Deploys verlangen weiterhin exakte Zählgleichheit.
 
+### Einmaliger betreiberautorisierter Rollout bei flüchtigen Altpartien (02.11.2026)
+
+Der nächste, ebenfalls sicher abgebrochene Produktionsversuch hat bestätigt,
+dass der alte Prozess zwei aktive Partien zählt, **aber weniger als zwei**
+davon in Redis persistiert sind. Nicht persistierte Partien lassen sich
+durch eine Redis-Sicherung nicht wiederherstellen. Der Betreiber hat erneut
+ausdrücklich bestätigt, dass niemand spielt, und den Rollout angeordnet.
+Der Verlust ausschließlich dieser verlassenen, nur im Arbeitsspeicher
+existierenden Alt-Spielstände ist daher für diesen **einen** Wechsel akzeptiert.
+
+Diese Freigabe gilt ausschließlich für den bereits verifizierten Checkout
+`fc59685e124a00c4666c53947fd2e0f174848b30`, exakt zwei aktive
+In-Memory-Partien und null WebSocket-Verbindungen. Drei getrennte Messungen
+müssen dieselben Bedingungen erfüllen. Vor jeder Messung muss der
+eigenständige Redis-Backup-Worker gesund sein und sein RDB-Snapshot
+netzwerkisoliert erfolgreich wiederhergestellt werden.
+
+Der neue Prüfmodus `--two-volatile` verlangt weiterhin: nicht mehr
+Redis-Räume als der Prozess meldet, ausschließlich gültige `session:*`-
+Schlüssel mit validen JSON-Snapshots und Phasen, und **höchstens zwei**
+persistierte aktive Partien. Auch wenn null oder eine dieser Partien
+persistiert sind, ist der einmalige Wechsel erlaubt. **Alle** vorhandenen
+Redis-Keys, AOF-Daten, PostgreSQL-Daten und Backup-Dateien bleiben erhalten.
+Die Logausgabe nennt nur anonyme Zähler; fehlende In-Memory-Snapshots
+werden als nicht wiederherstellbar gekennzeichnet. Der normale Spielschutz,
+die vorhandene Zwei-Partien-Prüfung `--two-abandoned` und andere
+Checkouts bleiben unverändert und scheitern bei fehlenden Snapshots.
+Nach erfolgreichem Fast-Forward kann die Sonderfreigabe nicht erneut greifen.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es

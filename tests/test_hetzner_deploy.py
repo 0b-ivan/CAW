@@ -66,12 +66,13 @@ class DeploymentSafetyTests(unittest.TestCase):
         script = SCRIPT.read_text()
         self.assertIn("fc59685e124a00c4666c53947fd2e0f174848b30", script)
         self.assertIn("in_progress == 2 && sockets == 0", script)
+        self.assertNotIn("python3 - \"$redis_container\" \"$sessions\" --two-abandoned", script)
         self.assertIn('git show "$sha:bin/verify-local-redis-restore"', script)
         self.assertIn('CAW_REPO_ROOT="$PWD" bash', script)
         self.assertIn("State.Health.Status", script)
-        self.assertIn("--two-abandoned", script)
+        self.assertIn("--two-volatile", script)
         self.assertLess(script.index("verify-local-redis-restore"),
-                        script.index("--two-abandoned"))
+                        script.index("--two-volatile"))
         # Do not weaken the normal metric-present deployment gate.
         self.assertIn("if (( in_progress != 0 || sockets != 0 )); then", script)
         self.assertIn("return 75", script)

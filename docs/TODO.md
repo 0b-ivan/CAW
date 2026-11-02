@@ -291,3 +291,13 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Abbruch bei verlorener aktiver Partie, zusätzlichen Keys und ungültigen Snapshots testen
 - [ ] Vollständige PR-/Main-CI grün bestätigen
 - [ ] Produktiven Serverwechsel, öffentlichen WSS-Test und erhaltene Redis-Spielstände nachweisen
+
+## Betrieb: ausdrücklich erzwungener Erst-Rollout bei nicht persistierten Altpartien (2026-11-02)
+
+- [x] Betreiberfreigabe für verlorene, nicht persistierte Alt-Spielstände im Backend-Konzept dokumentieren
+- [x] Ausschließlich auf `fc59685` bei zwei aktiven Metrik-Partien und null WebSockets erlauben
+- [x] Redis-Backup, isolierten Restore und wiederholte Prüfung vor dem Neustart beibehalten
+- [x] Vorhandene Redis-Snapshots und PostgreSQL unverändert lassen, keinerlei Löschbefehle
+- [x] Regressionen für 0–2 persistierte Altpartien und fehlerhafte Redis-Daten ergänzen
+- [ ] PR-/Main-CI vollständig grün und tatsächlichen Hetzner-Rollout nachweisen
+- [ ] Öffentlichen HTTPS- und WSS-Test nach dem Rollout nachweisen

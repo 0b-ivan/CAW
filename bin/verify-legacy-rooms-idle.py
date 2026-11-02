@@ -27,9 +27,13 @@ def main() -> int:
 
     # Only deploy-hetzner may supply these scoped, operator-approved limits.
     abandoned_limit = 0
+    volatile_override = len(sys.argv) == 4 and sys.argv[3] == "--two-volatile"
     if len(sys.argv) == 4:
-        abandoned_limit = {"--one-abandoned": 1, "--two-abandoned": 2}.get(
-            sys.argv[3], -1)
+        abandoned_limit = {
+            "--one-abandoned": 1,
+            "--two-abandoned": 2,
+            "--two-volatile": 2,
+        }.get(sys.argv[3], -1)
         if abandoned_limit < 0:
             print("FAIL: invalid migration override", file=sys.stderr)
             return 1
@@ -67,6 +71,16 @@ def main() -> int:
         # Snapshot values contain tickets/host tokens; never print them.
         print("FAIL: could not verify all legacy Redis room phases", file=sys.stderr)
         return 1
+
+    if volatile_override and active <= 2:
+        # The operator explicitly accepted losing only unpersisted, abandoned
+        # in-memory games on the exact old production checkout.
+        print(
+            f"PASS: 2 operator-confirmed abandoned legacy games; "
+            f"{active} persisted, {2 - active} volatile, "
+            f"all {len(keys)} Redis room snapshots preserved"
+        )
+        return 0
 
     if abandoned_limit == 2:
         # The server metric already confirmed exactly two active games.
