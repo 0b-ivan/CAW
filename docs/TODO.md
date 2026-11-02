@@ -246,3 +246,11 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] PR-CI inklusive Browser-Tests, CTest, Docker-Smoke und Lasttest grün bestätigen
 - [ ] Auf iPhone/Android und Big Screen mit realen langen Antworten visuell abnehmen
 
+## UI-Polish: Referenz-Prägeband (2026-11-02)
+
+- [x] Mechanisch geprägte, optisch große Versalien mit hohler Silberkontur statt flacher Beschriftung
+- [x] Stärkere gerichtete Spiegelungen, Glanzpunkte und Falten auf unregelmäßigem schwarzem Band
+- [x] Keine Änderung am Kartentext und keine Prägebänder auf Handkarten/Juror-Antwortliste
+- [x] Browser-Regression auf Versalien, Reliefkante und Glanzreflexe erweitert
+- [ ] Neuen PR-CI-Lauf einschließlich CTest, Browser- und Lasttest abschließen
+- [ ] Auf iPhone/Android mit echten langen Antworten gegen das Referenzbild visuell abnehmen
