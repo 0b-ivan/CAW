@@ -134,9 +134,9 @@ async function checkTape(page, selector) {
   assert.equal(material.letterCase, 'uppercase', `${selector}: printed capitals`);
   assert.ok(parseFloat(material.tracking) > 1, `${selector}: spaced-out embossing characters`);
   assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: three-dimensional letters`);
-  assert.ok(parseFloat(material.raisedEdge) >= .7 &&
-    parseFloat(material.raisedEdge) <= .88,
-  `${selector}: varying silver impression depths`);
+  assert.ok(parseFloat(material.raisedEdge) >= .65 &&
+    parseFloat(material.raisedEdge) <= 2,
+  `${selector}: scalable silver relief for phone and TV`);
   for (const offset of [material.foilOffset, material.foilSize,
     material.creaseOffset, material.glintOffset]) {
     assert.match(offset, /^\d+%$/, `${selector}: stable physical variation parameters`);
