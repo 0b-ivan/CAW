@@ -119,9 +119,9 @@ async function checkTape(page, selector) {
     };
   });
   assert.equal(material.background, 'rgb(5, 5, 5)', `${selector}: deep black plastic band`);
-  assert.match(material.sheen, /dymo-foil\\.svg/, `${selector}: reference-derived plastic surface`);
+  assert.match(material.sheen, /dymo-foil[.]svg/, `${selector}: reference-derived plastic surface`);
   assert.match(material.reflection, /radial-gradient/, `${selector}: uneven specular reflections`);
-  const asset = await page.request.get('/assets/dymo-foil.svg');
+  const asset = await page.request.get(`${target}/assets/dymo-foil.svg`);
   assert.equal(asset.status(), 200, 'local foil texture is served by Caddy');
   assert.match(await asset.text(), /data:image\/webp;base64,/, 'foil contains only an embedded local image');
   assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
