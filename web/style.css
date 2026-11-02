@@ -1318,51 +1318,55 @@ footer a { text-decoration: underline; }
   opacity: 0; cursor: pointer; }
 .editor-upload:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
 
-/* The monochrome game stays flat; only inserted answers mimic real DYMO plastic.
-   System fonts avoid downloads. Fixed variants keep scuffs stable between renders. */
+/* Embossed plastic label with a tiny text-free texture from the supplied
+   reference. Text is still live DOM and requires no font download. */
 mark.answer-tape,
 #reveal-sentence mark.answer-tape,
 .screen-plays li mark.answer-tape,
 #screen-reveal .screen-prompt mark.answer-tape {
   position: relative;
+  isolation: isolate;
   display: inline-block;
   vertical-align: baseline;
   max-width: 100%;
-  margin: .05em .07em .09em;
-  padding: .10em .34em .16em;
-  border: 1px solid #333;
-  border-radius: 1px 3px 2px 1px;
-  background-color: #080808;
+  margin: .05em .035em .09em;
+  padding: .13em .35em .16em;
+  border: 0;
+  border-radius: 3px;
+  background-color: #050505;
+  /* The local SVG contains only the photographed blank plastic, never text. */
   background-image:
-    linear-gradient(175deg, #454545 0%, #1b1b1b 9%, #090909 24%,
-      #050505 56%, #141414 82%, #080808 100%),
-    repeating-linear-gradient(97deg, transparent 0 11px,
-      #ffffff09 12px 13px, transparent 15px 29px);
-  color: #b6b6b2;
-  font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Helvetica Neue", Arial, sans-serif;
-  font-size: .91em;
-  font-weight: 600;
-  letter-spacing: .105em;
+    /* Darken the photographic glare behind the letters, not the tape edges. */
+    linear-gradient(115deg, #0009, #0005 35%, #0005 70%, #0008),
+    url("/assets/dymo-foil.svg");
+  /* Crop the same photographed foil differently for each physical strip. */
+  background-size: 100% 100%, var(--foil-size, 120%) 100%;
+  background-position: center, var(--foil-x, 50%) center;
+  background-repeat: no-repeat;
+  color: #393939;
+  font-family: "DIN Condensed", "Roboto Condensed", "Arial Narrow",
+    "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-stretch: condensed;
+  font-size: .98em;
+  font-weight: 500;
   line-height: 1.27;
   white-space: normal;
   text-align: left;
-  text-transform: none;
-  text-shadow: none;
   box-shadow:
-    inset 0 1px 1px #a4a4a45c,
-    inset 0 -2px 2px #000,
-    inset 1px 0 1px #ffffff28,
-    1px 2px 0 #353535,
-    2px 4px 5px #0008;
-  transform: rotate(-.65deg) skewY(-.18deg);
+    inset 0 1px 1px #a8a8a879,
+    inset 0 -1px 0 #000,
+    inset 1px 0 1px #ffffff47,
+    2px 3px 3px #0009,
+    2px 5px 7px #0009;
+  transform: rotate(-.4deg) skewY(-.08deg);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
   overflow-wrap: anywhere;
   hyphens: none;
 }
 
-/* Two translucent layers simulate scratches, hard reflections, and a crease.
-   Neither layer covers the embossed letters or intercepts touch input. */
+/* The glancing highlights are uneven across the plastic, like a crumpled
+   embossing strip, rather than a uniform gradient across a flat rectangle. */
 mark.answer-tape::before,
 mark.answer-tape::after {
   content: "";
@@ -1374,49 +1378,93 @@ mark.answer-tape::after {
 }
 mark.answer-tape::before {
   background:
-    linear-gradient(105deg, transparent 8%, #ffffff04 13%, #ffffff2e 17%,
-      #ffffff08 21%, transparent 29%, transparent 70%, #ffffff12 76%,
-      #ffffff34 80%, #ffffff06 85%, transparent 94%),
-    repeating-linear-gradient(175deg, transparent 0 13px,
-      #ffffff0c 14px, transparent 15px 29px);
-  opacity: .9;
+    radial-gradient(ellipse 24% 160% at var(--glint-x, 42%) -22%,
+      #ffffff85, transparent 80%),
+    linear-gradient(108deg, transparent 4%, #ffffff0c 12%, #ffffff38 15%,
+      #ffffff07 21%, transparent 28%, transparent 64%, #ffffff1a 72%,
+      #ffffff48 80%, #ffffff0a 82%, transparent 90%);
+  mix-blend-mode: screen;
+  opacity: .22;
 }
 mark.answer-tape::after {
   background:
-    linear-gradient(97deg, transparent 33%, #0008 38%, #ffffff38 40%,
-      #ffffff0d 42%, transparent 46%),
-    linear-gradient(171deg, transparent 18%, #ffffff19 20%,
-      #0005 22%, transparent 25%);
-  clip-path: polygon(0 2%, 17% 0, 34% 4%, 42% 0, 53% 3%,
-    79% 1%, 100% 5%, 100% 96%, 83% 100%, 57% 96%,
-    40% 100%, 26% 96%, 0 99%);
-  opacity: .9;
+    linear-gradient(100deg,
+      transparent calc(var(--crease-x, 50%) - 5%),
+      #000b calc(var(--crease-x, 50%) - 2%),
+      #ffffff5a var(--crease-x, 50%),
+      #ffffff08 calc(var(--crease-x, 50%) + 1%),
+      transparent calc(var(--crease-x, 50%) + 4%)),
+    linear-gradient(172deg, transparent 4%, #ffffff18 5%, transparent 9%,
+      transparent 87%, #ffffff30 89%, #000c 91%);
+  clip-path: polygon(0 4%, 8% 0, 22% 2%, 33% 0, 45% 3%, 62% 1%,
+    81% 0, 100% 5%, 100% 94%, 91% 100%, 75% 98%,
+    59% 100%, 35% 98%, 16% 100%, 0 96%);
+  opacity: .35;
 }
+
+/* Readability comes first: embossed lettering is filled, not hollow.
+   A thin offset rim suggests pressed plastic without losing letter shapes. */
 .answer-tape__letters {
   position: relative;
   z-index: 1;
-  color: #b9b9b4;
-  -webkit-text-stroke: .3px #efefec;
+  /* Return to the narrower mechanical font, but without its former bold,
+     double-highlighted strokes. Keep the raised plastic legible on phones. */
+  font-family: "DIN Condensed", "Roboto Condensed", "Arial Narrow",
+    "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-stretch: condensed;
+  font-weight: 500;
+  font-size: 1em;
+  line-height: 1.3;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #f5f5f1;
+  /* Keep the letter interior bright; only the lower rim gets a relief edge. */
+  -webkit-text-stroke: .08px #f6f6f2;
   text-shadow:
-    -.75px -.9px 0 #fafaf7,
-    .75px 1px 0 #626260,
-    1.5px 1.8px 1px #070707;
+    .018em .028em 0 #777,
+    .045em .06em .045em #090909;
 }
 
-/* No randomness: stable, subtly different cuts for each answer and row. */
-mark.answer-tape--1 { transform: rotate(.55deg) skewY(.22deg); border-radius: 3px 1px 1px 2px; }
-mark.answer-tape--2 { transform: rotate(-.25deg) skewY(-.32deg); border-radius: 1px 2px 3px 1px; }
-mark.answer-tape--3 { transform: rotate(.85deg) skewY(.14deg); border-radius: 2px 1px 3px 1px; }
-mark.answer-tape--1::after { transform: scaleX(-1); opacity: .68; }
-mark.answer-tape--2::before { transform: scaleX(-1); opacity: .75; }
-mark.answer-tape--3::after { transform: translateX(5%); opacity: .8; }
+/* Eight cut shapes, plus per-strip cropped foil and movable creases from JS.
+   The change is deterministic: no flicker when a round re-renders. */
+mark.answer-tape--0 { transform: rotate(-.62deg) skewY(-.11deg); border-radius: 1px 3px 2px 1px; }
+mark.answer-tape--1 {
+  transform: rotate(.45deg) skewY(.21deg);
+  border-radius: 3px 1px 2px 3px;
+}
+mark.answer-tape--2 {
+  transform: rotate(-.55deg) skewY(-.24deg);
+  border-radius: 1px 3px 2px 1px;
+}
+mark.answer-tape--3 {
+  transform: rotate(.65deg) skewY(.15deg);
+  border-radius: 2px 1px 3px 2px;
+}
+mark.answer-tape--1::before { transform: scaleX(-1); opacity: .86; }
+mark.answer-tape--2::after { transform: scaleX(-1); opacity: .8; }
+mark.answer-tape--3::before { transform: translateX(3%); opacity: .78; }
+mark.answer-tape--4 { transform: rotate(-.8deg) skewY(.14deg); border-radius: 2px 4px 1px 2px; }
+mark.answer-tape--5 { transform: rotate(.7deg) skewY(-.19deg); border-radius: 3px 1px 4px 1px; }
+mark.answer-tape--6 { transform: rotate(-.15deg) skewY(.28deg); border-radius: 1px 2px 1px 3px; }
+mark.answer-tape--7 { transform: rotate(.36deg) skewY(-.25deg); border-radius: 4px 2px 3px 1px; }
+mark.answer-tape--4::after { transform: scaleX(-1); opacity: .82; }
+mark.answer-tape--5::before { transform: translateX(-4%); opacity: .7; }
+mark.answer-tape--6::after { transform: scaleX(-1); opacity: .68; }
+mark.answer-tape--7::before { transform: translateX(3%); opacity: .85; }
+/* Foil and folds vary, but the readable letter weight stays consistent. */
+mark.answer-tape--1 .answer-tape__letters,
+mark.answer-tape--4 .answer-tape__letters { -webkit-text-stroke-width: .06px; }
+mark.answer-tape--3 .answer-tape__letters,
+mark.answer-tape--6 .answer-tape__letters { -webkit-text-stroke-width: .1px; }
 
-/* The unbroken measuring copy wraps naturally so JS can detect real line rows.
-   Long indivisible words retain native safe wrapping instead of clipping. */
-mark.answer-tape--measuring {
+/* Higher specificity is important: measuring labels must be inline even on
+   #reveal-sentence, otherwise their actual word boundaries cannot be found. */
+mark.answer-tape.answer-tape--measuring,
+#reveal-sentence mark.answer-tape.answer-tape--measuring,
+.screen-plays li mark.answer-tape.answer-tape--measuring,
+#screen-reveal .screen-prompt mark.answer-tape.answer-tape--measuring {
   display: inline;
   white-space: normal;
   overflow-wrap: anywhere;
 }
-/* A very long single label remains wrappable inside its plastic strip. */
 mark.answer-tape--strip { white-space: normal; overflow-wrap: anywhere; }

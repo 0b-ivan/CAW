@@ -22,11 +22,30 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   Band-Schlagschatten. Ausschließlich für die Kunststoffbänder sind
   dezente monochrome CSS-Verläufe und mehrlagige Schatten erlaubt; sie
   simulieren Material und Prägung, nicht eine farbige oder animierte UI.
+  Wenn die CSS-Simulation nicht genügt, darf ausschließlich die Bandoberfläche
+  eine kleine lokal eingebundene, aus dem vom Nutzer gelieferten Referenzbild
+  abgeleitete, textfreie Fototextur verwenden. Die Schrift bleibt dynamischer,
+  barrierefrei lesbarer Text im DOM; keine Kartentexte, Webfonts, externen
+  Ressourcen oder fremden Assets werden in die Oberfläche eingebettet.
   Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
-  eine verfügbare runde, mechanisch wirkende Systemschrift (ohne Webfont).
-  Feste, datenunabhängige Materialvarianten bilden kleine Knicke,
-  Reflexionswinkel und nicht perfekt gerade Kanten nach; kein Zufall bei jedem
-  Rendern. Kein Bild und keine Animation. Die normalen Handkarten und
+  **gut lesbare, hell gefüllte Versalien** in der vorherigen schmalen
+  mechanischen Schrift (DIN Condensed / Roboto Condensed mit
+  Sans-Serif-Fallback, ohne externen Font). Die spätere Courier-Schrift
+  wurde wegen ihrer breiten, schweren Buchstaben verworfen. Das Schriftgewicht
+  ist bewusst mittel statt fett; eine sehr feine Hell-/Dunkelkante deutet die
+  Prägung an, ohne die Zeichen optisch aufzudicken. Kein zusätzlicher heller
+  Textschatten auf den Buchstabenkörper. Zeichenabstand und Spiegelungen
+  bleiben zurückhaltend, vor allem auf Handy und Big Screen.
+  Die Großschreibung ist ausschließlich visuell;
+  der originale Kartentext bleibt im DOM und im Spielzustand unverändert.
+  Die Bänder wirken wie echtes, leicht zerknittertes schwarzes Kunststoffband:
+  wechselnde harte Glanzreflexe, diagonale Knicklinien, unruhige Oberflächen
+  und ein deutlich sichtbarer Schlagschatten auf der Papierkarte.
+  Die Oberfläche variiert pro Antwortstreifen reproduzierbar: lokale
+  Bildausschnitte der Bandtextur, Glanz- und Knickposition, Stanzdruck,
+  Bandwinkel und Kantenform folgen einem kleinen stabilen Text-Seed. So
+  wiederholt sich nicht derselbe Reflex auf jeder Karte und trotzdem
+  flackert beim Neuzeichnen nichts. Kein Bild und keine Animation. Die normalen Handkarten und
   Juror-Antwortoptionen bleiben frei von Prägebändern; beim Einsetzen in
   den Fragesatz entsteht das Band. Lange Antworten werden anhand der
   tatsächlichen Textzeilen in eigenständige, geringfügig unterschiedliche

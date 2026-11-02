@@ -114,16 +114,41 @@ async function checkTape(page, selector) {
       letterColor: raised?.color,
       relief: raised?.textShadow,
       raisedEdge: raised?.getPropertyValue('-webkit-text-stroke-width'),
+      letterCase: raised?.textTransform,
+      tracking: raised?.letterSpacing,
+      letterSize: raised?.fontSize,
+      letterWeight: raised?.fontWeight,
+      foilOffset: element.style.getPropertyValue('--foil-x'),
+      foilSize: element.style.getPropertyValue('--foil-size'),
+      creaseOffset: element.style.getPropertyValue('--crease-x'),
+      glintOffset: element.style.getPropertyValue('--glint-x'),
     };
   });
-  assert.equal(material.background, 'rgb(8, 8, 8)', `${selector}: black plastic band`);
-  assert.match(material.sheen, /linear-gradient/, `${selector}: molded plastic surface`);
-  assert.match(material.reflection, /linear-gradient/, `${selector}: scuffed reflections`);
+  assert.equal(material.background, 'rgb(5, 5, 5)', `${selector}: deep black plastic band`);
+  assert.match(material.sheen, /dymo-foil[.]svg/, `${selector}: reference-derived plastic surface`);
+  assert.match(material.reflection, /radial-gradient/, `${selector}: uneven specular reflections`);
+  const asset = await page.request.get(`${target}/assets/dymo-foil.svg`);
+  assert.equal(asset.status(), 200, 'local foil texture is served by Caddy');
+  assert.match(await asset.text(), /data:image\/webp;base64,/, 'foil contains only an embedded local image');
   assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
-  assert.match(material.font, /Arial Rounded MT Bold/, `${selector}: embossing font, not UI monospace`);
-  assert.equal(material.letterColor, 'rgb(185, 185, 180)', `${selector}: embossed silver lettering`);
-  assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: three-dimensional letters`);
-  assert.equal(material.raisedEdge, '0.3px', `${selector}: pressed letter edges`);
+  assert.match(material.font, /DIN Condensed/, `${selector}: earlier slim mechanical font`);
+  assert.match(material.font, /Roboto Condensed/, `${selector}: condensed fallback`);
+  assert.equal(material.letterColor, 'rgb(245, 245, 241)', `${selector}: readable filled white letters`);
+  assert.equal(Number(material.letterWeight), 500,
+    `${selector}: medium weight avoids bulky embossed letters`);
+  assert.equal(material.letterCase, 'uppercase', `${selector}: printed capitals`);
+  const trackingRatio = parseFloat(material.tracking) / parseFloat(material.letterSize);
+  assert.ok(trackingRatio >= .04 && trackingRatio <= .06,
+    `${selector}: restrained tracking retains the earlier condensed look`);
+  assert.ok(material.relief.split('rgb(').length >= 3,
+    `${selector}: subtle raised edges without heavy extra shadows`);
+  assert.ok(parseFloat(material.raisedEdge) >= .06 &&
+    parseFloat(material.raisedEdge) <= .1,
+    `${selector}: very thin relief must not thicken the letters`);
+  for (const offset of [material.foilOffset, material.foilSize,
+    material.creaseOffset, material.glintOffset]) {
+    assert.match(offset, /^\d+%$/, `${selector}: stable physical variation parameters`);
+  }
   assert.notEqual(material.edge, 'none', `${selector}: cut tape edges cast shadows`);
   assert.equal(material.band, 'clone', `${selector}: clean fallback wrapping`);
 }
@@ -321,6 +346,10 @@ async function playRound(host, players, round, screen) {
     .evaluate((card) => getComputedStyle(card).backgroundColor);
   assert.equal(revealPaper, 'rgb(244, 244, 240)', 'the reveal is a single large paper card');
   await checkTape(host, '#reveal-sentence mark.answer-tape');
+  // Only the display is capitalized; the spoken/stored sentence remains intact.
+  assert.ok((await host.locator('#reveal-sentence').textContent()).includes(
+    (await host.locator('#reveal-sentence mark.answer-tape').first().textContent()).trim()),
+    'uppercase embossing must not modify submitted card wording');
   await checkTapeNotClipped(host, '#reveal-sentence mark.answer-tape');
   await checkTape(screen, '#screen-sentence mark.answer-tape');
   if (round === 1) {
@@ -632,6 +661,10 @@ async function checkLongCards(browser) {
     assert.ok(await page.locator('#answer-prompt mark.answer-tape--strip').count() >= 2,
       `${width}x${height}: long inserted answers need separate strips per line`);
     await checkTapeNotClipped(page, '#answer-prompt mark.answer-tape');
+    const variations = await page.locator('#answer-prompt mark.answer-tape')
+      .evaluateAll((tapes) => tapes.map((tape) => tape.style.getPropertyValue('--foil-x')));
+    assert.ok(new Set(variations).size > 1,
+      `${width}x${height}: separate plastic strips need varied texture crops`);
     const renderedText = await page.locator('#answer-prompt').textContent();
     assert.match(renderedText, /Testantwort mit einem sehr langen Kartentext/,
       'splitting labels must preserve the original answer wording');
