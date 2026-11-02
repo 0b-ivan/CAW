@@ -23,7 +23,12 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   dezente monochrome CSS-Verläufe und mehrlagige Schatten erlaubt; sie
   simulieren Material und Prägung, nicht eine farbige oder animierte UI.
   Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
-  eine verfügbare runde, mechanisch wirkende Systemschrift (ohne Webfont).
+  schmale, metallisch hell umrandete **Versalien** in einer mechanisch wirkenden
+  Systemschrift (ohne Webfont). Die Großschreibung ist ausschließlich visuell;
+  der originale Kartentext bleibt im DOM und im Spielzustand unverändert.
+  Die Bänder wirken wie echtes, leicht zerknittertes schwarzes Kunststoffband:
+  wechselnde harte Glanzreflexe, diagonale Knicklinien, unruhige Oberflächen
+  und ein deutlich sichtbarer Schlagschatten auf der Papierkarte.
   Feste, datenunabhängige Materialvarianten bilden kleine Knicke,
   Reflexionswinkel und nicht perfekt gerade Kanten nach; kein Zufall bei jedem
   Rendern. Kein Bild und keine Animation. Die normalen Handkarten und
