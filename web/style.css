@@ -1338,11 +1338,15 @@ mark.answer-tape,
   background-image:
     linear-gradient(115deg, #0004, transparent 20%, transparent 82%, #0002),
     url("/assets/dymo-foil.svg");
-  background-size: 100% 100%;
+  /* Crop the same photographed foil differently for each physical strip. */
+  background-size: 100% 100%, var(--foil-size, 120%) 100%;
+  background-position: center, var(--foil-x, 50%) center;
   background-repeat: no-repeat;
   color: #393939;
-  font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Helvetica Neue", Arial, sans-serif;
-  font-size: .91em;
+  font-family: "DIN Condensed", "Roboto Condensed", "Arial Narrow",
+    "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-stretch: condensed;
+  font-size: .93em;
   font-weight: 400;
   line-height: 1.27;
   white-space: normal;
@@ -1373,23 +1377,28 @@ mark.answer-tape::after {
 }
 mark.answer-tape::before {
   background:
-    radial-gradient(ellipse 30% 180% at 14% -20%, #ffffff70, transparent 75%),
-    linear-gradient(108deg, transparent 4%, #ffffff0e 12%, #ffffff48 15%,
-      #ffffff0a 21%, transparent 28%, transparent 64%, #ffffff1f 72%,
-      #ffffff57 80%, #ffffff13 82%, transparent 90%);
+    radial-gradient(ellipse 24% 160% at var(--glint-x, 42%) -22%,
+      #ffffff85, transparent 80%),
+    linear-gradient(108deg, transparent 4%, #ffffff0c 12%, #ffffff38 15%,
+      #ffffff07 21%, transparent 28%, transparent 64%, #ffffff1a 72%,
+      #ffffff48 80%, #ffffff0a 82%, transparent 90%);
   mix-blend-mode: screen;
-  opacity: .28;
+  opacity: .4;
 }
 mark.answer-tape::after {
   background:
-    linear-gradient(100deg, transparent 35%, #000b 38%, #ffffff52 39%,
-      #ffffff06 40%, transparent 43%),
-    linear-gradient(172deg, transparent 4%, #ffffff13 5%, transparent 9%,
+    linear-gradient(100deg,
+      transparent calc(var(--crease-x, 50%) - 5%),
+      #000b calc(var(--crease-x, 50%) - 2%),
+      #ffffff5a var(--crease-x, 50%),
+      #ffffff08 calc(var(--crease-x, 50%) + 1%),
+      transparent calc(var(--crease-x, 50%) + 4%)),
+    linear-gradient(172deg, transparent 4%, #ffffff18 5%, transparent 9%,
       transparent 87%, #ffffff30 89%, #000c 91%);
   clip-path: polygon(0 4%, 8% 0, 22% 2%, 33% 0, 45% 3%, 62% 1%,
     81% 0, 100% 5%, 100% 94%, 91% 100%, 75% 98%,
     59% 100%, 35% 98%, 16% 100%, 0 96%);
-  opacity: .33;
+  opacity: .58;
 }
 
 /* Embossed letters are hollow-looking silver relief, not white printed ink.
@@ -1397,22 +1406,26 @@ mark.answer-tape::after {
 .answer-tape__letters {
   position: relative;
   z-index: 1;
-  font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Helvetica Neue", Arial, sans-serif;
+  font-family: "DIN Condensed", "Roboto Condensed", "Arial Narrow",
+    "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-stretch: condensed;
   font-weight: 400;
-  font-size: .85em;
-  line-height: 1.32;
-  letter-spacing: .17em;
+  font-size: .98em;
+  line-height: 1.3;
+  letter-spacing: .13em;
   text-transform: uppercase;
-  color: #393939;
-  -webkit-text-stroke: .83px #e7e7e5;
+  color: #303030;
+  -webkit-text-stroke: .78px #e6e6e3;
   text-shadow:
-    -.8px -1.1px .6px #f8f8f8,
-    .8px 1px .5px #a4a4a4,
-    1.5px 2px 1.5px #222,
-    2.4px 3px 3px #000;
+    -.7px -.9px .5px #ffffff,
+    .7px .9px .5px #8d8d8a,
+    1.3px 1.8px 1.5px #202020,
+    2.2px 2.7px 2.5px #000;
 }
 
-/* Stable irregularities vary by answer and line, without random rerenders. */
+/* Eight cut shapes, plus per-strip cropped foil and movable creases from JS.
+   The change is deterministic: no flicker when a round re-renders. */
+mark.answer-tape--0 { transform: rotate(-.62deg) skewY(-.11deg); border-radius: 1px 3px 2px 1px; }
 mark.answer-tape--1 {
   transform: rotate(.45deg) skewY(.21deg);
   border-radius: 3px 1px 2px 3px;
@@ -1428,6 +1441,18 @@ mark.answer-tape--3 {
 mark.answer-tape--1::before { transform: scaleX(-1); opacity: .86; }
 mark.answer-tape--2::after { transform: scaleX(-1); opacity: .8; }
 mark.answer-tape--3::before { transform: translateX(3%); opacity: .78; }
+mark.answer-tape--4 { transform: rotate(-.8deg) skewY(.14deg); border-radius: 2px 4px 1px 2px; }
+mark.answer-tape--5 { transform: rotate(.7deg) skewY(-.19deg); border-radius: 3px 1px 4px 1px; }
+mark.answer-tape--6 { transform: rotate(-.15deg) skewY(.28deg); border-radius: 1px 2px 1px 3px; }
+mark.answer-tape--7 { transform: rotate(.36deg) skewY(-.25deg); border-radius: 4px 2px 3px 1px; }
+mark.answer-tape--4::after { transform: scaleX(-1); opacity: .82; }
+mark.answer-tape--5::before { transform: translateX(-4%); opacity: .7; }
+mark.answer-tape--6::after { transform: scaleX(-1); opacity: .68; }
+mark.answer-tape--7::before { transform: translateX(3%); opacity: .85; }
+mark.answer-tape--1 .answer-tape__letters,
+mark.answer-tape--4 .answer-tape__letters { -webkit-text-stroke-width: .7px; }
+mark.answer-tape--3 .answer-tape__letters,
+mark.answer-tape--6 .answer-tape__letters { -webkit-text-stroke-width: .88px; }
 
 /* Higher specificity is important: measuring labels must be inline even on
    #reveal-sentence, otherwise their actual word boundaries cannot be found. */
