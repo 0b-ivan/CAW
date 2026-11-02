@@ -107,7 +107,8 @@ class LegacyRoomIdleTests(unittest.TestCase):
         self.assertEqual(mismatch, 1)
 
         deploy = (ROOT / "bin" / "deploy-hetzner").read_text()
-        self.assertIn('if [[ "$previous_sha" == cc02372* ]]', deploy)
+        self.assertIn('if [[ "$previous_sha" == fc59685e124a00c4666c53947fd2e0f174848b30 ]]', deploy)
+        self.assertIn("in_progress == 2 && sockets == 0", deploy)
         self.assertIn('git show "$sha:bin/verify-local-redis-restore"', deploy)
         self.assertIn('CAW_REPO_ROOT="$PWD" bash', deploy)
         self.assertLess(deploy.index("verify-local-redis-restore"),
