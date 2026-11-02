@@ -44,9 +44,9 @@ jobs:
           set -euo pipefail
           cd /opt/caw
           test "$(id -un)" = caw-deploy
-          container="$(env -u CAW_VERSION docker compose --env-file deploy/.env \
-            -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml \
-            ps -q redis-backup)"
+          container="$(docker ps --filter label=com.docker.compose.project=caw \
+            --filter label=com.docker.compose.service=redis-backup \
+            --format '{{.ID}}' | head -n 1)"
           test -n "$container"
           test "$(docker inspect --format '{{.State.Health.Status}}' "$container")" = healthy
           docker exec "$container" sh -ec \
