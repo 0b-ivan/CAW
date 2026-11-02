@@ -30,8 +30,9 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
   **gut lesbare, hell gefüllte Versalien** mit der Optik einer klassischen
   Schreibmaschine: monospaced, erkennbare Serifen und eher eckige Buchstaben
-  (American Typewriter / Courier New mit Monospace-Fallback, ohne externen
-  Font). Keine schmale DIN-/Sans-Serif-Schrift mehr. Der Anschlag darf durch
+  (bevorzugt Nimbus Mono PS, danach American Typewriter / Courier
+  mit Monospace-Fallback, ohne externen Font). Die Fallbacks müssen auch
+  auf Linux, iOS und Android sichtbar Schreibmaschinen-Charakter behalten. Keine schmale DIN-/Sans-Serif-Schrift mehr. Der Anschlag darf durch
   kleine helle und dunkle Versätze leicht ungleichmäßig wirken, aber die
   Zeichen bleiben durchgehend scharf und vollständig ausgefüllt. Ein breiter,
   fast weißer Buchstabenkörper hat Vorrang vor dem plastischen Schatten. Die metallische Prägung entsteht nur an den Kanten
