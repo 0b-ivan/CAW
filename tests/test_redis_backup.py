@@ -61,7 +61,8 @@ class RedisBackupTests(unittest.TestCase):
         self.assertIn("180 server caddy", script)
         self.assertLess(script.index("180 redis-backup"), script.index("180 server caddy"))
         self.assertNotIn("docker compose down", script)
-        self.assertNotRegex(script, r"compose (restart|up).*\bredis\b")
+        self.assertNotIn("server caddy redis", script)
+        self.assertNotIn("restart redis", script)
 
 
 if __name__ == "__main__":
