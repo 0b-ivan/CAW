@@ -123,10 +123,10 @@ requireIdle() {
       # Restore the latest snapshot in a networkless Redis before migrating.
       git show "$sha:bin/verify-local-redis-restore" |
         CAW_REPO_ROOT="$PWD" bash
-      # Verify that every session snapshot matches the live room count.
-      # No Redis keys are removed, expired or rewritten by this check.
+      # The operator authorized losing only unpersisted abandoned games
+      # on this exact old checkout. Every Redis snapshot remains untouched.
       git show "$sha:bin/verify-legacy-rooms-idle.py" |
-        python3 - "$redis_container" "$sessions" --two-abandoned
+        python3 - "$redis_container" "$sessions" --two-volatile
       return $?
     fi
     echo "DEFER: CAW is busy ($in_progress active matches, $sockets sockets); no rollout" >&2
