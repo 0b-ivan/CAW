@@ -274,3 +274,12 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Automatischen Bootstrap vor regulärem Game-Idle-Deploy verdrahtet und Sicherheitsregression ergänzt
 - [ ] PR-/Main-CI und ersten produktiven Snapshot mit isoliertem Restore nachweisen
 - [ ] Offsite-Backups weiterhin ausstehend (Storage Box vorerst zurückgestellt)
+
+## Betrieb: einmaliges Upgrade mit zwei verlassenen Altpartien (2026-11-02)
+
+- [x] Betreiberbestätigung und strikte Ausnahme im C++-Backend-Konzept festgehalten
+- [x] Legacy-Phasenprüfung für höchstens zwei verlassene Spiele nur auf dem bekannten Alt-Checkout erweitert
+- [x] Gesundes Redis-Backup und erfolgreichen isolierten Restore vor der Ausnahme vorgeschrieben
+- [x] Regressionen: ohne Override gesperrt, maximal zwei erlaubt, mehr als zwei gesperrt, Key-Anzahl muss stimmen
+- [ ] PR-/Main-CI einschließlich CTest, Browser/Lasttest und Compose-Smoke bestätigen
+- [ ] Produktiven Backup-Worker, aktuellen RDB-Restore und ersten Server-Rollout anhand der GitHub-Actions-Logs nachweisen
