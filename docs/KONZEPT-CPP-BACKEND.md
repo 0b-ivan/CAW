@@ -524,3 +524,38 @@ offene Verbindungen, fehlerhafte oder fehlende Daten blockieren weiterhin.
 Nach dem ersten erfolgreichen Checkout-Wechsel kann die Ausnahme bei
 späteren Releases nicht erneut greifen. Das ist ausdrücklich keine
 Änderung der allgemeinen Schutzregel für neue Spiele.
+
+## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
+
+Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
+tägliche lokale RDB-Kopien, damit versehentliche Datenverluste innerhalb des
+bestehenden Hetzner-Hosts wiederherstellbar sind. Ein eigener kleiner
+\`redis-backup\`-Compose-Dienst nutzt das **bereits vorhandene Redis-Image**
+und das **bestehende \`backups\`-Volume**, ohne Zugriff auf Docker-Socket,
+Postgres-Passwort oder Produktions-Volumes von Redis. Er liest über die
+interne Redis-Verbindung mit \`redis-cli --rdb\` einen konsistenten
+Snapshot, schreibt zuerst \`.part\`, veröffentlicht nur vollständig
+übertragene Dateien atomar und löscht vollständige RDBs nach 14 Tagen.
+Dateien enthalten private Spielzustände und sind mit \`umask 077\`
+nur für den Backup-Eigentümer lesbar. Bei Fehlschlag wird nach einer
+Stunde erneut versucht; ein erfolgreicher Versuch setzt den 24-h-Takt fort.
+
+Für den Restore-Test wird eine Kopie des neuesten RDBs in einem separaten
+\`redis:7-alpine\`-Container geladen, der \`--network none\`, keinen
+Produktions-Volume-Mount, keinen TCP-Port und ausschließlich eine lokale
+Unix-Socket-Verbindung hat. Der Test muss \`PING\` und \`DBSIZE\` bestehen;
+die CI prüft zusätzlich einen synthetischen Testschlüssel. Produktive
+Keys oder deren private Werte werden dabei nicht geloggt. Ein täglicher
+GitHub-Actions-Check meldet veraltete oder fehlende Backups über einen
+fehlgeschlagenen Workflow; Monitoring ist kein Ersatz für den Restore-Test.
+
+Beim ersten Update wird **nur** der unabhängige Redis-Backup-Sidecar
+zusätzlich gestartet, ohne Redis, PostgreSQL oder laufende Spiele
+neu zu erstellen. Bei späteren Releases bleibt er erhalten. Die
+bereits erfolgreichen manuellen lokalen PostgreSQL- und Redis-Restores
+werden durch die CI-Sicherung ergänzt.
+
+Diese lokalen RDBs schützen weiterhin **nicht** vor vollständigem Verlust
+des Hetzner-Hosts oder gemeinsamen Volumes. Eine verschlüsselte
+externe Sicherung für PostgreSQL und Redis samt externer Restore-Probe
+bleibt ausdrücklich offen; die Storage Box wurde vorerst zurückgestellt.
