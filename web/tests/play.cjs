@@ -116,6 +116,10 @@ async function checkTape(page, selector) {
       raisedEdge: raised?.getPropertyValue('-webkit-text-stroke-width'),
       letterCase: raised?.textTransform,
       tracking: raised?.letterSpacing,
+      foilOffset: element.style.getPropertyValue('--foil-x'),
+      foilSize: element.style.getPropertyValue('--foil-size'),
+      creaseOffset: element.style.getPropertyValue('--crease-x'),
+      glintOffset: element.style.getPropertyValue('--glint-x'),
     };
   });
   assert.equal(material.background, 'rgb(5, 5, 5)', `${selector}: deep black plastic band`);
@@ -125,12 +129,18 @@ async function checkTape(page, selector) {
   assert.equal(asset.status(), 200, 'local foil texture is served by Caddy');
   assert.match(await asset.text(), /data:image\/webp;base64,/, 'foil contains only an embedded local image');
   assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
-  assert.match(material.font, /Arial Rounded MT Bold/, `${selector}: embossing font, not UI monospace`);
-  assert.equal(material.letterColor, 'rgb(57, 57, 57)', `${selector}: hollow dark letter centers`);
+  assert.match(material.font, /DIN Condensed/, `${selector}: narrow mechanical embossing font`);
+  assert.equal(material.letterColor, 'rgb(48, 48, 48)', `${selector}: hollow dark letter centers`);
   assert.equal(material.letterCase, 'uppercase', `${selector}: printed capitals`);
   assert.ok(parseFloat(material.tracking) > 1, `${selector}: spaced-out embossing characters`);
   assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: three-dimensional letters`);
-  assert.equal(material.raisedEdge, '0.83px', `${selector}: raised silver letter outlines`);
+  assert.ok(parseFloat(material.raisedEdge) >= .7 &&
+    parseFloat(material.raisedEdge) <= .88,
+  `${selector}: varying silver impression depths`);
+  for (const offset of [material.foilOffset, material.foilSize,
+    material.creaseOffset, material.glintOffset]) {
+    assert.match(offset, /^\d+%$/, `${selector}: stable physical variation parameters`);
+  }
   assert.notEqual(material.edge, 'none', `${selector}: cut tape edges cast shadows`);
   assert.equal(material.band, 'clone', `${selector}: clean fallback wrapping`);
 }
@@ -643,6 +653,10 @@ async function checkLongCards(browser) {
     assert.ok(await page.locator('#answer-prompt mark.answer-tape--strip').count() >= 2,
       `${width}x${height}: long inserted answers need separate strips per line`);
     await checkTapeNotClipped(page, '#answer-prompt mark.answer-tape');
+    const variations = await page.locator('#answer-prompt mark.answer-tape')
+      .evaluateAll((tapes) => tapes.map((tape) => tape.style.getPropertyValue('--foil-x')));
+    assert.ok(new Set(variations).size > 1,
+      `${width}x${height}: separate plastic strips need varied texture crops`);
     const renderedText = await page.locator('#answer-prompt').textContent();
     assert.match(renderedText, /Testantwort mit einem sehr langen Kartentext/,
       'splitting labels must preserve the original answer wording');
