@@ -458,3 +458,33 @@ Sie schützen weder vor kompletter Hetzner-Hostzerstörung noch vor
 Verlust des Backup-Volumes. Verschlüsselte Offsite-Backups mit
 getrennter Restore-Probe bleiben ausstehend (Storage Box vorerst
 vom Betreiber zurückgestellt).
+
+### Backup-Worker auch bei noch gespeicherten aktiven Partien aktivieren
+
+Seit 2026-11-02 gibt es einen separaten Bootstrap-Schritt **vor** dem
+Game-Idle-Gate im GitHub-Workflow `deploy-hetzner.yml`. Er richtet
+ausschließlich den Redis-Backup-Worker ein; **Server, Caddy, Redis,
+PostgreSQL, Spielräume und Tunnel werden nicht neu gestartet**.
+
+Liegt der produktive Checkout wegen alter Sessions noch auf einer Version
+ohne `redis-backup`-Definition, liest der Bootstrap das geprüfte
+`deploy/redis-backup.sh` aus dem aktuellen `main`-Commit und speichert
+es privat unter `.git/caw-redis-backup.sh`. Nur für den Backup-Worker
+wird zusätzlich `.git/caw-redis-backup-bootstrap.yml` verwendet.
+Das bestehende Compose-Projekt `caw`, sein Redis-Netz und sein
+`backups`-Volume werden wiederverwendet; ein vollständiges
+`docker compose up` ist dafür **nicht nötig**. Das Setup ist
+idempotent und durch die normale Deploy-`flock`-Sperre serialisiert.
+
+Nach dem Start muss der Worker *healthy* werden. Ein
+`verify-local-redis-restore`-Lauf aus dem CI-geprüften Git-Commit
+lädt den neuesten Snapshot isoliert; bei Fehlern wird der GitHub-Job
+rot. Der tägliche Audit findet den Worker über die
+Compose-Container-Labels und prüft den Restore auch dann, wenn die
+Spielserver-Version noch zurückgestellt ist.
+
+Der restliche Auto-Deploy führt unverändert die Leerlaufprüfung aus
+und darf weiterhin **keine laufende Partie unterbrechen**. Sobald
+alle Spielräume tatsächlich beendet sind, wechselt das reguläre
+Deployment bei Bedarf auf die versionierte Backup-Compose-Definition.
+Externe Backups fehlen weiterhin.
