@@ -54,10 +54,24 @@ function drawSentence(element, prompt, answers) {
   }
 }
 
-// Different deterministic details suggest manually applied, slightly crooked labels.
+// A small repeatable seed prevents identical folds on every answer. The
+// same text and index always get the same texture even after a resize.
+function tapeSeed(text, index) {
+  let seed = index * 43;
+  for (const char of text) {
+    seed = (seed * 33 + char.codePointAt(0)) % 997;
+  }
+  return seed;
+}
+
 function createTape(text, index) {
   const tape = document.createElement('mark');
-  tape.className = 'answer-tape answer-tape--' + (index % 4);
+  const seed = tapeSeed(text, index);
+  tape.className = 'answer-tape answer-tape--' + (seed % 8);
+  tape.style.setProperty('--foil-x', (15 + seed % 71) + '%');
+  tape.style.setProperty('--foil-size', (116 + seed % 21) + '%');
+  tape.style.setProperty('--crease-x', (25 + Math.floor(seed / 3) % 51) + '%');
+  tape.style.setProperty('--glint-x', (12 + Math.floor(seed / 7) % 68) + '%');
   const letters = document.createElement('span');
   letters.className = 'answer-tape__letters';
   letters.textContent = text;
