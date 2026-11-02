@@ -34,7 +34,10 @@ class LegacyRoomIdleTests(unittest.TestCase):
         errors = io.StringIO()
         args = ["legacy", REDIS_CONTAINER, str(expected)]
         if override:
-            args.append("--one-abandoned" if override_limit == 1 else "--two-abandoned")
+            if override_limit == "volatile":
+                args.append("--two-volatile")
+            else:
+                args.append("--one-abandoned" if override_limit == 1 else "--two-abandoned")
         with mock.patch.object(sys, "argv", args):
             with mock.patch.object(legacy, "redis_cli", side_effect=fake_redis):
                 with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
@@ -76,7 +79,7 @@ class LegacyRoomIdleTests(unittest.TestCase):
 
         deploy = (ROOT / "bin" / "deploy-hetzner").read_text()
         self.assertIn('if [[ "$previous_sha" == cc02372* ]]', deploy)
-        self.assertIn("--two-abandoned", deploy)
+        self.assertIn("--two-volatile", deploy)
         self.assertIn("if (( sockets != 0 )); then", deploy)
         self.assertIn("verify-local-redis-restore", deploy)
         self.assertIn("State.Health.Status", deploy)
@@ -137,7 +140,52 @@ class LegacyRoomIdleTests(unittest.TestCase):
         self.assertIn('git show "$sha:bin/verify-local-redis-restore"', deploy)
         self.assertIn('CAW_REPO_ROOT="$PWD" bash', deploy)
         self.assertLess(deploy.index("verify-local-redis-restore"),
-                        deploy.index("--two-abandoned"))
+                        deploy.index("--two-volatile"))
+
+    def test_explicit_volatile_override_preserves_every_redis_snapshot(self):
+        # Production has exactly two abandoned games in memory, but the old
+        # persistence worker did not write all of them to Redis.
+        for phases in (
+            {},
+            {"session:ABCDEF": 1},
+            {"session:ABCDEF": 1, "session:BCDEFG": 3},
+            {"session:ABCDEF": 0, "session:BCDEFG": 4},
+        ):
+            with self.subTest(phases=phases):
+                result, output, errors = self.check(
+                    phases, expected=3, override=True, override_limit="volatile",
+                )
+                self.assertEqual(result, 0, errors)
+                persisted = sum(phase in (1, 2, 3) for phase in phases.values())
+                self.assertIn(f"{persisted} persisted", output)
+                self.assertIn(f"{2 - persisted} volatile", output)
+                self.assertIn("Redis room snapshots preserved", output)
+
+        # Without the explicit new override, a missing active snapshot fails.
+        rejected, _, error = self.check(
+            {"session:ABCDEF": 1}, expected=3,
+            override=True, override_limit=2,
+        )
+        self.assertEqual(rejected, 1)
+        self.assertIn("not all active games are persisted", error)
+
+    def test_volatile_override_still_blocks_unsafe_redis_states(self):
+        cases = [
+            ({"session:ABCDEF": 1, "session:BCDEFG": 2,
+              "session:CDEFGH": 3}, 3, False),
+            ({"session:ABCDEF": 0, "session:BCDEFG": 4,
+              "session:CDEFGH": 0}, 2, False),
+            ({"session:ABCDEF": 99}, 2, False),
+            ({"session:INVALID": 0}, 2, False),
+            ({"session:ABCDEF": 1}, 2, True),
+        ]
+        for phases, expected, broken in cases:
+            with self.subTest(phases=phases, broken=broken):
+                result, _, _ = self.check(
+                    phases, expected=expected, broken=broken,
+                    override=True, override_limit="volatile",
+                )
+                self.assertNotEqual(result, 0)
 
     def test_no_sessions_is_idle(self):
         result, output, _ = self.check({})
