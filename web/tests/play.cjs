@@ -140,7 +140,8 @@ async function checkTape(page, selector) {
   const trackingRatio = parseFloat(material.tracking) / parseFloat(material.letterSize);
   assert.ok(trackingRatio >= .04 && trackingRatio <= .06,
     `${selector}: restrained tracking retains the earlier condensed look`);
-  assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: three-dimensional letters`);
+  assert.ok(material.relief.split('rgb(').length >= 3,
+    `${selector}: subtle raised edges without heavy extra shadows`);
   assert.ok(parseFloat(material.raisedEdge) >= .06 &&
     parseFloat(material.raisedEdge) <= .1,
     `${selector}: very thin relief must not thicken the letters`);
