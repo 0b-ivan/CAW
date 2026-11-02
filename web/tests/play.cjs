@@ -131,14 +131,15 @@ async function checkTape(page, selector) {
   assert.equal(asset.status(), 200, 'local foil texture is served by Caddy');
   assert.match(await asset.text(), /data:image\/webp;base64,/, 'foil contains only an embedded local image');
   assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
-  assert.match(material.font, /DIN Condensed/, `${selector}: narrow mechanical embossing font`);
+  assert.match(material.font, /American Typewriter/, `${selector}: serif typewriter font stack`);
+  assert.match(material.font, /Courier New/, `${selector}: portable typewriter fallback`);
   assert.equal(material.letterColor, 'rgb(245, 245, 241)', `${selector}: readable filled white letters`);
   assert.ok(Number(material.letterWeight) >= 600,
     `${selector}: embossed lettering must not be thin`);
   assert.equal(material.letterCase, 'uppercase', `${selector}: printed capitals`);
   const trackingRatio = parseFloat(material.tracking) / parseFloat(material.letterSize);
-  assert.ok(trackingRatio >= .04 && trackingRatio <= .08,
-    `${selector}: readable tracking, including on TV`);
+  assert.ok(trackingRatio >= .01 && trackingRatio <= .025,
+    `${selector}: typewriter glyphs need tight tracking on phone and TV`);
   assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: three-dimensional letters`);
   assert.ok(parseFloat(material.raisedEdge) >= .12 &&
     parseFloat(material.raisedEdge) <= .2,
