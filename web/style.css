@@ -1344,8 +1344,8 @@ mark.answer-tape,
   background-position: center, var(--foil-x, 50%) center;
   background-repeat: no-repeat;
   color: #393939;
-  font-family: "American Typewriter", "Courier New", "Liberation Mono",
-    "DejaVu Sans Mono", monospace;
+  font-family: "Nimbus Mono PS", "American Typewriter", "Courier",
+    "Courier New", "Liberation Mono", monospace;
   font-size: .94em;
   font-weight: 700;
   line-height: 1.27;
@@ -1408,10 +1408,10 @@ mark.answer-tape::after {
   z-index: 1;
   /* Slab serifs and fixed glyph widths evoke an old mechanical typewriter.
      Keep tracking tight: the wider glyphs still have to fit on mobile. */
-  font-family: "American Typewriter", "Courier New", "Liberation Mono",
-    "DejaVu Sans Mono", monospace;
+  font-family: "Nimbus Mono PS", "American Typewriter", "Courier",
+    "Courier New", "Liberation Mono", monospace;
   font-weight: 700;
-  font-size: .94em;
+  font-size: .98em;
   line-height: 1.32;
   letter-spacing: .014em;
   text-transform: uppercase;
