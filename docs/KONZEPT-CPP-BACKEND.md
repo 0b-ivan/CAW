@@ -559,3 +559,31 @@ Diese lokalen RDBs schützen weiterhin **nicht** vor vollständigem Verlust
 des Hetzner-Hosts oder gemeinsamen Volumes. Eine verschlüsselte
 externe Sicherung für PostgreSQL und Redis samt externer Restore-Probe
 bleibt ausdrücklich offen; die Storage Box wurde vorerst zurückgestellt.
+
+### Backup-Worker starten, während Partien gespeichert bleiben
+
+Die Backup-Sicherung benötigt keinen Containerwechsel des Spielservers.
+Der CI-geprüfte Auto-Deploy startet deshalb den `redis-backup`-Worker
+**vor** der Spiel-Leerlaufprüfung über einen eigenen, per `flock`
+serialisierten Bootstrap-Schritt. Die aktive CAW-Session-Registry,
+WebSockets, PostgreSQL, der Redis-Server und der Cloudflare-Tunnel bleiben
+unverändert. Die allgemeine Spiel-Leerlaufprüfung für das eigentliche
+Deployment bleibt vollständig verpflichtend.
+
+Ist der Hetzner-Checkout wegen gespeicherter, nicht abgeschlossener Partien
+noch älter als die neue Compose-Datei, legt der Bootstrap nur zwei
+private Hilfsdateien unter `.git/` ab: das Backup-Skript aus dem
+**exakt CI-geprüften Git-Commit** und eine ergänzende Compose-Datei
+für **nur** `redis-backup`. Die bestehende Compose-Konfiguration und
+deren `backups`-Volume werden weiterverwendet; mit `--no-deps` wird
+kein bestehender Dienst neu erstellt. Die Hilfsdateien bleiben so lange
+erhalten, wie der Backup-Container sie bind-mountet. Beim nächsten
+normalen, leerlaufgesicherten App-Deployment übernimmt die reguläre
+versionierte Compose-Datei den Worker. Ein bereits gesunder Worker
+wird nicht neu gestartet. Jeder Erststart ist durch einen frischen
+RDB-Snapshot und dessen netzwerkisolierten Restore nachzuweisen.
+
+Damit können Backups starten, obwohl ein regulärer Release aus Rücksicht
+auf gespeicherte laufende Spiele zurückgestellt wird. Diese gezielte
+Backup-Aktivierung ist **keine** Erlaubnis, die bestehende
+Spiel-Leerlaufsperre für Server- oder Caddy-Releases zu umgehen.
