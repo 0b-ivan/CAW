@@ -131,7 +131,8 @@ async function checkTape(page, selector) {
   assert.equal(asset.status(), 200, 'local foil texture is served by Caddy');
   assert.match(await asset.text(), /data:image\/webp;base64,/, 'foil contains only an embedded local image');
   assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
-  assert.match(material.font, /American Typewriter/, `${selector}: serif typewriter font stack`);
+  assert.match(material.font, /Nimbus Mono PS/, `${selector}: old-style typewriter serifs`);
+  assert.match(material.font, /American Typewriter/, `${selector}: Apple typewriter fallback`);
   assert.match(material.font, /Courier New/, `${selector}: portable typewriter fallback`);
   assert.equal(material.letterColor, 'rgb(245, 245, 241)', `${selector}: readable filled white letters`);
   assert.ok(Number(material.letterWeight) >= 600,
