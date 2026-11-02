@@ -18,7 +18,7 @@ REDIS_CONTAINER = "a" * 64
 
 
 class LegacyRoomIdleTests(unittest.TestCase):
-    def check(self, phases, expected=None, broken=False, override=False):
+    def check(self, phases, expected=None, broken=False, override=False, override_limit=1):
         keys = list(phases)
         if expected is None:
             expected = len(keys)
@@ -34,7 +34,7 @@ class LegacyRoomIdleTests(unittest.TestCase):
         errors = io.StringIO()
         args = ["legacy", REDIS_CONTAINER, str(expected)]
         if override:
-            args.append("--one-abandoned")
+            args.append("--one-abandoned" if override_limit == 1 else "--two-abandoned")
         with mock.patch.object(sys, "argv", args):
             with mock.patch.object(legacy, "redis_cli", side_effect=fake_redis):
                 with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
@@ -76,8 +76,42 @@ class LegacyRoomIdleTests(unittest.TestCase):
 
         deploy = (ROOT / "bin" / "deploy-hetzner").read_text()
         self.assertIn('if [[ "$previous_sha" == cc02372* ]]', deploy)
-        self.assertIn("--one-abandoned", deploy)
+        self.assertIn("--two-abandoned", deploy)
         self.assertIn("if (( sockets != 0 )); then", deploy)
+        self.assertIn("verify-local-redis-restore", deploy)
+        self.assertIn("State.Health.Status", deploy)
+
+    def test_two_abandoned_matches_require_both_override_and_healthy_backup_gate(self):
+        phases = {
+            "session:ABCDEF": 1,
+            "session:BCDEFG": 2,
+        }
+        deferred, _, _ = self.check(phases)
+        self.assertEqual(deferred, 75)
+        one_only, _, _ = self.check(phases, override=True)
+        self.assertEqual(one_only, 75)
+        allowed, output, _ = self.check(phases, override=True, override_limit=2)
+        self.assertEqual(allowed, 0)
+        self.assertIn("2 operator-confirmed abandoned", output)
+
+        too_many, _, message = self.check({
+            "session:ABCDEF": 1,
+            "session:BCDEFG": 2,
+            "session:CDEFGH": 3,
+        }, override=True, override_limit=2)
+        self.assertEqual(too_many, 75)
+        self.assertIn("DEFER:", message)
+
+        mismatch, _, _ = self.check(phases, expected=3,
+                                    override=True, override_limit=2)
+        self.assertEqual(mismatch, 1)
+
+        deploy = (ROOT / "bin" / "deploy-hetzner").read_text()
+        self.assertIn('if [[ "$previous_sha" == cc02372* ]]', deploy)
+        self.assertIn('git show "$sha:bin/verify-local-redis-restore"', deploy)
+        self.assertIn('CAW_REPO_ROOT="$PWD" bash', deploy)
+        self.assertLess(deploy.index("verify-local-redis-restore"),
+                        deploy.index("--two-abandoned"))
 
     def test_no_sessions_is_idle(self):
         result, output, _ = self.check({})
