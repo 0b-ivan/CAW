@@ -22,6 +22,11 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   Band-Schlagschatten. Ausschließlich für die Kunststoffbänder sind
   dezente monochrome CSS-Verläufe und mehrlagige Schatten erlaubt; sie
   simulieren Material und Prägung, nicht eine farbige oder animierte UI.
+  Wenn die CSS-Simulation nicht genügt, darf ausschließlich die Bandoberfläche
+  eine kleine lokal eingebundene, aus dem vom Nutzer gelieferten Referenzbild
+  abgeleitete, textfreie Fototextur verwenden. Die Schrift bleibt dynamischer,
+  barrierefrei lesbarer Text im DOM; keine Kartentexte, Webfonts, externen
+  Ressourcen oder fremden Assets werden in die Oberfläche eingebettet.
   Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
   schmale, metallisch hell umrandete **Versalien** in einer mechanisch wirkenden
   Systemschrift (ohne Webfont). Die Großschreibung ist ausschließlich visuell;
