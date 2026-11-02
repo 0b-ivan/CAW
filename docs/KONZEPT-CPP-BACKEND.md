@@ -597,6 +597,31 @@ die vorhandene Zwei-Partien-Prüfung `--two-abandoned` und andere
 Checkouts bleiben unverändert und scheitern bei fehlenden Snapshots.
 Nach erfolgreichem Fast-Forward kann die Sonderfreigabe nicht erneut greifen.
 
+### Abnahme und Rücknahme der Altserver-Ausnahmen (02.11.2026)
+
+Der automatische Release `dcb97c4c9fea70a4ebf4d8bad6e633228dbf894e`
+wurde am 02.11.2026 auf Hetzner bestätigt (Actions-Run `41524954463`).
+Drei Prüfungen vor dem Neustart meldeten null WebSockets und exakt zwei
+verwaiste Partien, davon eine in Redis persistiert und eine ausschließlich
+im Arbeitsspeicher. Die Redis-RDB wurde vor dem Wechsel isoliert
+wiederhergestellt; vorhandene Redis-Snapshots, AOF und Datenbank-Volumes
+blieben erhalten. Der öffentliche HTTPS- und WSS-Handshake war erfolgreich.
+Zwei spätere planmäßige Runs (`41529164100`, `41533685057`) bestätigten
+denselben Release ohne erneuten Server-Neustart.
+
+**Ab jetzt gelten die damaligen Sonderfreigaben nur noch als historische
+Migrationsdokumentation.** Die produktive Codebasis entfernt die
+`cc02372*`- und `fc59685*`-Ausnahmen sowie die Modi
+`--one-abandoned`, `--two-abandoned` und `--two-volatile`.
+Eine Migration von einem älteren oder zurückgesetzten Checkout ist nur bei
+tatsächlichem Spiel-Leerlauf erlaubt: `caw_active_games == 0`
+und `caw_sockets == 0`. Fehlt der Aktivitätszähler, müssen alle
+Redis-Sitzungen vollständig vorliegen und in Lobby- oder Finished-Phase
+sein. Ein erneutes Erzwingen über eine im Repository verbliebene
+Altregel ist damit ausgeschlossen; bei fehlenden Snapshots wird abgebrochen
+statt ungesicherter Spielstände verworfen. Der vorhandene normale
+Deploy-Leerlaufschutz und die Wiederholungsprüfung bleiben erhalten.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
