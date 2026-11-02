@@ -423,6 +423,16 @@ Alle gespeicherten Räume werden mit der aktuellen Metrik abgeglichen.
 Kein Spielstand wird beendet oder gelöscht. Bei jeder Abweichung bleibt
 der Wechsel gesperrt. Nach dem Fast-Forward greift die Ausnahme nicht erneut.
 
+**Nachprüfung vom 02.11.2026:** Der erste Deploy mit der neuen Sicherung
+lieferte einen erfolgreichen isolierten Redis-Restore mit 18 Schlüsseln,
+blockierte aber wegen abweichender Zählung zwischen `caw_sessions` und
+`session:*`. Die Ausnahme akzeptiert deshalb einen kleineren Redis-
+Raumbestand ausschließlich dann, wenn die **beiden** vom Server als aktiv
+gemeldeten Partien mit validem JSON und Phase 1–3 nachweislich in Redis
+vorhanden sind. Fehlende aktive Spiele, zusätzliche Redis-Räume, ungültige
+Snapshots oder abweichende Spielzahlen blockieren weiterhin. Es werden nur
+anonyme Zähler protokolliert. Der Redis-Backup-Worker läuft unabhängig weiter.
+
 ## 10. Tägliche lokale Redis-Sicherung und Restore-Audit
 
 `redis-backup` läuft als unabhängiger Container aus dem vorhandenen

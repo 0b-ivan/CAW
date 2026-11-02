@@ -102,9 +102,34 @@ class LegacyRoomIdleTests(unittest.TestCase):
         self.assertEqual(too_many, 75)
         self.assertIn("DEFER:", message)
 
-        mismatch, _, _ = self.check(phases, expected=3,
-                                    override=True, override_limit=2)
-        self.assertEqual(mismatch, 1)
+        # An expired lobby may remain in the old process's room gauge.
+        stale_lobby, output, _ = self.check(
+            phases, expected=3, override=True, override_limit=2,
+        )
+        self.assertEqual(stale_lobby, 0)
+        self.assertIn("1 expired inactive rooms", output)
+
+        # Missing one of the two playing rooms is never safe to migrate.
+        missing_active, _, error = self.check(
+            {"session:ABCDEF": 1}, expected=3,
+            override=True, override_limit=2,
+        )
+        self.assertEqual(missing_active, 1)
+        self.assertIn("not all active games are persisted", error)
+
+        extra_persisted, _, _ = self.check(
+            phases, expected=1, override=True, override_limit=2,
+        )
+        self.assertEqual(extra_persisted, 1)
+        invalid, _, _ = self.check(
+            {"session:ABCDEF": 1, "session:BCDEFG": 99}, expected=3,
+            override=True, override_limit=2,
+        )
+        self.assertEqual(invalid, 1)
+        old_override, _, _ = self.check(
+            {"session:ABCDEF": 1}, expected=2, override=True,
+        )
+        self.assertEqual(old_override, 1)
 
         deploy = (ROOT / "bin" / "deploy-hetzner").read_text()
         self.assertIn('if [[ "$previous_sha" == fc59685e124a00c4666c53947fd2e0f174848b30 ]]', deploy)

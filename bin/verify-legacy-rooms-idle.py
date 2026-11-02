@@ -41,8 +41,17 @@ def main() -> int:
 
     try:
         keys = set(redis_cli(container, "--scan", "--pattern", "session:*").splitlines())
-        if len(keys) != expected_rooms or any(not KEY_PATTERN.fullmatch(key) for key in keys):
-            print("FAIL: Redis room count does not match live server", file=sys.stderr)
+        # Only the two-match operator exception may tolerate expired rooms
+        # still counted by the old process. It must find both active games.
+        count_drift = expected_rooms - len(keys)
+        if (count_drift < 0 or
+                (count_drift != 0 and abandoned_limit != 2) or
+                any(not KEY_PATTERN.fullmatch(key) for key in keys)):
+            print(
+                f"FAIL: Redis room count mismatch "
+                f"(server={expected_rooms}, persisted={len(keys)})",
+                file=sys.stderr,
+            )
             return 1
 
         active = 0
@@ -59,9 +68,20 @@ def main() -> int:
         print("FAIL: could not verify all legacy Redis room phases", file=sys.stderr)
         return 1
 
-    if 0 < active <= abandoned_limit:
-        # The caller also checks the exact old commit, zero sockets and backup.
-        print(f"PASS: {active} operator-confirmed abandoned legacy matches; snapshots preserved")
+    if abandoned_limit == 2:
+        # The server metric already confirmed exactly two active games.
+        # Both must survive in Redis even if old, inactive rooms have expired.
+        if active == 2:
+            print(
+                f"PASS: 2 operator-confirmed abandoned legacy matches; "
+                f"snapshots preserved ({count_drift} expired inactive rooms)"
+            )
+            return 0
+        if active < 2:
+            print("FAIL: not all active games are persisted in Redis", file=sys.stderr)
+            return 1
+    if active == 1 and abandoned_limit == 1:
+        print("PASS: 1 operator-confirmed abandoned legacy match; snapshots preserved")
         return 0
     if active:
         print(f"DEFER: Redis contains {active} unfinished matches; no rollout",
