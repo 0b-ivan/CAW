@@ -248,9 +248,9 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## UI-Polish: Referenz-Prägeband (2026-11-02)
 
-- [x] Schmale DIN-/Roboto-Condensed-Versalien mit Reliefkontur, deren Tiefe für Handy und Big Screen skaliert
+- [x] Gut lesbare, kräftige hell gefüllte Versalien statt dunkler hohler Schrift; dezente Reliefkante und geringerer Zeichenabstand
 - [x] Textfreie Fototextur aus der Nutzerreferenz; Ausschnitt, Glanzpunkt, Knick und Bandwinkel variieren stabil je Streifen, Texte bleiben im DOM
 - [x] Keine Änderung am Kartentext und keine Prägebänder auf Handkarten/Juror-Antwortliste
-- [x] Browser-Regression auf Versalien, Reliefkante und Glanzreflexe erweitert
+- [x] Browser-Regression auf gut lesbare Schriftstärke, weiße Füllung, Tracking, Reliefkante und Glanzreflexe erweitert
 - [ ] Neuen PR-CI-Lauf einschließlich CTest, Browser- und Lasttest abschließen
 - [ ] Auf iPhone/Android mit echten langen Antworten gegen das Referenzbild visuell abnehmen
