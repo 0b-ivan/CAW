@@ -62,20 +62,16 @@ class DeploymentSafetyTests(unittest.TestCase):
         self.assertIn("up --no-deps --no-build", rollback)
         self.assertNotIn("--volumes", rollback)
 
-    def test_two_abandoned_games_override_is_single_checkout_only(self):
+    def test_old_operator_exception_cannot_bypass_game_idle_gate(self):
         script = SCRIPT.read_text()
-        self.assertIn("fc59685e124a00c4666c53947fd2e0f174848b30", script)
-        self.assertIn("in_progress == 2 && sockets == 0", script)
-        self.assertNotIn("python3 - \"$redis_container\" \"$sessions\" --two-abandoned", script)
-        self.assertIn('git show "$sha:bin/verify-local-redis-restore"', script)
-        self.assertIn('CAW_REPO_ROOT="$PWD" bash', script)
-        self.assertIn("State.Health.Status", script)
-        self.assertIn("--two-volatile", script)
-        self.assertLess(script.index("verify-local-redis-restore"),
-                        script.index("--two-volatile"))
-        # Do not weaken the normal metric-present deployment gate.
         self.assertIn("if (( in_progress != 0 || sockets != 0 )); then", script)
         self.assertIn("return 75", script)
+        self.assertIn('python3 - "$redis_container" "$sessions"', script)
+        self.assertNotIn("fc59685e124a00c4666c53947fd2e0f174848b30", script)
+        self.assertNotIn("cc02372*", script)
+        self.assertNotIn("--one-abandoned", script)
+        self.assertNotIn("--two-abandoned", script)
+        self.assertNotIn("--two-volatile", script)
         self.assertNotIn("FLUSHALL", script)
         self.assertNotIn("DEL session:", script)
 

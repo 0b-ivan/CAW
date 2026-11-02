@@ -9,7 +9,7 @@ Handy-UI: `web/CardPartyPage.html`; Tests: `host-tests/cardparty/`).
 
 - [x] Postgres mit libpqxx gemäß vorrangigem KONZEPT-CPP-BACKEND.md
 - [x] Domain: `caw.obivan.org`
-- [ ] Zielserver
+- [x] Zielserver: bestehender Hetzner-Host, produktiver Docker-Compose-Stack
 - [ ] Big Screen nur Anzeige oder auch Juror-Wahl per Tastatur
 
 Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
@@ -126,14 +126,14 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 ## M8 – Betrieb und Release
 
 - [x] Caddy: Security-Header (CSP, Permissions-Policy, HSTS, kein `Server`), `/metrics` nur aus privaten Netzen, `no-cache` mit ETag für die Webdateien; TLS automatisch, sobald `CADDY_ADDRESS` eine Domain ist
-- [ ] Öffentlichen Cloudflare-Edge-TLS- und WSS-Test für `caw.obivan.org`
+- [x] Öffentlichen Cloudflare-Edge-TLS- und WSS-Test für `caw.obivan.org`
   nach Hetzner-Provisionierung bestehen (kein Origin-TLS durch Caddy)
 - [x] Hetzner-Konzept auf bestehenden Server/Tunnel angepasst, Compose-
   Override mit Loopback-only-Caddy-Port und extern gesperrtem `/metrics`
 - [x] Preflight- und synthetische Tunnel-Konfigurationstests in CI ergänzt
-- [ ] Existierenden Hetzner-Host prüfen: Docker, Compose, freier Port
+- [x] Existierenden Hetzner-Host prüfen: Docker, Compose, freier Port
   `127.0.0.1:18081`, bestehender `cloudflared`-Dienst und CAW-Start
-- [ ] Im bestehenden Cloudflare-Tunnel nur den Hostnamen
+- [x] Im bestehenden Cloudflare-Tunnel nur den Hostnamen
   `caw.obivan.org` → `http://127.0.0.1:18081` ergänzen und prüfen
 - [ ] Verschlüsselte Offsite-Backups für Postgres und Redis inklusive
   Restore-Test konfigurieren; lokale 14-Tage-Dumps allein genügen nicht
@@ -224,7 +224,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Echte GitHub-Runner-SSH-Verbindung zur Produktionsumgebung (ohne Deploy) bestanden
 - [ ] Storage-Box-Offsite-Backups sind auf Betreiberwunsch vorerst zurückgestellt
 - [ ] Verschlüsselte Offsite-Backups für Postgres und Redis-AOF mit Restore-Probe einrichten
-- [ ] GitHub-Environment production (SSH-Secrets, geprüfte known_hosts) einrichten
+- [x] GitHub-Environment production (SSH-Secrets, geprüfte known_hosts) aktiv (produktiv durchgeführter SSH-Deploy)
 - [ ] CAW_PRODUCTION_APPROVED und CAW_AUTO_DEPLOY nach Abnahme bewusst aktivieren
 - [x] Release-Kandidaten-Workflow zum separaten, CI-gesteuerten GHCR-SHA-Publish implementiert
 - [ ] GHCR-SHA-Publish auf main erfolgreich ausführen und SHA-Image in Registry verifizieren (ohne Hetzner-Deploy)
@@ -233,8 +233,8 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Ursache des ersten gescheiterten Deploys gefunden: altem Hetzner-Checkout fehlt bin/deploy-hetzner
 - [x] Sicheren Leerlauf-Gate und regelmäßige Wiederholung für laufende Spiele implementiert
 - [x] Legacy-Server: leere Redis-Lobbys und beendete Partien ohne WebSockets erlauben; laufende Matches bleiben gesperrt
-- [ ] Erste tatsächliche Hetzner-Aktualisierung nach Phasenprüfung und WSS-Test bestätigen
-- [ ] Ersten echten Hetzner-Deploy nach neuem Idle-Gate und WSS-Test abnehmen
+- [x] Erste tatsächliche Hetzner-Aktualisierung nach Phasenprüfung und WSS-Test bestätigt (Run 41524954463)
+- [x] Ersten echten Hetzner-Deploy nach neuem Idle-Gate und WSS-Test abgenommen (Run 41524954463)
 - [ ] Erstes manuelles Deployment und danach Autodeploy mit externem HTTPS/WSS bestätigen
 
 ## UI-Polish: geprägtes Antwortband (2026-11-01)
@@ -272,7 +272,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Idempotenten, gesperrten Legacy-Bootstrap ausschließlich für `redis-backup` implementiert
 - [x] Restore-Audit unterstützt das vorübergehende ältere Hetzner-Compose-Checkout ohne Datenverlust
 - [x] Automatischen Bootstrap vor regulärem Game-Idle-Deploy verdrahtet und Sicherheitsregression ergänzt
-- [ ] PR-/Main-CI und ersten produktiven Snapshot mit isoliertem Restore nachweisen
+- [x] PR-/Main-CI und ersten produktiven Snapshot mit isoliertem Restore nachgewiesen (Runs 41524954436, 41524954463)
 - [ ] Offsite-Backups weiterhin ausstehend (Storage Box vorerst zurückgestellt)
 
 ## Betrieb: einmaliges Upgrade mit zwei verlassenen Altpartien (2026-11-02)
@@ -281,16 +281,16 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Legacy-Phasenprüfung für höchstens zwei verlassene Spiele nur auf dem bekannten Alt-Checkout erweitert
 - [x] Gesundes Redis-Backup und erfolgreichen isolierten Restore vor der Ausnahme vorgeschrieben
 - [x] Regressionen: ohne Override gesperrt, maximal zwei erlaubt, mehr als zwei gesperrt, Key-Anzahl muss stimmen
-- [ ] PR-/Main-CI einschließlich CTest, Browser/Lasttest und Compose-Smoke bestätigen
-- [ ] Produktiven Backup-Worker, aktuellen RDB-Restore und ersten Server-Rollout anhand der GitHub-Actions-Logs nachweisen
+- [x] PR-/Main-CI einschließlich CTest, Browser/Lasttest und Compose-Smoke bestätigt (Runs 41523873980, 41524954436)
+- [x] Produktiven Backup-Worker, aktuellen RDB-Restore und ersten Server-Rollout anhand der GitHub-Actions-Logs nachgewiesen (Run 41524954463)
 
 ## Betrieb: Redis-Raumzählung beim sicheren Legacy-Upgrade (2026-11-02)
 
 - [x] Reale Produktionsabweichung nach isoliertem Redis-Restore im Backend-Konzept dokumentiert
 - [x] Nur bei genau zwei persistierten aktiven Partien geringere Redis-Raumanzahl als Live-Metrik erlauben
 - [x] Abbruch bei verlorener aktiver Partie, zusätzlichen Keys und ungültigen Snapshots testen
-- [ ] Vollständige PR-/Main-CI grün bestätigen
-- [ ] Produktiven Serverwechsel, öffentlichen WSS-Test und erhaltene Redis-Spielstände nachweisen
+- [x] Vollständige PR-/Main-CI grün bestätigt (Runs 41523873980, 41524954436)
+- [x] Produktiven Serverwechsel, öffentlichen WSS-Test und erhaltene Redis-Spielstände nachgewiesen (Run 41524954463)
 
 ## Betrieb: ausdrücklich erzwungener Erst-Rollout bei nicht persistierten Altpartien (2026-11-02)
 
@@ -299,5 +299,14 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Redis-Backup, isolierten Restore und wiederholte Prüfung vor dem Neustart beibehalten
 - [x] Vorhandene Redis-Snapshots und PostgreSQL unverändert lassen, keinerlei Löschbefehle
 - [x] Regressionen für 0–2 persistierte Altpartien und fehlerhafte Redis-Daten ergänzen
-- [ ] PR-/Main-CI vollständig grün und tatsächlichen Hetzner-Rollout nachweisen
-- [ ] Öffentlichen HTTPS- und WSS-Test nach dem Rollout nachweisen
+- [x] PR-/Main-CI vollständig grün und tatsächlichen Hetzner-Rollout nachgewiesen (Runs 41523873980, 41524954436, 41524954463)
+- [x] Öffentlichen HTTPS- und WSS-Test nach dem Rollout nachgewiesen (Runs 41524954463, 41529164100, 41533685057)
+
+## Betrieb: Altserver-Sonderfreigaben nach erfolgreichem Rollout entfernen (2026-11-02)
+
+- [x] Produktiv-Release `dcb97c4c` und zwei unveränderte, erfolgreiche halbstündliche Kontrollen dokumentieren
+- [x] Einmalige Force-Deploy-Pfade `cc02372*` und `fc59685*` aus dem Deploy-Skript entfernen
+- [x] Veraltete Ausnahmen in der Redis-Leerlaufprüfung abschalten, fehlende Snapshots wieder strikt ablehnen
+- [x] Negative Tests für verworfene Overrides und normale Sperre bei aktiven Partien ergänzen
+- [ ] Neue PR-/Main-CI und den anschließenden no-op-or-deferred Produktions-Deploy nachweisen
+- [ ] Verschlüsselte Offsite-Sicherung und reale mobile Touch-Abnahme bleiben separat offen
