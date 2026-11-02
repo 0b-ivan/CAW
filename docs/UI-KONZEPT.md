@@ -28,16 +28,14 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   barrierefrei lesbarer Text im DOM; keine Kartentexte, Webfonts, externen
   Ressourcen oder fremden Assets werden in die Oberfläche eingebettet.
   Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
-  **gut lesbare, hell gefüllte Versalien** mit der Optik einer klassischen
-  Schreibmaschine: monospaced, erkennbare Serifen und eher eckige Buchstaben
-  (bevorzugt Nimbus Mono PS, danach American Typewriter / Courier
-  mit Monospace-Fallback, ohne externen Font). Die Fallbacks müssen auch
-  auf Linux, iOS und Android sichtbar Schreibmaschinen-Charakter behalten. Keine schmale DIN-/Sans-Serif-Schrift mehr. Der Anschlag darf durch
-  kleine helle und dunkle Versätze leicht ungleichmäßig wirken, aber die
-  Zeichen bleiben durchgehend scharf und vollständig ausgefüllt. Ein breiter,
-  fast weißer Buchstabenkörper hat Vorrang vor dem plastischen Schatten. Die metallische Prägung entsteht nur an den Kanten
-  durch feine Hell-/Dunkelversätze. Zeichenabstand und Spiegelungen müssen
-  zurückhaltend bleiben, besonders auf dem Handy und dem Big Screen.
+  **gut lesbare, hell gefüllte Versalien** in der vorherigen schmalen
+  mechanischen Schrift (DIN Condensed / Roboto Condensed mit
+  Sans-Serif-Fallback, ohne externen Font). Die spätere Courier-Schrift
+  wurde wegen ihrer breiten, schweren Buchstaben verworfen. Das Schriftgewicht
+  ist bewusst mittel statt fett; eine sehr feine Hell-/Dunkelkante deutet die
+  Prägung an, ohne die Zeichen optisch aufzudicken. Kein zusätzlicher heller
+  Textschatten auf den Buchstabenkörper. Zeichenabstand und Spiegelungen
+  bleiben zurückhaltend, vor allem auf Handy und Big Screen.
   Die Großschreibung ist ausschließlich visuell;
   der originale Kartentext bleibt im DOM und im Spielzustand unverändert.
   Die Bänder wirken wie echtes, leicht zerknittertes schwarzes Kunststoffband:
