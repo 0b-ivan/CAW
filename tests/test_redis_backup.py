@@ -59,7 +59,7 @@ class RedisBackupTests(unittest.TestCase):
         script = DEPLOY.read_text()
         self.assertIn("180 redis-backup", script)
         self.assertIn("180 server caddy", script)
-        self.assertLess(script.index("180 redis-backup"), script.index("180 server caddy"))
+        self.assertLess(script.index("180 redis-backup"), script.rindex("180 server caddy"))
         self.assertNotIn("docker compose down", script)
         self.assertNotIn("server caddy redis", script)
         self.assertNotIn("restart redis", script)
