@@ -1415,12 +1415,13 @@ mark.answer-tape::after {
   letter-spacing: .13em;
   text-transform: uppercase;
   color: #303030;
-  -webkit-text-stroke: .78px #e6e6e3;
+  /* Scale the relief with its glyphs; TV lettering needs deeper embossing. */
+  -webkit-text-stroke: clamp(.7px, .038em, 1.8px) #e6e6e3;
   text-shadow:
-    -.7px -.9px .5px #ffffff,
-    .7px .9px .5px #8d8d8a,
-    1.3px 1.8px 1.5px #202020,
-    2.2px 2.7px 2.5px #000;
+    -.035em -.04em .02em #ffffff,
+    .03em .04em .025em #8d8d8a,
+    .06em .09em .04em #202020,
+    .1em .13em .075em #000;
 }
 
 /* Eight cut shapes, plus per-strip cropped foil and movable creases from JS.
@@ -1450,9 +1451,13 @@ mark.answer-tape--5::before { transform: translateX(-4%); opacity: .7; }
 mark.answer-tape--6::after { transform: scaleX(-1); opacity: .68; }
 mark.answer-tape--7::before { transform: translateX(3%); opacity: .85; }
 mark.answer-tape--1 .answer-tape__letters,
-mark.answer-tape--4 .answer-tape__letters { -webkit-text-stroke-width: .7px; }
+mark.answer-tape--4 .answer-tape__letters {
+  -webkit-text-stroke-width: clamp(.65px, .034em, 1.6px);
+}
 mark.answer-tape--3 .answer-tape__letters,
-mark.answer-tape--6 .answer-tape__letters { -webkit-text-stroke-width: .88px; }
+mark.answer-tape--6 .answer-tape__letters {
+  -webkit-text-stroke-width: clamp(.75px, .043em, 2px);
+}
 
 /* Higher specificity is important: measuring labels must be inline even on
    #reveal-sentence, otherwise their actual word boundaries cannot be found. */
