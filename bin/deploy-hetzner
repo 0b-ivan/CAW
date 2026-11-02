@@ -183,8 +183,12 @@ chmod 600 "$temporary_env"
 mv "$temporary_env" deploy/.env
 
 python3 bin/hetzner-preflight.py
+# Install or retain the independent Redis snapshot worker without touching the
+# live Redis/Postgres containers. This is the only additional Compose service.
+compose up --no-deps --no-build --detach --wait --wait-timeout 180 redis-backup
+
 # The matching immutable image is already downloaded before changing files.
-# Do not recreate Redis, Postgres, backups or any other host services.
+# Do not recreate Redis, Postgres or any other host services.
 compose up --no-deps --no-build --detach --wait --wait-timeout 180 server caddy
 
 port="$(sed -n 's/^CAW_ORIGIN_PORT=//p' deploy/.env | tail -1)"

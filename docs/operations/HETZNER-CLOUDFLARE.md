@@ -410,3 +410,51 @@ dieser einen Session aktualisiert werden. Vor jeder Umschaltung bleibt
 die Null-Socket-Prüfung verpflichtend, und die Redis-Snapshots bleiben
 unverändert. Mehr als eine unfertige Session blockiert weiterhin.
 Die Ausnahme greift nach dem Upgrade nicht noch einmal.
+
+## 10. Tägliche lokale Redis-Sicherung und Restore-Audit
+
+`redis-backup` läuft als unabhängiger Container aus dem vorhandenen
+`redis:7-alpine`-Image. Er verwendet ausschließlich das bereits bestehende
+Compose-Volume `backups`, **nicht** das produktive `redisdata`-Volume.
+Beim ersten Start und anschließend nach jedem erfolgreichen 24-Stunden-Zyklus
+wird über `redis-cli --rdb` ein konsistenter Snapshot erzeugt. Nach
+Fehlern folgt ein erneuter Versuch nach einer Stunde. Die veröffentlichten
+`/backups/redis/caw-*.rdb` sind privat (Dateimodus 0600) und werden nach
+14 Tagen entfernt. Das Redis-AOF bleibt unverändert aktiv.
+
+Der automatische GitHub-Deploy installiert den Worker mit
+`docker compose ... up --no-deps ... redis-backup`, **ohne** den
+Redis-Server, PostgreSQL oder andere CAW-Dienste neu zu starten.
+Ein fehlgeschlagener erster Backup-Start verhindert die Umschaltung
+des App-Servers. Bei späteren Updates bleibt der Worker unverändert.
+
+**Manuelle Prüfung auf Hetzner**, angemeldet als `caw-deploy`:
+
+```sh
+cd /opt/caw
+env -u CAW_VERSION docker compose --env-file deploy/.env \
+  -p caw -f deploy/compose.yml -f deploy/compose.hetzner.yml \
+  ps redis-backup
+
+bash bin/verify-local-redis-restore
+```
+
+Der Restore-Test kopiert den jüngsten RDB-Snapshot in ein temporäres
+Verzeichnis und startet Redis mit `--network none`, einer
+nur-lesbaren RDB-Datei und ausschließlich einem Unix-Socket.
+Er meldet nur die Anzahl wiederhergestellter Keys, **keine**
+privaten Sessioninhalte. In der CI wird zusätzlich ein synthetischer
+Schlüssel nachweislich wiederhergestellt.
+
+Der Workflow `.github/workflows/redis-backup-audit.yml` führt um
+07:17 UTC täglich auf Hetzner einen Frische- und Restore-Test aus.
+Scheitert einer dieser Schritte, ist der GitHub-Actions-Lauf rot.
+Für tatsächliche Benachrichtigungen müssen die GitHub-Actions-
+Fehlerbenachrichtigungen im Benutzerkonto aktiviert sein; ein
+externer Alarmkanal ist noch nicht eingerichtet.
+
+**Wichtig:** Die Sicherungen befinden sich auf **demselben Host**.
+Sie schützen weder vor kompletter Hetzner-Hostzerstörung noch vor
+Verlust des Backup-Volumes. Verschlüsselte Offsite-Backups mit
+getrennter Restore-Probe bleiben ausstehend (Storage Box vorerst
+vom Betreiber zurückgestellt).

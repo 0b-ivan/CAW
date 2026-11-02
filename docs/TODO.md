@@ -254,3 +254,15 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Browser-Regression auf gut lesbare Schriftstärke, weiße Füllung, Tracking, Reliefkante und Glanzreflexe erweitert
 - [ ] Neuen PR-CI-Lauf einschließlich CTest, Browser- und Lasttest abschließen
 - [ ] Auf iPhone/Android mit echten langen Antworten gegen das Referenzbild visuell abnehmen
+
+## Betrieb: tägliche Redis-Backups (2026-11-02)
+
+- [x] Backend-Konzept für lokale Redis-RDB-Snapshots und Restore-Audit vorab ergänzt
+- [x] Separater Redis-Backup-Worker mit bestehendem Redis-Image und Backup-Volume, ohne Live-Redis-Neustart
+- [x] Snapshot zunächst als partielle Datei, dann atomar veröffentlichen; 14 Tage Aufbewahrung und stündlicher Fehler-Retry
+- [x] Isolierten netzwerklosen Redis-Restore-Test mit synthetischem CI-Testschlüssel integriert
+- [x] Tägliche GitHub-Actions-Prüfung auf aktuelle Redis-Backups mit Restore und Workflow-Fehlerstatus erstellt
+- [ ] Vollständige PR-CI einschließlich CTest, Compose, Browser, Lasttest und Restore erfolgreich abschließen
+- [ ] Nach Merge die erste echte Redis-Sicherung und den isolierten Restore auf Hetzner nachweisen
+- [ ] Verschlüsselte externe Redis-/PostgreSQL-Sicherungen samt Restore-Probe nachholen (vorerst ausgesetzt)
+

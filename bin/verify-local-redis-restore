@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Prove the latest local Redis RDB restores without touching live Redis/AOF.
+set -Eeuo pipefail
+umask 077
+
+if [[ -n "${CAW_REPO_ROOT:-}" ]]; then
+  cd "$CAW_REPO_ROOT"
+else
+  cd "$(dirname "$0")/.."
+fi
+test -r deploy/.env || { echo "FAIL: deploy/.env is not readable" >&2; exit 1; }
+
+compose() {
+  env -u CAW_VERSION docker compose --env-file deploy/.env \
+    -p "${CAW_RESTORE_PROJECT:-caw}" \
+    -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+}
+
+backup_container="$(compose ps -q redis-backup)"
+if [[ -z "$backup_container" ]]; then
+  echo "FAIL: redis-backup container is not running" >&2
+  exit 1
+fi
+
+stage="$(mktemp -d)"
+trap 'rm -rf "$stage"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+file="$(docker exec "$backup_container" sh -c \
+  "find /backups/redis -maxdepth 1 -type f -name 'caw-*.rdb' | sort | tail -n 1")"
+if [[ ! "$file" =~ ^/backups/redis/caw-[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6}Z\.rdb$ ]]; then
+  echo "FAIL: no valid Redis RDB backup found" >&2
+  exit 1
+fi
+
+docker cp "$backup_container:$file" "$stage/dump.rdb" >/dev/null
+test -s "$stage/dump.rdb"
+
+# The backup is read-only and the new Redis has neither network nor access
+# to the production data volume. Use our UID to read the private 0600 file.
+docker run --rm --network none \
+  --user "$(id -u):$(id -g)" \
+  --mount "type=bind,src=$stage/dump.rdb,dst=/data/dump.rdb,readonly" \
+  --env "CAW_RESTORE_EXPECT_KEY=${CAW_RESTORE_EXPECT_KEY:-}" \
+  --env "CAW_RESTORE_EXPECT_VALUE=${CAW_RESTORE_EXPECT_VALUE:-}" \
+  --entrypoint sh redis:7-alpine -ec '
+    redis-server \
+      --daemonize yes \
+      --port 0 \
+      --unixsocket /tmp/caw-restore.sock \
+      --dir /data \
+      --dbfilename dump.rdb \
+      --appendonly no \
+      --save "" \
+      --logfile /tmp/caw-restore.log
+
+    ready=0
+    for attempt in $(seq 1 30); do
+      if redis-cli -s /tmp/caw-restore.sock ping 2>/dev/null | grep -qx PONG; then
+        ready=1
+        break
+      fi
+      sleep 0.2
+    done
+    if [ "$ready" -ne 1 ]; then
+      cat /tmp/caw-restore.log >&2
+      echo "FAIL: isolated Redis failed to load backup" >&2
+      exit 1
+    fi
+
+    keys="$(redis-cli -s /tmp/caw-restore.sock DBSIZE)"
+    case "$keys" in
+      ""|*[!0-9]*) echo "FAIL: invalid restored key count" >&2; exit 1 ;;
+    esac
+
+    if [ -n "$CAW_RESTORE_EXPECT_KEY" ]; then
+      actual="$(redis-cli --raw -s /tmp/caw-restore.sock GET "$CAW_RESTORE_EXPECT_KEY")"
+      if [ "$actual" != "$CAW_RESTORE_EXPECT_VALUE" ]; then
+        echo "FAIL: synthetic restore key mismatched" >&2
+        exit 1
+      fi
+    fi
+
+    redis-cli -s /tmp/caw-restore.sock shutdown nosave
+    echo "PASS: isolated Redis RDB restored ($keys keys)"
+  '
