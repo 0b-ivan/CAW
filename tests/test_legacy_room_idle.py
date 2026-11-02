@@ -66,7 +66,7 @@ class LegacyRoomIdleTests(unittest.TestCase):
     def test_operator_exception_is_limited_to_one_legacy_match(self):
         result, output, _ = self.check({"session:ABCDEF": 1}, override=True)
         self.assertEqual(result, 0)
-        self.assertIn("snapshot preserved", output)
+        self.assertIn("snapshots preserved", output)
 
         result, _, error = self.check(
             {"session:ABCDEF": 1, "session:BCDEFG": 2}, override=True,
