@@ -411,16 +411,17 @@ die Null-Socket-Prüfung verpflichtend, und die Redis-Snapshots bleiben
 unverändert. Mehr als eine unfertige Session blockiert weiterhin.
 Die Ausnahme greift nach dem Upgrade nicht noch einmal.
 
-**Erweiterung am 02.11.2026:** Die neueste Messung meldet zwei unfertige
-Legacy-Spiele, aber weiterhin null WebSockets. Der Betreiber bestätigt erneut,
-dass niemand spielt. Einzig beim alten Checkout `cc02372*` darf die Migration
-mit **maximal zwei** solchen Spielständen fortgesetzt werden. Voraussetzung:
-Der unabhängige Redis-Backup-Worker ist `healthy`, sein jüngster RDB-Snapshot
-wird isoliert und ohne Netzwerk erfolgreich wiederhergestellt, und alle
-wiederholten Socket-/Redis-Phasenprüfungen bestehen. Snapshots und AOF werden
-nicht verändert. Bei mehr als zwei solchen Partien, offenen Verbindungen oder
-fehlendem Restore bleibt das Update gesperrt. Die Ausnahme ist nach dem
-ersten Checkout-Wechsel automatisch wirkungslos.
+**Zusätzliche Einmalfreigabe am 02.11.2026:** Der produktive Checkout
+`fc59685e124a00c4666c53947fd2e0f174848b30` hat bereits die Metrik
+`caw_active_games`. Ihr Wert ist 2 bei 0 WebSockets. Der Betreiber bestätigt,
+dass keine Partie gespielt wird. Nur auf exakt diesem Checkout und bei genau
+zwei als aktiv gespeicherten Partien greift die zusätzliche Ausnahme im
+**Metrik-Pfad**. Die frühere Ein-Partie-Ausnahme für `cc02372*` bleibt
+unverändert. Vor jeder Prüfung muss der unabhängig laufende Backup-Worker
+gesund sein; der jüngste Redis-Snapshot muss isoliert wiederherstellbar sein.
+Alle gespeicherten Räume werden mit der aktuellen Metrik abgeglichen.
+Kein Spielstand wird beendet oder gelöscht. Bei jeder Abweichung bleibt
+der Wechsel gesperrt. Nach dem Fast-Forward greift die Ausnahme nicht erneut.
 
 ## 10. Tägliche lokale Redis-Sicherung und Restore-Audit
 
