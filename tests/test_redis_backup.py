@@ -55,6 +55,36 @@ class RedisBackupTests(unittest.TestCase):
         self.assertNotIn("docker compose down", script)
         self.assertNotIn("redis-cli FLUSH", script)
 
+    def test_bootstrap_does_not_update_app_or_touch_live_volumes(self):
+        script = (ROOT / "bin" / "bootstrap-redis-backup").read_text()
+        subprocess.run(["bash", "-n", str(ROOT / "bin" / "bootstrap-redis-backup")],
+                       check=True)
+        self.assertIn('flock -n 9', script)
+        self.assertIn('git show "$sha:deploy/redis-backup.sh"', script)
+        self.assertIn(".git/caw-redis-backup-bootstrap.yml", script)
+        self.assertIn("--no-deps --no-build --detach --wait --wait-timeout 180 redis-backup", script)
+        self.assertIn('SKIP: Redis backup worker already healthy', script)
+        self.assertNotIn("git merge --ff-only", script)
+        self.assertNotIn("git reset --hard", script)
+        self.assertNotIn("server caddy", script)
+        self.assertNotIn("docker compose down", script)
+        self.assertNotIn("redisdata:/data", script)
+        self.assertNotIn("/var/run/docker.sock", script)
+
+    def test_automatic_backup_activation_precedes_game_idle_gate(self):
+        workflow = (ROOT / ".github" / "workflows" / "deploy-hetzner.yml").read_text()
+        self.assertIn("Start Redis backups independently of game deployment", workflow)
+        self.assertIn("bin/bootstrap-redis-backup", workflow)
+        self.assertLess(
+            workflow.index("Start Redis backups independently"),
+            workflow.index("Deploy only when no CAW games"),
+        )
+        restore = RESTORE.read_text()
+        self.assertIn(".git/caw-redis-backup-bootstrap.yml", restore)
+        audit = (ROOT / ".github" / "workflows" / "redis-backup-audit.yml").read_text()
+        self.assertIn("git show origin/main:bin/verify-local-redis-restore", audit)
+        self.assertIn("label=com.docker.compose.service=redis-backup", audit)
+
     def test_production_installs_only_worker_without_recreating_redis(self):
         script = DEPLOY.read_text()
         self.assertIn("180 redis-backup", script)
