@@ -88,12 +88,24 @@ requireIdle() {
       echo "FAIL: Redis container not found for legacy room check" >&2
       return 1
     fi
-    # This one existing checkout contains a single abandoned match.
-    # Operator attested on 2026-11-01 that nobody is playing. Never allow
-    # the exception on newer installations or with connected sockets.
+    # The operator confirmed on 2026-11-02 that nobody is playing.
+    # Allow at most two abandoned matches on this exact legacy checkout.
+    # Before overriding their phases, prove the independent RDB is healthy
+    # and restorable; never do this for newer installations or live sockets.
     if [[ "$previous_sha" == cc02372* ]]; then
+      local backup_container
+      backup_container="$(docker ps --filter label=com.docker.compose.project=caw \
+        --filter label=com.docker.compose.service=redis-backup \
+        --format '{{.ID}}' | head -n 1)"
+      if [[ -z "$backup_container" ]] ||
+         [[ "$(docker inspect --format '{{.State.Health.Status}}' "$backup_container")" != healthy ]]; then
+        echo "FAIL: independently installed Redis backup must be healthy" >&2
+        return 1
+      fi
+      git show "$sha:bin/verify-local-redis-restore" |
+        CAW_REPO_ROOT="$PWD" bash
       git show "$sha:bin/verify-legacy-rooms-idle.py" |
-        python3 - "$redis_container" "$sessions" --one-abandoned
+        python3 - "$redis_container" "$sessions" --two-abandoned
     else
       git show "$sha:bin/verify-legacy-rooms-idle.py" |
         python3 - "$redis_container" "$sessions"
