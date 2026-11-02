@@ -114,16 +114,20 @@ async function checkTape(page, selector) {
       letterColor: raised?.color,
       relief: raised?.textShadow,
       raisedEdge: raised?.getPropertyValue('-webkit-text-stroke-width'),
+      letterCase: raised?.textTransform,
+      tracking: raised?.letterSpacing,
     };
   });
-  assert.equal(material.background, 'rgb(8, 8, 8)', `${selector}: black plastic band`);
+  assert.equal(material.background, 'rgb(5, 5, 5)', `${selector}: deep black plastic band`);
   assert.match(material.sheen, /linear-gradient/, `${selector}: molded plastic surface`);
-  assert.match(material.reflection, /linear-gradient/, `${selector}: scuffed reflections`);
+  assert.match(material.reflection, /radial-gradient/, `${selector}: uneven specular reflections`);
   assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
   assert.match(material.font, /Arial Rounded MT Bold/, `${selector}: embossing font, not UI monospace`);
-  assert.equal(material.letterColor, 'rgb(185, 185, 180)', `${selector}: embossed silver lettering`);
+  assert.equal(material.letterColor, 'rgb(57, 57, 57)', `${selector}: hollow dark letter centers`);
+  assert.equal(material.letterCase, 'uppercase', `${selector}: printed capitals`);
+  assert.ok(parseFloat(material.tracking) > 1, `${selector}: spaced-out embossing characters`);
   assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: three-dimensional letters`);
-  assert.equal(material.raisedEdge, '0.3px', `${selector}: pressed letter edges`);
+  assert.equal(material.raisedEdge, '0.83px', `${selector}: raised silver letter outlines`);
   assert.notEqual(material.edge, 'none', `${selector}: cut tape edges cast shadows`);
   assert.equal(material.band, 'clone', `${selector}: clean fallback wrapping`);
 }
@@ -321,6 +325,10 @@ async function playRound(host, players, round, screen) {
     .evaluate((card) => getComputedStyle(card).backgroundColor);
   assert.equal(revealPaper, 'rgb(244, 244, 240)', 'the reveal is a single large paper card');
   await checkTape(host, '#reveal-sentence mark.answer-tape');
+  // Only the display is capitalized; the spoken/stored sentence remains intact.
+  assert.ok((await host.locator('#reveal-sentence').textContent()).includes(
+    (await host.locator('#reveal-sentence mark.answer-tape').first().textContent()).trim()),
+    'uppercase embossing must not modify submitted card wording');
   await checkTapeNotClipped(host, '#reveal-sentence mark.answer-tape');
   await checkTape(screen, '#screen-sentence mark.answer-tape');
   if (round === 1) {
