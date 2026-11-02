@@ -411,6 +411,17 @@ die Null-Socket-Prüfung verpflichtend, und die Redis-Snapshots bleiben
 unverändert. Mehr als eine unfertige Session blockiert weiterhin.
 Die Ausnahme greift nach dem Upgrade nicht noch einmal.
 
+**Erweiterung am 02.11.2026:** Die neueste Messung meldet zwei unfertige
+Legacy-Spiele, aber weiterhin null WebSockets. Der Betreiber bestätigt erneut,
+dass niemand spielt. Einzig beim alten Checkout `cc02372*` darf die Migration
+mit **maximal zwei** solchen Spielständen fortgesetzt werden. Voraussetzung:
+Der unabhängige Redis-Backup-Worker ist `healthy`, sein jüngster RDB-Snapshot
+wird isoliert und ohne Netzwerk erfolgreich wiederhergestellt, und alle
+wiederholten Socket-/Redis-Phasenprüfungen bestehen. Snapshots und AOF werden
+nicht verändert. Bei mehr als zwei solchen Partien, offenen Verbindungen oder
+fehlendem Restore bleibt das Update gesperrt. Die Ausnahme ist nach dem
+ersten Checkout-Wechsel automatisch wirkungslos.
+
 ## 10. Tägliche lokale Redis-Sicherung und Restore-Audit
 
 `redis-backup` läuft als unabhängiger Container aus dem vorhandenen
