@@ -283,3 +283,11 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Regressionen: ohne Override gesperrt, maximal zwei erlaubt, mehr als zwei gesperrt, Key-Anzahl muss stimmen
 - [ ] PR-/Main-CI einschließlich CTest, Browser/Lasttest und Compose-Smoke bestätigen
 - [ ] Produktiven Backup-Worker, aktuellen RDB-Restore und ersten Server-Rollout anhand der GitHub-Actions-Logs nachweisen
+
+## Betrieb: Redis-Raumzählung beim sicheren Legacy-Upgrade (2026-11-02)
+
+- [x] Reale Produktionsabweichung nach isoliertem Redis-Restore im Backend-Konzept dokumentiert
+- [x] Nur bei genau zwei persistierten aktiven Partien geringere Redis-Raumanzahl als Live-Metrik erlauben
+- [x] Abbruch bei verlorener aktiver Partie, zusätzlichen Keys und ungültigen Snapshots testen
+- [ ] Vollständige PR-/Main-CI grün bestätigen
+- [ ] Produktiven Serverwechsel, öffentlichen WSS-Test und erhaltene Redis-Spielstände nachweisen
