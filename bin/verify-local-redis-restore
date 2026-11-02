@@ -11,9 +11,18 @@ fi
 test -r deploy/.env || { echo "FAIL: deploy/.env is not readable" >&2; exit 1; }
 
 compose() {
-  env -u CAW_VERSION docker compose --env-file deploy/.env \
-    -p "${CAW_RESTORE_PROJECT:-caw}" \
-    -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+  if ! grep -q '^  redis-backup:' deploy/compose.yml &&
+      [[ -f .git/caw-redis-backup-bootstrap.yml ]]; then
+    # The original checkout is intentionally still live while games exist.
+    env -u CAW_VERSION docker compose --env-file deploy/.env \
+      -p "${CAW_RESTORE_PROJECT:-caw}" \
+      -f deploy/compose.yml -f deploy/compose.hetzner.yml \
+      -f .git/caw-redis-backup-bootstrap.yml "$@"
+  else
+    env -u CAW_VERSION docker compose --env-file deploy/.env \
+      -p "${CAW_RESTORE_PROJECT:-caw}" \
+      -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+  fi
 }
 
 backup_container="$(compose ps -q redis-backup)"
