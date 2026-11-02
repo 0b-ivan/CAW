@@ -74,9 +74,9 @@ services:
     healthcheck:
       # A successfully published RDB must exist from the last 26 hours.
       test: [CMD-SHELL, "find /backups/redis -maxdepth 1 -type f -name 'caw-*.rdb' -mmin -1560 | grep -q ."]
-      interval: 1h
+      interval: 30s
       timeout: 5s
-      start_period: 5m
+      start_period: 2m
       retries: 2
 
   postgres:
