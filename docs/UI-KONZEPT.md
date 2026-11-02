@@ -28,11 +28,13 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   barrierefrei lesbarer Text im DOM; keine Kartentexte, Webfonts, externen
   Ressourcen oder fremden Assets werden in die Oberfläche eingebettet.
   Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
-  **gut lesbare, hell gefüllte Versalien** in einer mechanisch wirkenden
-  Systemschrift (DIN Condensed / Roboto Condensed mit Sans-Serif-Fallback,
-  ohne externen Font). Die Buchstaben dürfen weder hohl noch ultradünn
-  sein: ein breiter, fast weißer Buchstabenkörper hat Vorrang vor dem
-  plastischen Schatten. Die metallische Prägung entsteht nur an den Kanten
+  **gut lesbare, hell gefüllte Versalien** mit der Optik einer klassischen
+  Schreibmaschine: monospaced, erkennbare Serifen und eher eckige Buchstaben
+  (American Typewriter / Courier New mit Monospace-Fallback, ohne externen
+  Font). Keine schmale DIN-/Sans-Serif-Schrift mehr. Der Anschlag darf durch
+  kleine helle und dunkle Versätze leicht ungleichmäßig wirken, aber die
+  Zeichen bleiben durchgehend scharf und vollständig ausgefüllt. Ein breiter,
+  fast weißer Buchstabenkörper hat Vorrang vor dem plastischen Schatten. Die metallische Prägung entsteht nur an den Kanten
   durch feine Hell-/Dunkelversätze. Zeichenabstand und Spiegelungen müssen
   zurückhaltend bleiben, besonders auf dem Handy und dem Big Screen.
   Die Großschreibung ist ausschließlich visuell;
