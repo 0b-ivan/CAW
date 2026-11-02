@@ -131,20 +131,19 @@ async function checkTape(page, selector) {
   assert.equal(asset.status(), 200, 'local foil texture is served by Caddy');
   assert.match(await asset.text(), /data:image\/webp;base64,/, 'foil contains only an embedded local image');
   assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
-  assert.match(material.font, /Nimbus Mono PS/, `${selector}: old-style typewriter serifs`);
-  assert.match(material.font, /American Typewriter/, `${selector}: Apple typewriter fallback`);
-  assert.match(material.font, /Courier New/, `${selector}: portable typewriter fallback`);
+  assert.match(material.font, /DIN Condensed/, `${selector}: earlier slim mechanical font`);
+  assert.match(material.font, /Roboto Condensed/, `${selector}: condensed fallback`);
   assert.equal(material.letterColor, 'rgb(245, 245, 241)', `${selector}: readable filled white letters`);
-  assert.ok(Number(material.letterWeight) >= 600,
-    `${selector}: embossed lettering must not be thin`);
+  assert.equal(Number(material.letterWeight), 500,
+    `${selector}: medium weight avoids bulky embossed letters`);
   assert.equal(material.letterCase, 'uppercase', `${selector}: printed capitals`);
   const trackingRatio = parseFloat(material.tracking) / parseFloat(material.letterSize);
-  assert.ok(trackingRatio >= .01 && trackingRatio <= .025,
-    `${selector}: typewriter glyphs need tight tracking on phone and TV`);
+  assert.ok(trackingRatio >= .04 && trackingRatio <= .06,
+    `${selector}: restrained tracking retains the earlier condensed look`);
   assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: three-dimensional letters`);
-  assert.ok(parseFloat(material.raisedEdge) >= .12 &&
-    parseFloat(material.raisedEdge) <= .2,
-    `${selector}: thin relief must not obscure the filled glyphs`);
+  assert.ok(parseFloat(material.raisedEdge) >= .06 &&
+    parseFloat(material.raisedEdge) <= .1,
+    `${selector}: very thin relief must not thicken the letters`);
   for (const offset of [material.foilOffset, material.foilSize,
     material.creaseOffset, material.glintOffset]) {
     assert.match(offset, /^\d+%$/, `${selector}: stable physical variation parameters`);
