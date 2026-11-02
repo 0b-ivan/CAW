@@ -249,7 +249,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 ## UI-Polish: Referenz-Prägeband (2026-11-02)
 
 - [x] Mechanisch geprägte, optisch große Versalien mit hohler Silberkontur statt flacher Beschriftung
-- [x] Stärkere gerichtete Spiegelungen, Glanzpunkte und Falten auf unregelmäßigem schwarzem Band
+- [x] Textfreie Fototextur der Kunststoffoberfläche aus der Nutzerreferenz ergänzt; dynamische Texte bleiben im DOM
 - [x] Keine Änderung am Kartentext und keine Prägebänder auf Handkarten/Juror-Antwortliste
 - [x] Browser-Regression auf Versalien, Reliefkante und Glanzreflexe erweitert
 - [ ] Neuen PR-CI-Lauf einschließlich CTest, Browser- und Lasttest abschließen
