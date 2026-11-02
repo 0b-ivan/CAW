@@ -28,15 +28,20 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   barrierefrei lesbarer Text im DOM; keine Kartentexte, Webfonts, externen
   Ressourcen oder fremden Assets werden in die Oberfläche eingebettet.
   Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
-  schmale, metallisch hell umrandete **Versalien** in einer mechanisch wirkenden
-  Systemschrift (ohne Webfont). Die Großschreibung ist ausschließlich visuell;
+  schmale, metallisch hell umrandete **Versalien** in einer schmalen
+  mechanischen Systemschrift (bevorzugt DIN Condensed / Roboto Condensed,
+  ohne externen Font). Die Prägung hat ein dunkles Zentrum und leicht
+  unterschiedlich kräftige helle Kanten statt einer gleichmäßig weißen
+  Beschriftung. Die Großschreibung ist ausschließlich visuell;
   der originale Kartentext bleibt im DOM und im Spielzustand unverändert.
   Die Bänder wirken wie echtes, leicht zerknittertes schwarzes Kunststoffband:
   wechselnde harte Glanzreflexe, diagonale Knicklinien, unruhige Oberflächen
   und ein deutlich sichtbarer Schlagschatten auf der Papierkarte.
-  Feste, datenunabhängige Materialvarianten bilden kleine Knicke,
-  Reflexionswinkel und nicht perfekt gerade Kanten nach; kein Zufall bei jedem
-  Rendern. Kein Bild und keine Animation. Die normalen Handkarten und
+  Die Oberfläche variiert pro Antwortstreifen reproduzierbar: lokale
+  Bildausschnitte der Bandtextur, Glanz- und Knickposition, Stanzdruck,
+  Bandwinkel und Kantenform folgen einem kleinen stabilen Text-Seed. So
+  wiederholt sich nicht derselbe Reflex auf jeder Karte und trotzdem
+  flackert beim Neuzeichnen nichts. Kein Bild und keine Animation. Die normalen Handkarten und
   Juror-Antwortoptionen bleiben frei von Prägebändern; beim Einsetzen in
   den Fragesatz entsteht das Band. Lange Antworten werden anhand der
   tatsächlichen Textzeilen in eigenständige, geringfügig unterschiedliche
