@@ -1344,10 +1344,9 @@ mark.answer-tape,
   background-position: center, var(--foil-x, 50%) center;
   background-repeat: no-repeat;
   color: #393939;
-  font-family: "DIN Condensed", "Roboto Condensed", "Arial Narrow",
-    "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
-  font-stretch: condensed;
-  font-size: .98em;
+  font-family: "American Typewriter", "Courier New", "Liberation Mono",
+    "DejaVu Sans Mono", monospace;
+  font-size: .94em;
   font-weight: 700;
   line-height: 1.27;
   white-space: normal;
@@ -1407,21 +1406,22 @@ mark.answer-tape::after {
 .answer-tape__letters {
   position: relative;
   z-index: 1;
-  font-family: "DIN Condensed", "Roboto Condensed", "Arial Narrow",
-    "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
-  font-stretch: condensed;
+  /* Slab serifs and fixed glyph widths evoke an old mechanical typewriter.
+     Keep tracking tight: the wider glyphs still have to fit on mobile. */
+  font-family: "American Typewriter", "Courier New", "Liberation Mono",
+    "DejaVu Sans Mono", monospace;
   font-weight: 700;
-  font-size: 1em;
-  line-height: 1.3;
-  letter-spacing: .055em;
+  font-size: .94em;
+  line-height: 1.32;
+  letter-spacing: .014em;
   text-transform: uppercase;
   color: #f5f5f1;
   /* Keep the letter interior bright; only the lower rim gets a relief edge. */
   -webkit-text-stroke: .16px #fff;
   text-shadow:
-    -.012em -.016em 0 #fff,
-    .025em .032em 0 #626262,
-    .065em .075em .06em #000;
+    -.012em -.018em 0 #fff,
+    .018em .028em 0 #777,
+    .045em .06em .045em #090909;
 }
 
 /* Eight cut shapes, plus per-strip cropped foil and movable creases from JS.
