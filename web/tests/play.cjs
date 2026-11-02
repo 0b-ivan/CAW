@@ -116,6 +116,8 @@ async function checkTape(page, selector) {
       raisedEdge: raised?.getPropertyValue('-webkit-text-stroke-width'),
       letterCase: raised?.textTransform,
       tracking: raised?.letterSpacing,
+      letterSize: raised?.fontSize,
+      letterWeight: raised?.fontWeight,
       foilOffset: element.style.getPropertyValue('--foil-x'),
       foilSize: element.style.getPropertyValue('--foil-size'),
       creaseOffset: element.style.getPropertyValue('--crease-x'),
@@ -130,13 +132,17 @@ async function checkTape(page, selector) {
   assert.match(await asset.text(), /data:image\/webp;base64,/, 'foil contains only an embedded local image');
   assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
   assert.match(material.font, /DIN Condensed/, `${selector}: narrow mechanical embossing font`);
-  assert.equal(material.letterColor, 'rgb(48, 48, 48)', `${selector}: hollow dark letter centers`);
+  assert.equal(material.letterColor, 'rgb(245, 245, 241)', `${selector}: readable filled white letters`);
+  assert.ok(Number(material.letterWeight) >= 600,
+    `${selector}: embossed lettering must not be thin`);
   assert.equal(material.letterCase, 'uppercase', `${selector}: printed capitals`);
-  assert.ok(parseFloat(material.tracking) > 1, `${selector}: spaced-out embossing characters`);
+  const trackingRatio = parseFloat(material.tracking) / parseFloat(material.letterSize);
+  assert.ok(trackingRatio >= .04 && trackingRatio <= .08,
+    `${selector}: readable tracking, including on TV`);
   assert.ok(material.relief.split('rgb(').length >= 4, `${selector}: three-dimensional letters`);
-  assert.ok(parseFloat(material.raisedEdge) >= .65 &&
-    parseFloat(material.raisedEdge) <= 2,
-  `${selector}: scalable silver relief for phone and TV`);
+  assert.ok(parseFloat(material.raisedEdge) >= .12 &&
+    parseFloat(material.raisedEdge) <= .2,
+    `${selector}: thin relief must not obscure the filled glyphs`);
   for (const offset of [material.foilOffset, material.foilSize,
     material.creaseOffset, material.glintOffset]) {
     assert.match(offset, /^\d+%$/, `${selector}: stable physical variation parameters`);
