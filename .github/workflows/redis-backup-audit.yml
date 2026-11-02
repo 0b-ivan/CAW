@@ -51,6 +51,8 @@ jobs:
           test "$(docker inspect --format '{{.State.Health.Status}}' "$container")" = healthy
           docker exec "$container" sh -ec \
             'find /backups/redis -maxdepth 1 -type f -name "caw-*.rdb" -mmin -1560 | grep -q .'
-          bash bin/verify-local-redis-restore
+          git fetch --quiet origin main
+          git show origin/main:bin/verify-local-redis-restore |
+            CAW_REPO_ROOT=/opt/caw bash
           echo 'PASS: fresh Redis backup restored without production data access'
           REMOTE
