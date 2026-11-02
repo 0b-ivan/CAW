@@ -525,23 +525,29 @@ Nach dem ersten erfolgreichen Checkout-Wechsel kann die Ausnahme bei
 späteren Releases nicht erneut greifen. Das ist ausdrücklich keine
 Änderung der allgemeinen Schutzregel für neue Spiele.
 
-### Nachtrag: zwei verlassene Legacy-Partien (02.11.2026)
+### Nachtrag: zwei verlassene, gespeicherte Partien (02.11.2026)
 
-Die erneute Produktionsprüfung meldet jetzt zwei unfertige Redis-Sessions bei
-null WebSocket-Verbindungen. Der Betreiber bestätigt ausdrücklich, dass
-niemand spielt. Ausschließlich für den bekannten Alt-Checkout `cc02372*`
-wird die einmalige Ausnahme deshalb auf **höchstens zwei** unfertige
-Legacy-Sessions erweitert; auf neueren Serverversionen greift sie nicht.
+Die aktuelle Produktionsprüfung zeigt zwei als aktiv gespeicherte Partien
+und null WebSocket-Verbindungen. Der Betreiber bestätigt ausdrücklich, dass
+niemand spielt. Der laufende Server stellt bereits `caw_active_games`
+bereit; deshalb greift die alte Legacy-Raumprüfung allein hier nicht.
 
-Voraussetzung ist ein gesunder, unabhängig installierter Redis-Backup-Worker
-mit erfolgreichem, netzwerkisoliertem Restore des jüngsten Snapshots **vor**
-dem Serverwechsel. Jede der drei Leerlaufkontrollen muss weiterhin null
-WebSockets, eine zu `caw_sessions` passende Redis-Key-Anzahl und gültige
-Spielphasen belegen. Alle gespeicherten Sessiondaten und Redis-AOF bleiben
-unverändert; weder der Override noch das Deployment dürfen Redis leeren,
-Partien beenden oder andere Dienste neu starten. Bei jeder Abweichung wird
-weiterhin nicht deployt. Die Ausnahme ersetzt keine allgemeine Regel für
-künftig unterbrochene, aber noch laufende Spiele.
+Nur für den über den produktiven SSH-Preflight verifizierten Checkout
+`fc59685e124a00c4666c53947fd2e0f174848b30` darf der Server bei
+**genau zwei** noch unfertigen, aber vom Betreiber als verlassen bestätigten
+Partien und **null** WebSockets einmalig aktualisiert werden. Diese Ausnahme
+ist unabhängig von der älteren, unveränderten Ein-Partie-Ausnahme für
+`cc02372*` und gilt niemals auf neueren Checkouts.
+
+Vor **jeder** der drei Leerlaufkontrollen muss der eigenständige
+Redis-Backup-Worker gesund sein; sein jüngster RDB-Snapshot wird in einem
+netzwerkisolierten Redis erfolgreich geladen. Eine zusätzliche Redis-Prüfung
+stellt sicher, dass alle `session:*`-Schlüssel valide Spielphasen haben,
+`caw_sessions` zur Schlüsselanzahl passt und höchstens zwei Partien
+unfertig sind. Alle Redis-Snapshots und das AOF bleiben unverändert.
+Bei offenen Sockets, anderer Spielzahl, defekter Sicherung oder unbekanntem
+Checkout wird nicht deployt. Nach dem ersten Fast-Forward ist diese
+Ausnahme automatisch wirkungslos.
 
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
