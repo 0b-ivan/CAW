@@ -525,6 +525,24 @@ Nach dem ersten erfolgreichen Checkout-Wechsel kann die Ausnahme bei
 späteren Releases nicht erneut greifen. Das ist ausdrücklich keine
 Änderung der allgemeinen Schutzregel für neue Spiele.
 
+### Nachtrag: zwei verlassene Legacy-Partien (02.11.2026)
+
+Die erneute Produktionsprüfung meldet jetzt zwei unfertige Redis-Sessions bei
+null WebSocket-Verbindungen. Der Betreiber bestätigt ausdrücklich, dass
+niemand spielt. Ausschließlich für den bekannten Alt-Checkout `cc02372*`
+wird die einmalige Ausnahme deshalb auf **höchstens zwei** unfertige
+Legacy-Sessions erweitert; auf neueren Serverversionen greift sie nicht.
+
+Voraussetzung ist ein gesunder, unabhängig installierter Redis-Backup-Worker
+mit erfolgreichem, netzwerkisoliertem Restore des jüngsten Snapshots **vor**
+dem Serverwechsel. Jede der drei Leerlaufkontrollen muss weiterhin null
+WebSockets, eine zu `caw_sessions` passende Redis-Key-Anzahl und gültige
+Spielphasen belegen. Alle gespeicherten Sessiondaten und Redis-AOF bleiben
+unverändert; weder der Override noch das Deployment dürfen Redis leeren,
+Partien beenden oder andere Dienste neu starten. Bei jeder Abweichung wird
+weiterhin nicht deployt. Die Ausnahme ersetzt keine allgemeine Regel für
+künftig unterbrochene, aber noch laufende Spiele.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
