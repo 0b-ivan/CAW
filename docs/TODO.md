@@ -266,3 +266,11 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] Nach Merge die erste echte Redis-Sicherung und den isolierten Restore auf Hetzner nachweisen
 - [ ] Verschlüsselte externe Redis-/PostgreSQL-Sicherungen samt Restore-Probe nachholen (vorerst ausgesetzt)
 
+## Betrieb: Redis-Backup ohne Spielserver-Neustart (2026-11-02)
+
+- [x] Backend-Konzept aktualisiert: Backup-Worker darf vor dem Spiel-Leerlauf-Gate gestartet werden
+- [x] Idempotenten, gesperrten Legacy-Bootstrap ausschließlich für `redis-backup` implementiert
+- [x] Restore-Audit unterstützt das vorübergehende ältere Hetzner-Compose-Checkout ohne Datenverlust
+- [x] Automatischen Bootstrap vor regulärem Game-Idle-Deploy verdrahtet und Sicherheitsregression ergänzt
+- [ ] PR-/Main-CI und ersten produktiven Snapshot mit isoliertem Restore nachweisen
+- [ ] Offsite-Backups weiterhin ausstehend (Storage Box vorerst zurückgestellt)
