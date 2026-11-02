@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Install the Redis snapshot worker while leaving active games untouched.
+set -Eeuo pipefail
+umask 077
+
+sha="$1"
+if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "FAIL: invalid verified main commit" >&2
+  exit 1
+fi
+cd /opt/caw
+
+exec 9>.git/caw-deploy.lock
+if ! flock -n 9; then
+  echo "FAIL: another CAW operation holds the deploy lock" >&2
+  exit 1
+fi
+test "$(git branch --show-current)" = main
+test -z "$(git status --porcelain --untracked-files=no)"
+test -r deploy/.env
+git fetch --quiet origin main
+test "$(git rev-parse origin/main)" = "$sha"
+git merge-base --is-ancestor HEAD "$sha"
+
+worker="$(docker ps --filter label=com.docker.compose.project=caw \
+  --filter label=com.docker.compose.service=redis-backup --format '{{.ID}}' |
+  head -n 1)"
+if [[ -n "$worker" ]]; then
+  test "$(docker inspect --format '{{.State.Health.Status}}' "$worker")" = healthy
+  echo "SKIP: Redis backup worker already healthy"
+  exit 0
+fi
+
+# The older checkout does not yet define the backup worker. Keep all
+# bootstrap files inside .git so tracked assets remain unchanged.
+if ! grep -q '^  redis-backup:' deploy/compose.yml; then
+  staged="$(mktemp .git/caw-redis-backup.sh.XXXXXX)"
+  git show "$sha:deploy/redis-backup.sh" > "$staged"
+  chmod 600 "$staged"
+  mv "$staged" .git/caw-redis-backup.sh
+
+  cat > .git/caw-redis-backup-bootstrap.yml <<'YAML'
+services:
+  redis-backup:
+    image: redis:7-alpine
+    restart: unless-stopped
+    entrypoint: [/bin/sh, /redis-backup.sh]
+    volumes:
+      - ../.git/caw-redis-backup.sh:/redis-backup.sh:ro
+      - backups:/backups
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "find /backups/redis -maxdepth 1 -type f -name 'caw-*.rdb' -mmin -1560 | grep -q ."]
+      interval: 30s
+      timeout: 5s
+      start_period: 2m
+      retries: 2
+YAML
+fi
+
+compose() {
+  if ! grep -q '^  redis-backup:' deploy/compose.yml; then
+    env -u CAW_VERSION docker compose --env-file deploy/.env -p caw \
+      -f deploy/compose.yml -f deploy/compose.hetzner.yml \
+      -f .git/caw-redis-backup-bootstrap.yml "$@"
+  else
+    env -u CAW_VERSION docker compose --env-file deploy/.env -p caw \
+      -f deploy/compose.yml -f deploy/compose.hetzner.yml "$@"
+  fi
+}
+
+# No app, database, tunnel or live Redis service is restarted.
+compose up --no-deps --no-build --detach --wait --wait-timeout 180 redis-backup
+
+# Prove this is a readable backup, not just a running worker.
+git show "$sha:bin/verify-local-redis-restore" |
+  CAW_REPO_ROOT="$PWD" bash
+echo "PASS: Redis backup active independently of game deployments"

@@ -100,6 +100,15 @@ jobs:
           printf '%s\n' "$CAW_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/caw_deploy" "$HOME/.ssh/known_hosts"
           ssh-keygen -y -f "$HOME/.ssh/caw_deploy" >/dev/null
+      - name: Start Redis backups independently of game deployment
+        run: |
+          set -euo pipefail
+          # Only the new worker may be created here. Do not touch running games.
+          # The script is read from the exact commit accepted by the CI gate.
+          ssh -T -i "$HOME/.ssh/caw_deploy" \
+            -p "$CAW_SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$CAW_SSH_USER@$CAW_SSH_HOST" \
+            "set -euo pipefail; cd /opt/caw; git fetch --quiet origin main; git show '$DEPLOY_SHA:bin/bootstrap-redis-backup' | bash -s -- '$DEPLOY_SHA'"
       - name: Deploy only when no CAW games or sockets are active
         id: rollout
         run: |
