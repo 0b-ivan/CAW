@@ -15,6 +15,23 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   Versatzschatten bekommen. Keine Akzentfarben, Glows oder Verläufe.
   Animationen nur für die bereits vorgesehenen CAW-Intros, Gewinner- und
   Timer-Signale.
+  **Weitere gezielte Material-Ausnahme:** Eingesetzte Antworttexte dürfen als
+  schwarze Kunststoff-Prägebänder (klassisches DYMO-Reliefband) erscheinen:
+  helle, sichtbar erhabene Reliefbuchstaben mit hellen und dunklen
+  Lichtkanten, leicht glänzender schwarzer Kunststoff und sanfte
+  Band-Schlagschatten. Ausschließlich für die Kunststoffbänder sind
+  dezente monochrome CSS-Verläufe und mehrlagige Schatten erlaubt; sie
+  simulieren Material und Prägung, nicht eine farbige oder animierte UI.
+  Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
+  eine verfügbare runde, mechanisch wirkende Systemschrift (ohne Webfont).
+  Feste, datenunabhängige Materialvarianten bilden kleine Knicke,
+  Reflexionswinkel und nicht perfekt gerade Kanten nach; kein Zufall bei jedem
+  Rendern. Kein Bild und keine Animation. Die normalen Handkarten und
+  Juror-Antwortoptionen bleiben frei von Prägebändern; beim Einsetzen in
+  den Fragesatz entsteht das Band. Lange Antworten werden anhand der
+  tatsächlichen Textzeilen in eigenständige, geringfügig unterschiedliche
+  Bandstücke aufgeteilt. Auch bei Viewport-Änderungen und auf dem Big Screen
+  bleiben Text und Zeilenumbrüche vollständig lesbar, ohne Overflow.
 - **Monospace für alles.** `ui-monospace, Menlo, SFMono-Regular, Consolas,
   Liberation Mono` – keine Webfont-Pflicht (Performance-Budget).
 - **Typografie trägt die Hierarchie:** kurze Labels in GROSSBUCHSTABEN mit
@@ -172,6 +189,13 @@ GESPERRT · FRAG DEN HOST“.
 
 ### 4.5 Antworten
 
+Die weißen Handkarten zeigen ihre Antworttexte ohne Prägeband oder
+Reliefeffekt als normalen dunklen Text auf hellem Papier, damit auch längere
+Antworten sofort lesbar bleiben. Die invertierte Darstellung ausgewählter
+Handkarten bleibt bestehen. Erst wenn Antworten in die Frage eingesetzt oder
+in der Juror- und Auflösungsansicht gezeigt werden, erscheint das schwarze
+Prägeband.
+
 Die Hand enthält standardmäßig **7 Karten** (Host-Einstellung **3–10** im Menü SPIELREGELN, ausschließlich in der Lobby). Spieler sehen immer alle gerade zugeteilten Karten; bei Draw 2 kann die Hand kurzfristig um bis zu zwei Karten wachsen. Geändert wird nur vor dem Start einer neuen Partie; bereits gespeicherte und laufende Partien behalten ihren Wert.
 
 Frage oben in eigenem Scroll-Bereich (max. 30 % Höhe), darunter die Hand
@@ -181,8 +205,8 @@ und ohne Seitenwechsel erreichbar. Nur die Kartenhand scrollt vertikal;
 Frage, Kopfzeile und `[ ABGEBEN ]` bleiben stehen. Lange Kartentexte dürfen
 nicht abgeschnitten oder durch Verkleinern unlesbar werden. Antippen wählt
 in Reihenfolge; die Position steht vor der Karte (`<1/3>`). Die Frage ist
-zugleich die Vorschau: gewählte Karten stehen invertiert in ihren Lücken,
-keine eigene Vorschauzeile. Fußleiste: `[ ABWERFEN ]` (1× pro Runde, genau
+zugleich die Vorschau: gewählte Karten stehen als geprägte Antwortbänder
+in ihren Lücken, keine eigene Vorschauzeile. Fußleiste: `[ ABWERFEN ]` (1× pro Runde, genau
 eine Karte gewählt), `2/3 GEWÄHLT`, `[ ABGEBEN ]`.
 Nach Abgabe: „ABGEGEBEN · 4/6“ mit Fortschritt aus Zeichen (`████░░`).
 
@@ -191,14 +215,18 @@ Nach Abgabe: „ABGEGEBEN · 4/6“ mit Fortschritt aus Zeichen (`████�
 Die Frage steht **einmal oben**, darunter nur die Antworten, nummeriert und
 anonym (`[2] ANTWORT A / ANTWORT B`). Lange Fragen würden sonst in jedem
 Eintrag wiederholt und die Liste etwa verdoppeln. Juror: antippen = auswählen;
-die gewählte Antwort erscheint invertiert in den Lücken der Frage oben, so
-liest er den ganzen Satz vor dem `[ BESTÄTIGEN ]`. Alle anderen:
+die gewählte Antwort erscheint als geprägtes Band in den Lücken der Frage oben,
+so liest er den ganzen Satz vor dem `[ BESTÄTIGEN ]`. Die anonymen
+Antwortoptionen darunter bleiben als normaler, gut lesbarer Text auf weißen
+Karten (ausgewählt: invertiert). Ausschließlich die in die obere Frage
+eingesetzten Antworten erhalten das Prägeband. Alle anderen:
 „JUROR ENTSCHEIDET“ und dieselbe Liste zum Mitlesen (ohne Auswahl). Der Big
 Screen zeigt weiterhin ganze eingesetzte Sätze (Abschnitt 5).
 
 ### 4.7 Auflösung
 
-Siegersatz groß, eingesetzte Antworten **invertiert hervorgehoben**, darunter
+Siegersatz groß, eingesetzte Antworten als **geprägte schwarze Prägebänder**,
+darunter
 `GEWINNER: ADA·TOAST`, Punktestand. Das Gewinner-Handy zeigt kurz eine
 textliche `DU HAST DIE RUNDE GEWONNEN`-Meldung mit zweimaliger Invertierung;
 bei reduzierter Bewegung nur statisch. Host: `[ NÄCHSTE RUNDE ]`.
@@ -279,12 +307,13 @@ nur bei „WARTET AUF …“ der Name, wie am Handy.
 
 Der Countdown bleibt oben rechts sichtbar, auch wenn der Juror wählt.
 Die Frage mit **jeder Antwort eingesetzt**, als nummerierte ganze Sätze
-untereinander; bei mehr Sätzen zweispaltig. Eingesetzte Teile invertiert.
+untereinander; bei mehr Sätzen zweispaltig. Eingesetzte Teile als geprägte
+schwarze Prägebänder.
 Kopfzeile: „JUROR ADA ENTSCHEIDET“.
 
 ### Auflösung
 
-Nur der Siegersatz, sehr groß, Antworten invertiert, darunter der Gewinner
+Nur der Siegersatz, sehr groß, Antworten als geprägte Prägebänder, darunter der Gewinner
 und eine schmale Punktetabelle.
 
 ### Ende

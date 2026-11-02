@@ -236,3 +236,13 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] Erste tatsächliche Hetzner-Aktualisierung nach Phasenprüfung und WSS-Test bestätigen
 - [ ] Ersten echten Hetzner-Deploy nach neuem Idle-Gate und WSS-Test abnehmen
 - [ ] Erstes manuelles Deployment und danach Autodeploy mit externem HTTPS/WSS bestätigen
+
+## UI-Polish: geprägtes Antwortband (2026-11-01)
+
+- [x] Gezielte DYMO-Prägeband-Ausnahme im UI-Konzept für eingesetzte Antworten festhalten
+- [x] Schwarze Kunststoffstreifen mit erhabenen hellen Buchstaben, CSS-Glanzverläufen und Material-/Reliefschatten, ohne Bilder/Webfonts
+- [x] Weiße Handkarten und die Antwortliste des Jurors mit normalem Text belassen; Prägebänder nur für eingesetzte Antworten in den Fragesätzen, Auflösung und Big Screen
+- [x] Zeilenumbruch durch tatsächliche Browser-Zeilenmessung: einzelne Bandstücke, feste Knick-Varianten und Reflow bei Viewport-Wechseln; synthetische Browser-Regressionstests
+- [ ] PR-CI inklusive Browser-Tests, CTest, Docker-Smoke und Lasttest grün bestätigen
+- [ ] Auf iPhone/Android und Big Screen mit realen langen Antworten visuell abnehmen
+
