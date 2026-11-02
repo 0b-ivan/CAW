@@ -248,7 +248,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 
 ## UI-Polish: Referenz-Prägeband (2026-11-02)
 
-- [x] Gut lesbare, kräftige hell gefüllte Schreibmaschinen-Versalien (American Typewriter / Courier New), dezente Reliefkante und enger Zeichenabstand
+- [x] Frühere schmale DIN-/Roboto-Condensed-Buchstaben wiederhergestellt; Gewicht 500, hauchdünne Reliefkante, kein aufdickender heller Textschatten
 - [x] Textfreie Fototextur aus der Nutzerreferenz; Ausschnitt, Glanzpunkt, Knick und Bandwinkel variieren stabil je Streifen, Texte bleiben im DOM
 - [x] Keine Änderung am Kartentext und keine Prägebänder auf Handkarten/Juror-Antwortliste
 - [x] Browser-Regression auf gut lesbare Schriftstärke, weiße Füllung, Tracking, Reliefkante und Glanzreflexe erweitert
