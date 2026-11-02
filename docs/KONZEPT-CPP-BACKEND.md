@@ -549,6 +549,25 @@ Bei offenen Sockets, anderer Spielzahl, defekter Sicherung oder unbekanntem
 Checkout wird nicht deployt. Nach dem ersten Fast-Forward ist diese
 Ausnahme automatisch wirkungslos.
 
+### Redis-Raumzählung bei der einmaligen Migration (02.11.2026)
+
+Der erste Backup-verifizierte Deployversuch wurde sicher abgebrochen:
+`caw_sessions` und die Zahl der noch in Redis enthaltenen `session:*`-Keys
+weichen voneinander ab. Der laufende Server kann abgelaufene inaktive Räume
+weiter im Arbeitsspeicher zählen. Ein bloßer Socket- oder Redis-Gesamtzähler
+reicht nicht aus, um diese Abweichung als ungefährlich zu beurteilen.
+
+**Nur für die oben genannte Zwei-Partien-Ausnahme** darf die Anzahl der
+persistierten Räume kleiner als der Live-Zähler sein, **wenn genau beide**
+aktiven Partien anhand gültiger Phasen 1–3 in Redis gefunden werden. Die
+geprüften Redis-Schlüssel müssen gültig und eindeutig sein; jeder gelesene
+Snapshot muss ein gültiges JSON mit zulässiger Phase enthalten. Mehr Redis-
+Räume als im Live-Zähler, weniger als zwei persistierte aktive Partien, ein
+ungültiger Snapshot oder ein anderer Server-Checkout stoppen den Rollout.
+Die Prüfung gibt ausschließlich anonyme Zahlen aus, keine Raumcodes,
+Kartentexte, Tickets oder Tokens. Die Ein-Partie-Ausnahme des alten
+Checkouts und alle regulären Deploys verlangen weiterhin exakte Zählgleichheit.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
