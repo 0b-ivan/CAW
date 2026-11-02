@@ -1318,8 +1318,8 @@ footer a { text-decoration: underline; }
   opacity: 0; cursor: pointer; }
 .editor-upload:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
 
-/* Embossed plastic label, matched to the physical tape reference.
-   All reflections and dents are static CSS, with no textures or webfonts. */
+/* Embossed plastic label with a tiny text-free texture from the supplied
+   reference. Text is still live DOM and requires no font download. */
 mark.answer-tape,
 #reveal-sentence mark.answer-tape,
 .screen-plays li mark.answer-tape,
@@ -1331,12 +1331,15 @@ mark.answer-tape,
   max-width: 100%;
   margin: .05em .035em .09em;
   padding: .13em .35em .16em;
-  border: 1px solid #282828;
-  border-radius: 2px 3px 3px 2px;
+  border: 0;
+  border-radius: 3px;
   background-color: #050505;
+  /* The local SVG contains only the photographed blank plastic, never text. */
   background-image:
-    linear-gradient(178deg, #5a5a5a 0%, #1b1b1b 11%, #050505 26%,
-      #090909 72%, #1c1c1c 89%, #080808 100%);
+    linear-gradient(115deg, #0004, transparent 20%, transparent 82%, #0002),
+    url("/assets/dymo-foil.svg");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   color: #393939;
   font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Helvetica Neue", Arial, sans-serif;
   font-size: .91em;
@@ -1375,7 +1378,7 @@ mark.answer-tape::before {
       #ffffff0a 21%, transparent 28%, transparent 64%, #ffffff1f 72%,
       #ffffff57 80%, #ffffff13 82%, transparent 90%);
   mix-blend-mode: screen;
-  opacity: .68;
+  opacity: .28;
 }
 mark.answer-tape::after {
   background:
@@ -1386,7 +1389,7 @@ mark.answer-tape::after {
   clip-path: polygon(0 4%, 8% 0, 22% 2%, 33% 0, 45% 3%, 62% 1%,
     81% 0, 100% 5%, 100% 94%, 91% 100%, 75% 98%,
     59% 100%, 35% 98%, 16% 100%, 0 96%);
-  opacity: .72;
+  opacity: .33;
 }
 
 /* Embossed letters are hollow-looking silver relief, not white printed ink.
