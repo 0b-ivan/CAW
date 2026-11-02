@@ -1336,7 +1336,8 @@ mark.answer-tape,
   background-color: #050505;
   /* The local SVG contains only the photographed blank plastic, never text. */
   background-image:
-    linear-gradient(115deg, #0004, transparent 20%, transparent 82%, #0002),
+    /* Darken the photographic glare behind the letters, not the tape edges. */
+    linear-gradient(115deg, #0009, #0005 35%, #0005 70%, #0008),
     url("/assets/dymo-foil.svg");
   /* Crop the same photographed foil differently for each physical strip. */
   background-size: 100% 100%, var(--foil-size, 120%) 100%;
@@ -1346,8 +1347,8 @@ mark.answer-tape,
   font-family: "DIN Condensed", "Roboto Condensed", "Arial Narrow",
     "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
   font-stretch: condensed;
-  font-size: .93em;
-  font-weight: 400;
+  font-size: .98em;
+  font-weight: 700;
   line-height: 1.27;
   white-space: normal;
   text-align: left;
@@ -1383,7 +1384,7 @@ mark.answer-tape::before {
       #ffffff07 21%, transparent 28%, transparent 64%, #ffffff1a 72%,
       #ffffff48 80%, #ffffff0a 82%, transparent 90%);
   mix-blend-mode: screen;
-  opacity: .4;
+  opacity: .22;
 }
 mark.answer-tape::after {
   background:
@@ -1398,30 +1399,29 @@ mark.answer-tape::after {
   clip-path: polygon(0 4%, 8% 0, 22% 2%, 33% 0, 45% 3%, 62% 1%,
     81% 0, 100% 5%, 100% 94%, 91% 100%, 75% 98%,
     59% 100%, 35% 98%, 16% 100%, 0 96%);
-  opacity: .58;
+  opacity: .35;
 }
 
-/* Embossed letters are hollow-looking silver relief, not white printed ink.
-   Uppercase is visual only; selection and screen readers retain the card text. */
+/* Readability comes first: embossed lettering is filled, not hollow.
+   A thin offset rim suggests pressed plastic without losing letter shapes. */
 .answer-tape__letters {
   position: relative;
   z-index: 1;
   font-family: "DIN Condensed", "Roboto Condensed", "Arial Narrow",
     "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
   font-stretch: condensed;
-  font-weight: 400;
-  font-size: .98em;
+  font-weight: 700;
+  font-size: 1em;
   line-height: 1.3;
-  letter-spacing: .13em;
+  letter-spacing: .055em;
   text-transform: uppercase;
-  color: #303030;
-  /* Scale the relief with its glyphs; TV lettering needs deeper embossing. */
-  -webkit-text-stroke: clamp(.7px, .038em, 1.8px) #e6e6e3;
+  color: #f5f5f1;
+  /* Keep the letter interior bright; only the lower rim gets a relief edge. */
+  -webkit-text-stroke: .16px #fff;
   text-shadow:
-    -.035em -.04em .02em #ffffff,
-    .03em .04em .025em #8d8d8a,
-    .06em .09em .04em #202020,
-    .1em .13em .075em #000;
+    -.012em -.016em 0 #fff,
+    .025em .032em 0 #626262,
+    .065em .075em .06em #000;
 }
 
 /* Eight cut shapes, plus per-strip cropped foil and movable creases from JS.
@@ -1450,14 +1450,11 @@ mark.answer-tape--4::after { transform: scaleX(-1); opacity: .82; }
 mark.answer-tape--5::before { transform: translateX(-4%); opacity: .7; }
 mark.answer-tape--6::after { transform: scaleX(-1); opacity: .68; }
 mark.answer-tape--7::before { transform: translateX(3%); opacity: .85; }
+/* Material variation is in the foil and folds, never in letter legibility. */
 mark.answer-tape--1 .answer-tape__letters,
-mark.answer-tape--4 .answer-tape__letters {
-  -webkit-text-stroke-width: clamp(.65px, .034em, 1.6px);
-}
+mark.answer-tape--4 .answer-tape__letters { -webkit-text-stroke-width: .12px; }
 mark.answer-tape--3 .answer-tape__letters,
-mark.answer-tape--6 .answer-tape__letters {
-  -webkit-text-stroke-width: clamp(.75px, .043em, 2px);
-}
+mark.answer-tape--6 .answer-tape__letters { -webkit-text-stroke-width: .2px; }
 
 /* Higher specificity is important: measuring labels must be inline even on
    #reveal-sentence, otherwise their actual word boundaries cannot be found. */
