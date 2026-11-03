@@ -34,9 +34,9 @@ class BlueGreenRehearsalTests(unittest.TestCase):
         self.assertIn("docker inspect --format", content)
         self.assertIn("http://127.0.0.1:18082/readyz", content)
         self.assertLess(content.index("stop -t 30 server"),
-                        content.index("server-green"))
-        self.assertLess(content.index("server-green\n"),
-                        content.index('caddy\n'))
+                        content.index("--wait-timeout 90 server-green"))
+        self.assertLess(content.index("--wait-timeout 90 server-green"),
+                        content.index("--wait-timeout 90 caddy"))
         for forbidden in ("docker compose down", "--volumes", "FLUSHALL",
                           "DEL session:", "restart redis", "restart postgres"):
             self.assertNotIn(forbidden, content)
