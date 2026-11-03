@@ -986,3 +986,13 @@ Caddy kontrolliert neu erstellt; die Spieler verbinden sich danach erneut
 Der produktive Tunnel und die Hetzner-Caddy-Konfiguration bleiben dabei
 unverändert. Das Testverfahren belegt ausdrücklich **keinen**
 unterbrechungsfreien Caddy-Reload.
+
+Im nächsten ausschließlich lokalen/CI-Schritt erzeugt Green nach der
+Hin-Übergabe einen **synthetischen neuen Raum**. Bei null offenen Sockets
+wird Green vollständig gestoppt, Blue aus denselben Redis-Snapshots
+gestartet und auf vollständigen Raumzählerbestand geprüft. Erst danach
+geht der Test-Caddy zurück zu Blue; der neue Raum muss über den
+gleichen Origin erreichbar sein. Weder dieses Rehearsal noch die
+Caddy-Neuerstellung dürfen in der Produktion laufen. Der reale
+Rollback bedarf weiterhin eines atomaren, generationsgesicherten
+Ownership-Übergangs und einer ausfallsicheren Caddy-Konfigurationsänderung.
