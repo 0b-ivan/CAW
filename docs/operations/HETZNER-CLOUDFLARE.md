@@ -510,3 +510,43 @@ und darf weiterhin **keine laufende Partie unterbrechen**. Sobald
 alle Spielräume tatsächlich beendet sind, wechselt das reguläre
 Deployment bei Bedarf auf die versionierte Backup-Compose-Definition.
 Externe Backups fehlen weiterhin.
+
+## 11. Deploy-Status korrekt lesen (03.11.2026)
+
+Nach dem erfolgreichen Erst-Rollout am 02.11.2026 blieb Release
+`f01d90c7` zurückgestellt: mehrere planmäßige Prüfungen meldeten
+`1 active matches, 0 sockets` (zuletzt Run
+[41560312537](https://github.com/0b-ivan/CAW/actions/runs/41560312537)).
+Das Workflow-Ergebnis `success` bedeutete in diesen Fällen lediglich,
+dass der **Leerlaufschutz korrekt eingegriffen hatte**, nicht dass der
+Commit bereits auf dem Server lief.
+
+Der Workflow schreibt daher eine eindeutig bezeichnete Zusammenfassung:
+
+- **CAW: DEPLOYED** – exakt dieser SHA-Release wurde installiert. Nur
+  dann ist bei fehlerhafter anschließender WSS-Abnahme ein Rollback zulässig.
+- **CAW: UNCHANGED** – der gewünschte oder ein neuerer Release war schon
+  installiert. Die öffentliche WSS-Prüfung bleibt aktiv; kein automatischer
+  Rollback auf einen älteren Stand nach einem bloßen No-op.
+- **CAW: NOT DEPLOYED (deferred)** – eine Partie bzw. ein Socket blockiert.
+  Der Release steht weiterhin aus. Der Workflow prüft ausschließlich
+  die öffentliche HTTPS-Readiness und die `/metrics`-Sperre, **ohne
+  testweise einen Spielraum anzulegen**. Die nächste geplante Prüfung
+  erfolgt ungefähr 30 Minuten später.
+
+Im letzten Fall ist der erfolgreiche Actions-Lauf ein erfolgreicher
+**Schutz-/Erreichbarkeitstest**, keine Produktionsversionsbestätigung.
+Bei einer nicht beendeten, aber getrennten Partie verlängert allein
+das Verstreichen der Zeit die Sitzung nicht: standardmäßig läuft die
+Lebensdauer nach 24 Stunden ohne Aktivität aus
+(`SESSION_TTL_HOURS`, gegebenenfalls auf dem Host abweichend konfiguriert).
+Es werden keine Partien zur Freigabe des Deployments gelöscht oder
+zwangsweise beendet.
+
+Eine einmalige historische Sonderfreigabe für die alten Checkouts
+`cc02372*` und `fc59685*` wurde beim erfolgreichen Release
+`dcb97c4c` abgeschlossen und anschließend in PR #35 aus dem
+Deploy-Code entfernt. Die damaligen Beschreibungen in Abschnitt 9 sind
+ausschließlich als Verlauf zu verstehen, nicht als aktuelle
+Handlungsanweisung. Nachweis:
+[docs/validation/PRODUCTION-2026-11-02.md](../validation/PRODUCTION-2026-11-02.md).

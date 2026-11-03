@@ -75,6 +75,43 @@ class DeploymentSafetyTests(unittest.TestCase):
         self.assertNotIn("FLUSHALL", script)
         self.assertNotIn("DEL session:", script)
 
+    def test_no_op_and_deferred_status_do_not_trigger_rollback(self):
+        script = SCRIPT.read_text()
+        workflow = WORKFLOW.read_text()
+        # Two skip paths: desired SHA already deployed or superseded.
+        self.assertEqual(script.count("exit 79"), 2)
+        self.assertIn("SKIP: CAW already runs $tag", script)
+        self.assertIn("SKIP: newer main commit is already checked out", script)
+        self.assertIn('case "$result" in', workflow)
+        for result in ("0)", "75)", "79)"):
+            self.assertIn(result, workflow)
+        self.assertIn('echo "changed=true" >> "$GITHUB_OUTPUT"', workflow)
+        self.assertIn('echo "deferred=true" >> "$GITHUB_OUTPUT"', workflow)
+        self.assertIn('echo "unchanged=true" >> "$GITHUB_OUTPUT"', workflow)
+        self.assertIn("CAW: NOT DEPLOYED (deferred)", workflow)
+        self.assertIn("CAW: UNCHANGED", workflow)
+        self.assertIn("CAW: DEPLOYED", workflow)
+        self.assertIn(
+            "if: failure() && steps.rollout.outputs.changed == 'true' "
+            "&& steps.wss.outcome == 'failure'",
+            workflow,
+        )
+
+    def test_deferred_rollout_uses_read_only_public_health_probe(self):
+        workflow = WORKFLOW.read_text()
+        self.assertIn(
+            "Verify public HTTPS without creating a room when deferred", workflow
+        )
+        self.assertIn("if: steps.rollout.outputs.deferred == 'true'", workflow)
+        self.assertIn("https://caw.obivan.org/healthz | grep -qx ok", workflow)
+        self.assertIn("https://caw.obivan.org/metrics", workflow)
+        self.assertIn('test "$metrics_status" = 404', workflow)
+        self.assertIn(
+            "if: steps.rollout.outputs.deferred != 'true'", workflow
+        )
+        # Existing release probes still exercise WSS; deferred ones only read health.
+        self.assertIn("node bin/hetzner-wss-check.mjs", workflow)
+
     def test_pipeline_gates_real_production_access(self):
         workflow = WORKFLOW.read_text()
         self.assertIn("push:\n    branches: [main]", workflow)

@@ -124,12 +124,37 @@ jobs:
               "set -e; cd /opt/caw; git fetch --quiet origin main; bootstrap=\$(mktemp .git/caw-deploy-bootstrap.XXXXXX); trap 'rm -f \"\$bootstrap\"' EXIT; git show '$DEPLOY_SHA:bin/deploy-hetzner' > \"\$bootstrap\"; bash \"\$bootstrap\" '$DEPLOY_TAG' '$GITHUB_ACTOR'"
           result=$?
           set -e
-          if [[ "$result" == 75 ]]; then
-            echo "deferred=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Active games detected: deployment postponed until a scheduled retry"
-            exit 0
-          fi
-          exit "$result"
+          case "$result" in
+            0)
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+              printf '### CAW: DEPLOYED\n\nInstalled commit `%s`. Public WSS verification follows.\n' \
+                "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            75)
+              echo "deferred=true" >> "$GITHUB_OUTPUT"
+              printf '### CAW: NOT DEPLOYED (deferred)\n\nCommit `%s` is pending because a game or socket is active. Existing containers were not restarted. The scheduled retry remains enabled.\n' \
+                "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+              echo "::notice::CAW rollout deferred; this workflow did not install the release"
+              ;;
+            79)
+              echo "unchanged=true" >> "$GITHUB_OUTPUT"
+              printf '### CAW: UNCHANGED\n\nCommit `%s` is already installed or superseded. No containers were restarted.\n' \
+                "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              exit "$result"
+              ;;
+          esac
+      - name: Verify public HTTPS without creating a room when deferred
+        if: steps.rollout.outputs.deferred == 'true'
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 --retry-delay 2 \
+            https://caw.obivan.org/healthz | grep -qx ok
+          metrics_status="$(curl --silent --show-error --output /dev/null \
+            --write-out '%{http_code}' https://caw.obivan.org/metrics)"
+          test "$metrics_status" = 404
+          echo "PASS: deferred rollout leaves public HTTPS healthy"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -147,7 +172,7 @@ jobs:
           done
           exit 1
       - name: Roll back CAW if the public WebSocket handshake fails
-        if: failure() && steps.wss.outcome == 'failure'
+        if: failure() && steps.rollout.outputs.changed == 'true' && steps.wss.outcome == 'failure'
         run: |
           set -euo pipefail
           ssh -T -i "$HOME/.ssh/caw_deploy" \

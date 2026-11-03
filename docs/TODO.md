@@ -308,5 +308,16 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Einmalige Force-Deploy-Pfade `cc02372*` und `fc59685*` aus dem Deploy-Skript entfernen
 - [x] Veraltete Ausnahmen in der Redis-Leerlaufprüfung abschalten, fehlende Snapshots wieder strikt ablehnen
 - [x] Negative Tests für verworfene Overrides und normale Sperre bei aktiven Partien ergänzen
-- [ ] Neue PR-/Main-CI und den anschließenden no-op-or-deferred Produktions-Deploy nachweisen
+- [x] Neue PR-/Main-CI erfolgreich (Runs 41537307137, 41538205718); anschließender Deploy schützt aktive Partie (Run 41538205293)
 - [ ] Verschlüsselte Offsite-Sicherung und reale mobile Touch-Abnahme bleiben separat offen
+
+## Betrieb: klarer Deploy-Status und sicherer Rollback (2026-11-03)
+
+- [x] Produktionsbefund dokumentiert: sechs planmäßige Prüfungen melden eine aktive Partie ohne WebSockets; `f01d90c7` noch nicht ausgerollt
+- [x] Konzept um eindeutige Ergebnisse `deployed`, `unchanged`, `deferred` ergänzt
+- [x] Eigenen No-op-Rückgabecode für bereits installierte/neuer bereitgestellte Version implementiert
+- [x] Automatischen Rollback auf Deploys begrenzt, bei denen derselbe Lauf Container tatsächlich aktualisiert hat
+- [x] GitHub-Actions-Zusammenfassung für alle drei Fälle hinzugefügt; bei Defer nur öffentliche HTTPS-Readiness ohne Erstellen einer Testsitzung
+- [x] Regressionschecks für alle Ausgänge und den Rollback-Gate ergänzt
+- [ ] PR-/Main-CI und den produktiven Defer/No-op-Pfad bestätigen
+- [ ] Release `f01d90c7` bzw. den dann aktuellen `main`-SHA bei echtem Spiel-Leerlauf ausliefern (kein erzwungener Spielabbruch)

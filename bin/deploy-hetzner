@@ -51,7 +51,8 @@ previous_sha="$(git rev-parse HEAD)"
 if ! git merge-base --is-ancestor "$previous_sha" "$sha"; then
   if git merge-base --is-ancestor "$sha" "$previous_sha"; then
     echo "SKIP: newer main commit is already checked out"
-    exit 0
+    # A no-op is not a new deployment and must never trigger a rollback.
+    exit 79
   fi
   echo "FAIL: deployed checkout diverged from the requested commit" >&2
   exit 1
@@ -108,7 +109,8 @@ requireIdle() {
 if [[ "$previous_sha" == "$sha" ]] &&
    grep -qx "CAW_VERSION=$tag" deploy/.env; then
   echo "SKIP: CAW already runs $tag"
-  exit 0
+  # Distinguish a healthy no-op from a release that replaced containers.
+  exit 79
 fi
 
 # Validate the existing host configuration before making any changes.
