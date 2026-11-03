@@ -1016,3 +1016,25 @@ dafür sind atomarer Redis-Raumbesitz mit Generation/Fencing, ein geprüfter
 Green-Restore und ein getrennt abgesicherter Caddy-Umschaltvorgang Pflicht.
 Das bisherige reine CI-Restore-Rehearsal und die Produktionskonfiguration
 bleiben dadurch unverändert. Ein Flush-Timeout darf keinen Slotwechsel auslösen.
+
+### Blue/Green: interne Quiesce-Operation vor der CI-Übergabe (03.11.2026)
+
+Ein aktiver Slot stellt ausschließlich auf seiner eigenen Loopback-Schnittstelle
+`POST /internal/handoff/quiesce` bereit. Caddy und Cloudflare routen diesen
+Pfad **nicht**. Der Aufruf sperrt im einen Event-Loop-Thread neue Raum-Anlagen,
+Schreiboperationen an individuellen Karten, neue Spiel-WebSocket-Upgrades,
+Spielbefehle, Timer-Fortschritt sowie Disconnect-Nebenwirkungen. Alle noch
+geänderten und danach sämtliche vorhandenen Raum-Snapshots werden zur
+Persistenz eingereiht; nur ein erfolgreicher, zeitlich begrenzter
+`PersistQueue::flush` liefert HTTP 200. Bei Redis-Problemen kommt 503;
+der Slot bleibt sicher gesperrt. Nach dem Einfrieren meldet `/readyz` 503,
+während `/healthz` die Abhängigkeiten weiterhin unabhängig prüft.
+
+Die Operation ist absichtlich einseitig und nicht öffentlich rückgängig zu
+machen. Sie ist **keine** Redis-Raumbesitzfreigabe und aktiviert **keinen**
+zweiten Writer. Erst wenn separate, atomare Redis-Owner-/Generationsprüfungen,
+ein sicherer Caddy-Switch und ein Rollback-Protokoll vollständig umgesetzt
+sind, darf diese Operation Teil eines produktiven Deployments werden. Im
+isolierten CI-Rehearsal darf nach bestätigter Quiesce Blue vollständig
+stoppen, bevor Green wiederherstellt; ohne positive Bestätigung bleibt Blue
+weiterhin der einzige Slot und der Test bricht ab.
