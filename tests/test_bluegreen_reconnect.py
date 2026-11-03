@@ -33,6 +33,10 @@ class BlueGreenRehearsalTests(unittest.TestCase):
         self.assertIn('stop -t 30 server', content)
         self.assertIn("docker inspect --format", content)
         self.assertIn("http://127.0.0.1:18082/readyz", content)
+        self.assertIn('awk \'$1 == "caw_sessions" { print $2 }\'', content)
+        self.assertIn("Green did not restore every room", content)
+        self.assertLess(content.index("restored_rooms="),
+                        content.index("--wait-timeout 90 caddy"))
         self.assertLess(content.index("stop -t 30 server"),
                         content.index("--wait-timeout 90 server-green"))
         self.assertLess(content.index("--wait-timeout 90 server-green"),
