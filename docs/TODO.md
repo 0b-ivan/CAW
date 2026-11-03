@@ -353,3 +353,15 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Spieltest verwendet Touch-Emulation bei Android- und iPhone-großen Viewports
 - [ ] PR-/Main-CI, CTest, Playwright und produktiven Deploy verifizieren
 - [ ] Echte Android-Chrome- und iPhone-Safari-Abnahme auf Hardware durchführen
+
+## Betrieb: Raum-TTL bleibt mit Redis konsistent (Issue #40, 2026-11-03)
+
+- [x] Befund aus Deploy 41601420535: eine unfertige In-Memory-Partie, aber kein aktiver Redis-Snapshot; sicher zurückgestellt
+- [x] Backend-Konzept um dauerhaft gekoppelte In-Memory-/Redis-TTL ergänzt
+- [x] Read-only-Lookups und WebSocket-Upgrades verlängern keine ungesicherte Partie mehr
+- [x] Neue Snapshots verlängern die In-Memory-TTL im selben Arbeitsschritt wie die Persistenzübergabe
+- [x] Wiederherstellung erneuert die Redis-TTL atomar per GETEX (Redis 7)
+- [x] Doctest für schreibfreie Lookups, Ablauf und erneute Speicherung
+- [x] Compose-CI: künstlich kurzlebiger Redis-Raum erhält beim Serverneustart volle TTL zurück
+- [ ] Vollständige PR-/main-CI und Produktiv-Deploy nach den Sicherheitssperren prüfen
+- [ ] Bereits vor dem Fix ungesicherte aktive Räume nur nach separater Betreiberfreigabe rekonstruieren oder auslaufen lassen

@@ -1,6 +1,8 @@
 // Snapshots reach the store in the background, newest per room, all of them on stop.
 #include <doctest/doctest.h>
 
+#include <chrono>
+#include <condition_variable>
 #include <map>
 #include <mutex>
 #include <nlohmann/json.hpp>
@@ -29,6 +31,40 @@ struct FakeStore final : caw::SnapshotStore {
   std::vector<std::pair<std::string, std::string>> loadAll() override {
     return {latest.begin(), latest.end()};
   }
+};
+
+// Simulates a single lost Redis connection after the queue has taken its batch.
+struct FlakyStore final : caw::SnapshotStore {
+  std::mutex mutex;
+  std::condition_variable failedWake;
+  bool failedOnce = false;
+  int attempts = 0;
+  std::map<std::string, std::string> latest;
+
+  bool save(const std::string& code, const std::string& snapshot) override {
+    std::lock_guard<std::mutex> lock(mutex);
+    ++attempts;
+    if (!failedOnce) {
+      failedOnce = true;
+      failedWake.notify_one();
+      return false;
+    }
+    latest[code] = snapshot;
+    return true;
+  }
+  std::vector<std::pair<std::string, std::string>> loadAll() override {
+    std::lock_guard<std::mutex> lock(mutex);
+    return {latest.begin(), latest.end()};
+  }
+};
+
+struct BrokenStore final : caw::SnapshotStore {
+  int attempts = 0;
+  bool save(const std::string&, const std::string&) override {
+    ++attempts;
+    return false;
+  }
+  std::vector<std::pair<std::string, std::string>> loadAll() override { return {}; }
 };
 
 struct FakeHistory final : caw::HistoryStore {
@@ -74,6 +110,37 @@ TEST_CASE("stop saves the newest snapshot of every room") {
   CHECK(store.saves["AAAAAA"] <= 1000);
 }
 
+TEST_CASE("failed snapshots retry without replacing newer room state") {
+  FlakyStore store;
+  FakeHistory history;
+  {
+    PersistQueue queue(store, history);
+    queue.push("AAAAAA", "stale");
+    // Make the first failure deterministic before sending the next state.
+    {
+      std::unique_lock<std::mutex> lock(store.mutex);
+      REQUIRE(store.failedWake.wait_for(lock, std::chrono::seconds(3),
+                                        [&store] { return store.failedOnce; }));
+    }
+    queue.push("AAAAAA", "latest");
+    queue.stop();
+  }
+  CHECK(store.attempts >= 2);
+  REQUIRE(store.latest.count("AAAAAA") == 1);
+  CHECK(store.latest["AAAAAA"] == "latest");
+}
+
+TEST_CASE("a permanent Redis error does not hang shutdown indefinitely") {
+  BrokenStore store;
+  FakeHistory history;
+  {
+    PersistQueue queue(store, history);
+    queue.push("AAAAAA", "synthetic data only");
+    queue.stop();
+  }
+  CHECK(store.attempts == 5);
+}
+
 TEST_CASE("a room survives a registry restart through its snapshot") {
   SessionRegistry first(24, testPacks());
   const auto room = first.create("en");
@@ -90,6 +157,46 @@ TEST_CASE("a room survives a registry restart through its snapshot") {
   CHECK_FALSE(second.restore(room.code, snapshot));
   CHECK_FALSE(second.restore("CCCCCC", "{}"));
   CHECK_FALSE(second.restore("lower!", snapshot));
+}
+
+TEST_CASE("reading or reconnecting to a room does not outlive its Redis snapshot") {
+  using namespace std::chrono_literals;
+  const auto start = SessionRegistry::Clock::now();
+  SessionRegistry registry(1, testPacks());
+  const auto room = registry.create("de", start);
+
+  // Repeated HTTP and WebSocket lookups are not durable activity.
+  REQUIRE(registry.find(room.code, start + 30min) != nullptr);
+  REQUIRE(registry.find(room.code, start + 59min) != nullptr);
+  CHECK(registry.language(room.code, start + 59min) == "de");
+  CHECK_FALSE(registry.language(room.code, start + 61min));
+  CHECK(registry.find(room.code, start + 61min) == nullptr);
+
+  // An already expired room cannot be revived merely by serializing it.
+  CHECK(registry.snapshot(room.code, start + 61min).empty());
+  registry.expire(start + 61min);
+  CHECK(registry.activeCount(start + 61min) == 0);
+}
+
+TEST_CASE("saving a changed room extends the in-memory lifetime alongside Redis") {
+  using namespace std::chrono_literals;
+  const auto start = SessionRegistry::Clock::now();
+  SessionRegistry registry(1, testPacks());
+  const auto room = registry.create("de", start);
+  const auto changedAt = start + 50min;
+
+  // Only a snapshot that will be queued for persistence extends the TTL.
+  const std::string snapshot = registry.snapshot(room.code, changedAt);
+  REQUIRE_FALSE(snapshot.empty());
+  CHECK(registry.find(room.code, start + 100min) != nullptr);
+  CHECK(registry.language(room.code, start + 109min) == "de");
+  CHECK(registry.find(room.code, start + 111min) == nullptr);
+
+  // A restored room gets the same fresh window as the atomic Redis GETEX.
+  SessionRegistry restored(1, testPacks());
+  REQUIRE(restored.restore(room.code, snapshot, start + 100min));
+  CHECK(restored.find(room.code, start + 159min) != nullptr);
+  CHECK(restored.find(room.code, start + 161min) == nullptr);
 }
 
 TEST_CASE("room records keep language, host token and state together") {
