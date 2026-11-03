@@ -58,10 +58,12 @@ if ! git merge-base --is-ancestor "$previous_sha" "$sha"; then
   exit 1
 fi
 
-# A live room (including a temporarily disconnected one) must finish before
-# this single-instance server can be replaced without disturbing its players.
+# No connected clients may be interrupted. An unfinished but fully saved
+# offline room can resume after a server restart.
+offline_actions=""
+offline_seen=0
 requireIdle() {
-  local server_container metrics sessions sockets in_progress
+  local server_container metrics sessions sockets in_progress actions
   server_container="$(compose ps -q server)"
   if [[ -z "$server_container" ]]; then
     echo "FAIL: CAW server container not found" >&2
@@ -99,10 +101,42 @@ requireIdle() {
     echo "FAIL: invalid active match count" >&2
     return 1
   fi
-  if (( in_progress != 0 || sockets != 0 )); then
-    echo "DEFER: CAW is busy ($in_progress active matches, $sockets sockets); no rollout" >&2
+  if (( sockets != 0 )); then
+    echo "DEFER: CAW has $sockets connected sockets; no rollout" >&2
     return 75
   fi
+  if (( in_progress == 0 )); then
+    return 0
+  fi
+
+  # The metric counts unfinished phases, not currently connected players.
+  # Catch actions across the three checks, including a short reconnect.
+  actions="$(awk '$1 == "caw_actions_total" {print $2}' <<< "$metrics")"
+  if [[ ! "$actions" =~ ^[0-9]+$ ]]; then
+    echo "FAIL: cannot establish stable offline-room activity" >&2
+    return 1
+  fi
+  if [[ -n "$offline_actions" && "$offline_actions" != "$actions" ]]; then
+    echo "DEFER: game activity detected between offline-room checks" >&2
+    return 75
+  fi
+  offline_actions="$actions"
+  offline_seen=1
+
+  local redis_container backup_container
+  redis_container="$(compose ps -q redis)"
+  backup_container="$(compose ps -q redis-backup)"
+  if [[ -z "$redis_container" || -z "$backup_container" ]] ||
+     [[ "$(docker inspect --format '{{.State.Health.Status}}' "$backup_container")" != healthy ]]; then
+    echo "FAIL: healthy Redis backup required for an offline-game rollout" >&2
+    return 1
+  fi
+  # Redis and its AOF are never modified; the newest RDB must restore in
+  # an isolated container before we consider restarting any saved game.
+  git show "$sha:bin/verify-local-redis-restore" |
+    CAW_REPO_ROOT="$PWD" bash
+  git show "$sha:bin/verify-offline-games.py" |
+    python3 - "$redis_container" "$sessions" "$in_progress"
 }
 
 # A repeat schedule must not recreate an already deployed release.
@@ -155,7 +189,13 @@ unset registry_token
 # pull before modifying the checkout or restarting either service.
 docker pull "ghcr.io/0b-ivan/caw-server:$tag" >/dev/null
 requireIdle
-sleep 3
+# A brief network dropout must not be mistaken for genuine game inactivity.
+# Keep the action counter stable for at least a minute when rooms are offline.
+if (( offline_seen != 0 )); then
+  sleep 60
+else
+  sleep 3
+fi
 requireIdle
 
 # This dumps Postgres to the pre-existing CAW backup volume. Redis continues
