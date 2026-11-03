@@ -23,6 +23,7 @@ class BlueGreenRollbackTests(unittest.TestCase):
         text = ROLLBACK.read_text()
         subprocess.run(["bash", "-n", str(ROLLBACK)], check=True)
         self.assertIn('active_sockets', text)
+        self.assertIn("for attempt in $(seq 1 40)", text)
         self.assertIn("refuse to stop Green while clients remain connected", text)
         self.assertLess(text.index("stop -t 30 server-green"),
                         text.index("--wait-timeout 90 server"))

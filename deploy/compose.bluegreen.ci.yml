@@ -1,3 +1,5 @@
+# CI ONLY. Compose refuses to parse this overlay without the explicit CI flag.
+x-ci-rehearsal: ${CAW_BLUEGREEN_CI:?Never use the active-Green overlay outside an isolated CI run}
 # CI ONLY: expose the candidate on loopback and make it active after Blue has stopped.
 # Never include this overlay in the Hetzner production Compose invocation.
 services:

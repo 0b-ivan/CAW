@@ -10,9 +10,16 @@ fi
 cd "$(dirname "$0")/.."
 base=(docker compose -f deploy/compose.yml)
 candidate=(docker compose -f deploy/compose.yml -f deploy/compose.bluegreen.yml -f deploy/compose.bluegreen.ci.yml)
-green_metrics="$("${candidate[@]}" exec -T server-green \
-  curl --fail --silent http://127.0.0.1:8080/metrics)"
-active_sockets="$(printf '%s\n' "$green_metrics" | awk '$1 == "caw_sockets" { print $2 }')"
+# Completed bots close their sockets asynchronously. Give them a bounded
+# drain period, then refuse rollback if even one connection remains.
+active_sockets=""
+for attempt in $(seq 1 40); do
+  green_metrics="$("${candidate[@]}" exec -T server-green \
+    curl --fail --silent http://127.0.0.1:8080/metrics)"
+  active_sockets="$(printf '%s\n' "$green_metrics" | awk '$1 == "caw_sockets" { print $2 }')"
+  if [[ "$active_sockets" == "0" ]]; then break; fi
+  sleep 0.25
+done
 if [[ "$active_sockets" != "0" ]]; then
   echo "FAIL: refuse to stop Green while clients remain connected" >&2
   exit 1

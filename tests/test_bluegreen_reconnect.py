@@ -51,6 +51,7 @@ class BlueGreenRehearsalTests(unittest.TestCase):
         caddy = (ROOT / "deploy" / "Caddyfile").read_text()
         hetzner = (ROOT / "deploy" / "Caddyfile.hetzner").read_text()
         self.assertIn('CAW_STANDBY: "0"', overlay)
+        self.assertIn("x-ci-rehearsal: ${CAW_BLUEGREEN_CI:?", overlay)
         self.assertIn("CAW_UPSTREAM: server-green:8080", overlay)
         self.assertIn("127.0.0.1:18082:8080", overlay)
         self.assertIn('CAW_STANDBY: "1"', stable)
