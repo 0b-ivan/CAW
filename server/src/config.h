@@ -12,6 +12,7 @@ struct Config {
   std::string logLevel = "info";
   std::string packsDir = "/app/packs";  // one folder per source, each with a packs.json
   unsigned rateLimitPerMinute = 60;     // room lookups and sockets per client; creating: a tenth
+  bool standby = false;                 // Prewarm only, without owning any game room
 };
 Config readConfig();
 }  // namespace caw

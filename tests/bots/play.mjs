@@ -8,7 +8,10 @@ import { execSync } from "node:child_process";
 
 const base = process.argv[2] ?? "http://localhost:8080";
 const restartCommand = process.argv[3] ?? "";
-const wsBase = base.replace(/^http/, "ws");
+// Optional target for a controlled Blue -> Green restore in an isolated CI stack.
+const takeoverBase = process.argv[4] ?? "";
+let httpBase = base;
+let wsBase = base.replace(/^http/, "ws");
 const names = ["Ada", "Bert", "Cyra", "Dora", "Emil", "Fritz", "Gerd", "Hanna"];
 
 function fail(message) {
@@ -62,6 +65,23 @@ async function resume(code, old) {
   return tab;
 }
 
+// A screen is read-only and must never receive a player's private hand or ticket.
+async function openScreen(code) {
+  const screen = { state: null, closed: false };
+  screen.ws = new WebSocket(`${wsBase}/ws/${code}/screen`);
+  screen.ws.onclose = () => (screen.closed = true);
+  screen.ws.onmessage = (event) => {
+    const frame = JSON.parse(String(event.data));
+    if (frame.type === "screen") screen.state = frame;
+  };
+  await until("big screen snapshot", () => screen.state || screen.closed);
+  if (!screen.state) fail("big screen did not receive a snapshot");
+  for (const key of ["me", "token", "hostToken"]) {
+    if (key in screen.state) fail("big screen received private state");
+  }
+  return screen;
+}
+
 async function claimHost(code, hostToken) {
   const host = await openTab(code);
   host.send({ type: "host", token: hostToken });
@@ -91,7 +111,7 @@ async function waitForRoom(code) {
   const end = Date.now() + 90000;
   while (Date.now() < end) {
     try {
-      if ((await fetch(`${base}/api/sessions/${code}`)).status === 200) return;
+      if ((await fetch(`${httpBase}/api/sessions/${code}`)).status === 200) return;
     } catch {
       // Server still down; try again.
     }
@@ -135,7 +155,14 @@ for (let round = 1; round <= 8; ++round) {
       p.send({ type: "submit", token: p.token, revision: p.state.me.revision,
                slots: [...Array(p.state.pick).keys()] });
     await until("3 answers in", () => players[0].state.submitted >= 3);
+    const oldScreen = takeoverBase ? await openScreen(room.code) : null;
+    // The CI takeover command stops Blue completely before promoting Green.
     execSync(restartCommand, { stdio: "inherit" });
+    if (takeoverBase) {
+      httpBase = takeoverBase;
+      wsBase = takeoverBase.replace(/^http/, "ws");
+      await until("old big screen disconnected", () => oldScreen.closed);
+    }
     await waitForRoom(room.code);
     const back = [];
     for (const old of players) back.push(await resume(room.code, old));
@@ -143,7 +170,14 @@ for (let round = 1; round <= 8; ++round) {
     host = await claimHost(room.code, room.hostToken);
     if (players[0].state.round !== 5 || players[0].state.submitted < 3)
       fail("restart lost the round or its answers");
-    console.log("round 5: server restarted, all 8 seats and 3 answers are back");
+    if (takeoverBase) {
+      const newScreen = await openScreen(room.code);
+      if (newScreen.state.round !== 5 || newScreen.state.phase !== "playing")
+        fail("big screen lost the current round after takeover");
+      newScreen.ws.close();
+    }
+    console.log(`round 5: ${takeoverBase ? "Green restored" : "server restarted"}, ` +
+                "all 8 seats and 3 answers are back");
   }
 
   await answerAll(players);

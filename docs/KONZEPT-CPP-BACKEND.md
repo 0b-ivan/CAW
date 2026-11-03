@@ -832,6 +832,72 @@ separat entworfen und getestet. Zwei Container allein reichen
 **nicht** für unterbrechungsfreie WebSockets, solange Session-Besitz,
 Admission-Stop und gezielte Verbindungsweiterleitung ungeklärt sind.
 
+## 19. Blue/Green-Deployment ohne periodische No-op-Rollouts (Planung, 03.11.2026)
+
+Nach dem einmalig autorisierten erfolgreichen Hetzner-Rollout von `54dc2b61`
+wird die halbstündlich wiederholte Deployment-Prüfung durch ein
+ereignisgetriebenes Blue/Green-Verfahren ersetzt. Der bestehende Cloudflare
+Tunnel und Caddy bleiben der **einzige öffentliche Einstieg**; Redis und
+PostgreSQL samt Volumes bleiben unverändert. Es gibt zwei Slots desselben
+C++-Servers, aber keinen Node-Dienst und keinen zweiten Spieldatenbestand.
+
+**Harte Invariante:** Pro Raum darf zu jedem Zeitpunkt nur genau ein
+Server-Slot Aktionen verarbeiten und Redis-Snapshots schreiben. Beide
+Server dürfen niemals zugleich sämtliche `session:*`-Keys laden und
+Spielbefehle annehmen. Eine zufällige Load-Balancer-Verteilung oder
+reine Client-Cookie-Affinität reicht nicht, weil mehrere Spieler und
+der Big Screen sich unabhängig über denselben Raumcode verbinden.
+
+### Stufe A: isolierter grüner Standby-Slot
+
+Das erste, gefahrlose Inkrement ergänzt einen zweiten Compose-Slot
+(`server-green`) im **Standby-Modus**. Standby lädt keine Redis-Räume,
+registriert **keine** Spiel-REST-Routen und **keine** Spiel-WebSockets.
+Lediglich `/healthz`, `/metrics` und der zustandsfreie
+`/ws/probe`-Handshake stehen zur Verfügung; `/readyz` bleibt 503.
+So kann das neue unveränderliche Image vor dem Umschalten samt
+Abhängigkeiten und Transport geprüft werden, ohne auch nur einen
+Spielraum zu verändern oder heimlich eine zweite Session-Owner-Instanz
+zu starten. Der bestehende Caddy-Upstream bleibt unverändert `server`.
+Die neuen Compose-Einträge werden erst nach eigenem CI-Test verwendet.
+
+### Stufe B: exklusives Ownership-Handoff und Caddy-Switch
+
+Vor jeder Aktivierung müssen eine dauerhafte Raum-Zuordnung und
+ein überprüfbarer, expliziter Zustandsübergang implementiert werden:
+Blue unterbindet neue Raum-Anlagen, die Verarbeitung von Spielaktionen
+wird für das Handoff eingefroren, sämtliche geänderten Zustände müssen
+erfolgreich in Redis vorliegen, danach verliert Blue das Schreibrecht.
+Erst **danach** darf Green diese Räume laden, `/readyz` freigeben
+und Caddy den HTTP-/WSS-Upstream umschalten. Bei Fehlern wird
+vor einer weiteren Aktion eindeutig auf genau einen Besitzer
+zurückgeschaltet. Vorher ist kein produktives Blue/Green erlaubt.
+
+Für echte ununterbrochene WebSocket-Verbindungen sind zusätzlich
+routenstabile Alträume erforderlich: Bereits verbundene Clients
+dürfen auf Blue bleiben, während neu angelegte Räume zu Green gehen,
+und Reconnects müssen denselben Besitzer anhand des Raumcodes
+finden. Das bedarf eines dedizierten Routing-/Ownership-Konzepts;
+zwei Replica-Container und `lb_policy cookie` alleine bieten diese
+Garantie nicht. Alternativ kann ein bewusst angekündigtes, kurzzeitiges
+Ticket-Reconnect-Handoff implementiert werden, aber niemals als
+unterbrechungsfrei bezeichnet werden.
+
+Caddy schließt bei Konfigurations-Reload ohne zusätzliche Einstellung
+bereits laufende Reverse-Proxy-WebSocket-Streams. Der spätere
+Switch muss `stream_close_delay` und die tatsächlichen Verbindungen
+in der gepinnten Caddy-Version testen; ein Timer alleine löst jedoch
+das Raum-Ownership-Problem nicht. Der neue Slot braucht
+HTTPS-/WSS-Host-/State-Abnahme vor Freigabe, ein geordnetes
+Rollback ohne Redis-Löschung und Last-/Restore-Regressionstests.
+
+Erst nach vollständiger produktiver Abnahme wird der
+`*/30 * * * *`-Deploy-Schedule entfernt und die zustandsfreie
+`/ws/probe`-Prüfung unabhängig von Deployments als Monitoring
+fortgeführt. Bis dahin bleibt das bestehende nachgewiesen funktionierende
+Single-Server-Deployment aktiv. Die einmalige Altpartie-Sonderfreigabe
+wird nach der Migration entfernt und darf kein Dauer-Override werden.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
@@ -894,3 +960,81 @@ Damit können Backups starten, obwohl ein regulärer Release aus Rücksicht
 auf gespeicherte laufende Spiele zurückgestellt wird. Diese gezielte
 Backup-Aktivierung ist **keine** Erlaubnis, die bestehende
 Spiel-Leerlaufsperre für Server- oder Caddy-Releases zu umgehen.
+
+### Blue/Green: isolierte Restore-Probe vor der Live-Umschaltung (03.11.2026)
+
+Als zusätzliche CI-Vorstufe testet ein zweiter, zunächst isolierter Container
+die Wiederaufnahme derselben Partie **nach** dem vollständigen Stopp von Blue.
+Ein ausschließlich für CI vorgesehenes Compose-Overlay schaltet Green dazu
+aus dem Standby-Modus und veröffentlicht dessen Port nur auf 127.0.0.1.
+Der Acht-Spieler-Bottest prüft beim Übergang in der laufenden Runde die
+Fortsetzung von drei bereits gespeicherten Antworten, die unveränderten Sitze,
+Ticket-Rotation, Host-Reauthentifizierung und den wiederverbundenen Big Screen
+ohne private Hände. Andere Container und Volumes werden nicht neu erstellt.
+
+**Dies ist kein produktiver Cutover und beweist keine atomare Übergabe.**
+Insbesondere ersetzt ein erfolgreicher Restore-Test weder den bestätigten
+Flush der Persistenzwarteschlange noch die Redis-Eigentümerschaft, das
+Caddy-Routing, Fehler-Rollback oder eine reale HTTPS-/WSS-Abnahme. Bis diese
+Anforderungen separat implementiert und getestet sind, bleibt der Green-Slot
+in Produktions-Compose ausschließlich Standby; es findet kein Slotwechsel statt.
+
+Die Test-Compose-Konfiguration setzt das Caddy-Upstream-Ziel erst **nach**
+dem erfolgreichen Green-Restore auf Green. Für diesen isolierten Test wird
+Caddy kontrolliert neu erstellt; die Spieler verbinden sich danach erneut
+über denselben HTTP-/WebSocket-Einstieg, nicht direkt mit dem Container.
+Der produktive Tunnel und die Hetzner-Caddy-Konfiguration bleiben dabei
+unverändert. Das Testverfahren belegt ausdrücklich **keinen**
+unterbrechungsfreien Caddy-Reload.
+
+Im nächsten ausschließlich lokalen/CI-Schritt erzeugt Green nach der
+Hin-Übergabe einen **synthetischen neuen Raum**. Bei null offenen Sockets
+wird Green vollständig gestoppt, Blue aus denselben Redis-Snapshots
+gestartet und auf vollständigen Raumzählerbestand geprüft. Erst danach
+geht der Test-Caddy zurück zu Blue; der neue Raum muss über den
+gleichen Origin erreichbar sein. Weder dieses Rehearsal noch die
+Caddy-Neuerstellung dürfen in der Produktion laufen. Der reale
+Rollback bedarf weiterhin eines atomaren, generationsgesicherten
+Ownership-Übergangs und einer ausfallsicheren Caddy-Konfigurationsänderung.
+
+### Blue/Green: bestätigte Persistenzbarriere vor dem Raumbesitzwechsel (03.11.2026)
+
+Vor einer künftigen Übergabe muss der abgebende Slot zuerst neue Räume,
+WebSocket-Spielaktionen und Timer-Fortschritte anhalten und die letzten
+vollständigen Snapshots **aller** in-memory Räume einreihen. Eine synchrone
+`PersistQueue::flush(timeout)`-Barriere darf erst dann Erfolg liefern, wenn
+alle bis dahin eingereihten Redis-Snapshots vom Persistenz-Thread bestätigt
+wurden. Sie prüft sowohl die Warteschlange als auch gerade ausgeführte Writes;
+ein vorübergehender oder dauerhafter Redis-Ausfall führt bis zur vollständigen
+Bestätigung zu Timeout / fehlgeschlagener Übergabe, niemals zu Erfolg.
+
+Die Barriere wird **nicht** im normalen Spielpfad pro Aktion aufgerufen;
+vor der späteren Ownership-Übergabe ist die Event-Loop-Zulassung zu sperren,
+damit nach dem Flush kein neuer Spielzustand entsteht. Die Barriere allein
+verhindert weder konkurrierende Prozesse noch einen verspäteten Redis-Write:
+dafür sind atomarer Redis-Raumbesitz mit Generation/Fencing, ein geprüfter
+Green-Restore und ein getrennt abgesicherter Caddy-Umschaltvorgang Pflicht.
+Das bisherige reine CI-Restore-Rehearsal und die Produktionskonfiguration
+bleiben dadurch unverändert. Ein Flush-Timeout darf keinen Slotwechsel auslösen.
+
+### Blue/Green: interne Quiesce-Operation vor der CI-Übergabe (03.11.2026)
+
+Ein aktiver Slot stellt ausschließlich auf seiner eigenen Loopback-Schnittstelle
+`POST /internal/handoff/quiesce` bereit. Caddy und Cloudflare routen diesen
+Pfad **nicht**. Der Aufruf sperrt im einen Event-Loop-Thread neue Raum-Anlagen,
+Schreiboperationen an individuellen Karten, neue Spiel-WebSocket-Upgrades,
+Spielbefehle, Timer-Fortschritt sowie Disconnect-Nebenwirkungen. Alle noch
+geänderten und danach sämtliche vorhandenen Raum-Snapshots werden zur
+Persistenz eingereiht; nur ein erfolgreicher, zeitlich begrenzter
+`PersistQueue::flush` liefert HTTP 200. Bei Redis-Problemen kommt 503;
+der Slot bleibt sicher gesperrt. Nach dem Einfrieren meldet `/readyz` 503,
+während `/healthz` die Abhängigkeiten weiterhin unabhängig prüft.
+
+Die Operation ist absichtlich einseitig und nicht öffentlich rückgängig zu
+machen. Sie ist **keine** Redis-Raumbesitzfreigabe und aktiviert **keinen**
+zweiten Writer. Erst wenn separate, atomare Redis-Owner-/Generationsprüfungen,
+ein sicherer Caddy-Switch und ein Rollback-Protokoll vollständig umgesetzt
+sind, darf diese Operation Teil eines produktiven Deployments werden. Im
+isolierten CI-Rehearsal darf nach bestätigter Quiesce Blue vollständig
+stoppen, bevor Green wiederherstellt; ohne positive Bestätigung bleibt Blue
+weiterhin der einzige Slot und der Test bricht ab.

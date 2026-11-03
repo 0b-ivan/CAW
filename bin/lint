@@ -5,7 +5,8 @@ cd "$(dirname "$0")/.."
 if ! find server/src server/tests -type f \( -name '*.cpp' -o -name '*.h' \) \
   -exec clang-format --dry-run --Werror {} +; then
   # Emit machine-readable formatting suggestions in CI for precise fixes.
-  for path in server/src/net/Messages.cpp server/src/packs/PackLibrary.cpp \
+  for path in server/src/net/Server.cpp server/src/store/PersistQueue.cpp \
+    server/src/net/Messages.cpp server/src/packs/PackLibrary.cpp \
     server/src/session/SessionRegistry.cpp server/src/session/Session.cpp \
     server/tests/store/test_persist.cpp server/tests/net/test_room_messages.cpp \
     server/tests/session/test_session.cpp; do

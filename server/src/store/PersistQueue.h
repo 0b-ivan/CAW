@@ -2,6 +2,7 @@
 // that saves them: Redis for the snapshots, Postgres for the statistics.
 #pragma once
 
+#include <chrono>
 #include <condition_variable>
 #include <map>
 #include <mutex>
@@ -25,6 +26,10 @@ class PersistQueue final {
   void push(const std::string& code, std::string snapshot);
   // Statistics are never replaced, only appended.
   void pushHistory(std::vector<HistoryEvent> events);
+  // Confirm that all pending room snapshots were accepted by Redis. The caller must
+  // stop room mutations first so no newer state is enqueued after this barrier.
+  // Returns false on timeout or if shutdown abandoned a failed write.
+  bool flush(std::chrono::milliseconds timeout);
   // Saves everything still waiting, then ends the thread. Safe to call twice.
   void stop();
 
@@ -35,9 +40,12 @@ class PersistQueue final {
   HistoryStore& history_;
   std::mutex mutex_;
   std::condition_variable wake_;
+  std::condition_variable drained_;
   std::map<std::string, std::string> waiting_;  // code → newest snapshot
   std::vector<HistoryEvent> events_;
   bool stopping_ = false;
+  bool saving_ = false;     // a Redis batch may be in flight while waiting_ is empty
+  bool discarded_ = false;  // shutdown exhausted its Redis retries
   std::thread thread_;
 };
 

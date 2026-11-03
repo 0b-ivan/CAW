@@ -19,7 +19,7 @@
   respond @publicMetrics 404
   @backend path /api /api/* /ws /ws/* /healthz /metrics
   handle @backend {
-    reverse_proxy server:8080
+    reverse_proxy {$CAW_UPSTREAM:server:8080}
   }
   # Every session link opens the same game page; the code is read from the path.
   @session path_regexp ^/s/[A-Za-z0-9]{6}/?$

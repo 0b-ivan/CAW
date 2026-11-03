@@ -44,11 +44,17 @@ class Server final {
   Server& operator=(const Server&) = delete;
 
   void registerRoutes(uWS::App& app);
+  // Green prewarm exposes transport probing, never game routes or sessions.
+  void registerStandbyRoutes(uWS::App& app);
+  // An acknowledged freeze rejects every subsequent game mutation and upgrade.
+  bool acceptingGameTraffic() const { return !quiesced_; }
   // Listens on the port and starts the clock. False if the port cannot be bound.
   bool start(uWS::App& app, int port);
 
  private:
   void registerSessionRoutes(uWS::App& app);
+  // Internal, loopback-only persistence barrier before a future owner handoff.
+  void registerHandoffRoute(uWS::App& app);
   // Transport-only public probe: never creates or persists a game room.
   void registerProbeSocket(uWS::App& app);
   // False, after answering 429, if this client has used up its requests on `limiter`.
@@ -78,6 +84,7 @@ class Server final {
   RateLimiter createLimit_;
   RateLimiter roomLimit_;
   const std::atomic<bool>& stop_;
+  bool quiesced_ = false;
   uWS::App* app_ = nullptr;
   struct us_listen_socket_t* listenSocket_ = nullptr;
   struct us_timer_t* timer_ = nullptr;

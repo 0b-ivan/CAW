@@ -33,6 +33,13 @@ void PersistQueue::pushHistory(std::vector<HistoryEvent> events) {
   wake_.notify_one();
 }
 
+bool PersistQueue::flush(std::chrono::milliseconds timeout) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  const bool complete = drained_.wait_for(
+      lock, timeout, [this] { return discarded_ || (waiting_.empty() && !saving_); });
+  return complete && !discarded_;
+}
+
 void PersistQueue::stop() {
   {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -51,6 +58,7 @@ void PersistQueue::run() {
       std::unique_lock<std::mutex> lock(mutex_);
       wake_.wait(lock, [this] { return stopping_ || !waiting_.empty() || !events_.empty(); });
       if (waiting_.empty() && events_.empty()) return;  // stopping, and nothing left to save
+      saving_ = true;
       batch.swap(waiting_);
       events.swap(events_);
     }
@@ -64,6 +72,11 @@ void PersistQueue::run() {
       waiting_.try_emplace(code, snapshot);
     }
     if (!events.empty()) history_.record(events);
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      saving_ = false;
+    }
+    drained_.notify_all();
     if (!failed) {
       shutdownFailures = 0;
       continue;
@@ -75,6 +88,8 @@ void PersistQueue::run() {
       if (++shutdownFailures >= 5) {
         log::error("Room snapshots remain unsaved after shutdown retries");
         waiting_.clear();
+        discarded_ = true;
+        drained_.notify_all();
       }
     } else {
       // Retry after an outage, but never spin at full speed while Redis is down.

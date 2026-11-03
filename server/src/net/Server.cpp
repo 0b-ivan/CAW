@@ -31,12 +31,33 @@ void jsonReply(uWS::HttpResponse<false>* response, std::string_view status,
       ->end(payload);
 }
 
+// uWebSockets renders IPv6 addresses as uncompressed hex blocks. Compare the
+// actual binary peer address, never its formatted text or spoofable HTTP headers.
+bool isLoopbackAddress(std::string_view address) {
+  if (address.size() == 4)
+    return static_cast<unsigned char>(address[0]) == 127 && address[1] == 0 && address[2] == 0 &&
+           static_cast<unsigned char>(address[3]) == 1;
+  if (address.size() != 16) return false;
+  bool ipv6Loopback = address[15] == 1;
+  for (std::size_t index = 0; index < 15; ++index)
+    if (address[index] != 0) ipv6Loopback = false;
+  if (ipv6Loopback) return true;
+  // Linux can represent a local IPv4 connection as ::ffff:127.0.0.1.
+  for (std::size_t index = 0; index < 10; ++index)
+    if (address[index] != 0) return false;
+  return static_cast<unsigned char>(address[10]) == 255 &&
+         static_cast<unsigned char>(address[11]) == 255 &&
+         static_cast<unsigned char>(address[12]) == 127 && address[13] == 0 && address[14] == 0 &&
+         address[15] == 1;
+}
+
 void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions,
-                PersistQueue& persist) {
+                PersistQueue& persist, const bool& quiesced) {
   auto request = std::make_shared<RequestBody>();
   // onAborted keeps the request buffer alive until the client disconnects.
   response->onAborted([request]() { request->content.clear(); });
-  response->onData([response, &sessions, &persist, request](std::string_view chunk, bool final) {
+  response->onData([response, &sessions, &persist, &quiesced, request](std::string_view chunk,
+                                                                       bool final) {
     if (!request->tooLarge) {
       if (chunk.size() > 1024 - request->content.size())
         request->tooLarge = true;
@@ -44,6 +65,11 @@ void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions,
         request->content.append(chunk);
     }
     if (!final) return;
+    // A slow request may finish after the handoff barrier started.
+    if (quiesced) {
+      jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+      return;
+    }
     if (request->tooLarge) {
       jsonReply(response, "413 Payload Too Large", Messages::errorResponse("body_too_large"));
       return;
@@ -92,11 +118,36 @@ bool Server::admitted(RateLimiter& limiter, uWS::HttpResponse<false>* response,
 }
 
 void Server::registerRoutes(uWS::App& app) {
+  registerHandoffRoute(app);
   registerSessionRoutes(app);
   // Register the exact probe route before the session-code wildcard.
   registerProbeSocket(app);
   registerGameSocket(app, false);
   registerGameSocket(app, true);
+}
+
+void Server::registerStandbyRoutes(uWS::App& app) { registerProbeSocket(app); }
+
+void Server::registerHandoffRoute(uWS::App& app) {
+  app.post("/internal/handoff/quiesce", [this](auto* response, auto*) {
+    if (!isLoopbackAddress(response->getRemoteAddress())) {
+      jsonReply(response, "403 Forbidden", Messages::errorResponse("forbidden"));
+      return;
+    }
+    if (!quiesced_) {
+      // This runs on the one game thread, before any further socket callbacks.
+      quiesced_ = true;
+      persistDirty(true);
+      for (const auto& room : sessions_.all()) persist(room.first);
+    }
+    if (!persist_.flush(std::chrono::seconds(5))) {
+      log::error("Cannot confirm all room snapshots before handoff");
+      jsonReply(response, "503 Service Unavailable",
+                Messages::errorResponse("snapshot_unavailable"));
+      return;
+    }
+    jsonReply(response, "200 OK", R"({"status":"persisted"})");
+  });
 }
 
 void Server::registerProbeSocket(uWS::App& app) {
@@ -141,6 +192,10 @@ void Server::registerSessionRoutes(uWS::App& app) {
     jsonReply(response, "200 OK", Messages::customCards(sessions_.customCards(code)));
   });
   app.put("/api/sessions/:code/cards", [this](auto* response, auto* request) {
+    if (quiesced_) {
+      jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+      return;
+    }
     if (!admitted(roomLimit_, response, request)) return;
     const std::string code(request->getParameter(0));
     const std::string_view authorization = request->getHeader("authorization");
@@ -164,6 +219,10 @@ void Server::registerSessionRoutes(uWS::App& app) {
         jsonReply(response, "413 Payload Too Large", Messages::errorResponse("body_too_large"));
         return;
       }
+      if (quiesced_) {
+        jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+        return;
+      }
       auto pack = Messages::readCustomCards(body->content);
       if (!pack) {
         jsonReply(response, "400 Bad Request", Messages::errorResponse("invalid_cards"));
@@ -181,7 +240,12 @@ void Server::registerSessionRoutes(uWS::App& app) {
     });
   });
   auto createHandler = [this](auto* response, auto* request) {
-    if (admitted(createLimit_, response, request)) createRoom(response, sessions_, persist_);
+    if (quiesced_) {
+      jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+      return;
+    }
+    if (admitted(createLimit_, response, request))
+      createRoom(response, sessions_, persist_, quiesced_);
   };
   app.post("/api/sessions", createHandler);
   app.get("/api/sessions/:code", [this](auto* response, auto* request) {
@@ -203,6 +267,10 @@ void Server::registerGameSocket(uWS::App& app, bool screen) {
   // Above this, uWebSockets drops frames for that socket; it is resynced on drain.
   behavior.maxBackpressure = 64 * 1024;
   behavior.upgrade = [this, screen](auto* response, auto* request, auto* context) {
+    if (quiesced_) {
+      jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+      return;
+    }
     if (!admitted(roomLimit_, response, request)) return;
     const std::string code(request->getParameter(0));
     if (sessions_.find(code) == nullptr) {
@@ -233,6 +301,10 @@ void Server::registerGameSocket(uWS::App& app, bool screen) {
 }
 
 void Server::onMessage(Socket* socket, std::string_view text) {
+  if (quiesced_) {
+    socket->send(Protocol::error("server_draining"), uWS::OpCode::TEXT);
+    return;
+  }
   SocketData& data = *socket->getUserData();
   Session* session = sessions_.find(data.code);
   if (session == nullptr) {
@@ -256,6 +328,7 @@ void Server::onMessage(Socket* socket, std::string_view text) {
 }
 
 void Server::onDrain(Socket* socket) {
+  if (quiesced_) return;
   SocketData& data = *socket->getUserData();
   if (!data.needsResync || socket->getBufferedAmount() > 0) return;
   Session* session = sessions_.find(data.code);
@@ -269,6 +342,7 @@ void Server::onClose(Socket* socket) {
   const SocketData data = *socket->getUserData();
   sockets_.erase(data.id);
   metrics_.sockets = sockets_.size();
+  if (quiesced_) return;
   Session* session = sessions_.find(data.code);
   if (session == nullptr) return;
   session->connectionClosed(data.id, millisNow());
@@ -306,6 +380,7 @@ void Server::persist(const std::string& code) {
 
 void Server::tickAll() {
   if (stop_) return shutdown();
+  if (quiesced_) return;
   const auto started = std::chrono::steady_clock::now();
   sessions_.expire();
   const std::uint32_t now = millisNow();

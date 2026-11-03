@@ -383,3 +383,32 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] Neue Räume nur auf Green, vorhandene WebSockets bis Spielende auf Blue; Redis/PostgreSQL unverändert
 - [ ] Sicheren Rückschwenk, Wiederaufnahme über Tickets und wiederholte Slot-Switch-Tests nachweisen
 - [ ] Bisheriges halbstündliches Deploy-Schedule nach erfolgreicher Abnahme durch eventgetriebenen Deploy ersetzen
+
+## Blue/Green-Deployment: Stufe A – separater Standby-Server (Issue #43)
+
+- [x] C++-Backend-Konzept: Eigentümerschaft je Raum und gestuftes Blue/Green festlegen
+- [x] `CAW_STANDBY=1` lädt keine Redis-Sitzungen, initialisiert keine Statistik-Schreibpfade
+- [x] Standby bietet nur Health, Metrics und `/ws/probe`, keine Game-REST-/WS-Routen
+- [x] `/readyz` unterscheidet Standby (503) von aktiviertem Spielserver (200)
+- [x] Zweiten Compose-Service `server-green` ohne Host-Port; Caddy bleibt zunächst auf `server`
+- [x] Compose-CI: Standby erstellt keine Sessions, bleibt nicht spielbereit und ist gesund
+- [ ] PR-CI für Stufe A komplett grün und Architektur auf realem Caddy/Compose testen
+- [ ] Stufe B: langlebige Eigentümerschaft, Cutover/Drain, Caddy-Switch und Rollback bauen
+- [ ] Reconnect und laufende Spiele bei Slotwechsel durch Browser-/Lasttest nachweisen
+- [ ] Nach Abnahme halbstündliches Deploy-Schedule abschalten und Einmal-Override entfernen
+
+### Blue/Green: isolierter Restore-Probelauf (Issue #43)
+
+- [x] Eigenständigen Green-Container nach vollständig gestopptem Blue aus Redis starten
+- [x] Im isolierten CI-Lauf nach Green-Readiness Caddy auf Green richten und über denselben öffentlichen Test-Origin reconnecten
+- [x] Acht Spieler mit rotierenden Tickets, gespeicherten Antworten und Big Screen im CI-Probelauf prüfen (Test im PR; CI-Abnahme noch ausstehend)
+- [x] Redis-Snapshot-Flush mit bestätigten In-Flight-Writes, Timeout und Redis-Ausfalltests ergänzt
+- [x] Interne, Loopback-beschränkte Quiesce: keine neuen Räume/Spielaktionen/Timer/
+  Kartenänderungen oder WebSocket-Upgrades nach Beginn der Übergabe
+- [x] CI-Rehearsal für Hin- und Rückweg verlangt bestätigte Quiesce vor Serverstopp
+- [x] Interne Quiesce akzeptiert nur binären Loopback-Peer; anderer Compose-Container erhält HTTP 403
+- [x] Vollständige Quiesce-Integration, 20/20 CTest, Lint, Browser, Lasttest, Restore und Hin-/Rückweg in PR-CI grün (Run 41651396779)
+- [ ] Fail-closed Redis-Ownership/Fencing, produktives Caddy-Routing und Rollback umsetzen
+- [ ] Öffentliche Live-Abnahme mit Reconnect und Last-/Restore-Regressionen durchführen
+
+- [x] Isolierten Rückweg Green → Blue mit einem erst auf Green erstellten Raum automatisiert prüfen (CI-Abnahme ausstehend)
