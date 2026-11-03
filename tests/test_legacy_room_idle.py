@@ -85,7 +85,10 @@ class LegacyRoomIdleTests(unittest.TestCase):
 
     def test_deploy_never_reenables_legacy_force_migration(self):
         deploy = (ROOT / "bin" / "deploy-hetzner").read_text()
-        self.assertIn("if (( in_progress != 0 || sockets != 0 )); then", deploy)
+        self.assertIn("if (( sockets != 0 )); then", deploy)
+        self.assertIn("if (( in_progress == 0 )); then", deploy)
+        self.assertIn("verify-offline-games.py", deploy)
+        self.assertIn("verify-local-redis-restore", deploy)
         self.assertIn('python3 - "$redis_container" "$sessions"', deploy)
         self.assertIn("if (( sockets != 0 )); then", deploy)
         self.assertNotIn("fc59685e124a00c4666c53947fd2e0f174848b30", deploy)
