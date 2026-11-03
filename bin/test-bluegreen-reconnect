@@ -21,6 +21,18 @@ if [[ ! "$expected_rooms" =~ ^[1-9][0-9]*$ ]]; then
   exit 1
 fi
 
+# Freeze the old game thread first. HTTP 200 confirms even in-flight Redis
+# writes; a 503 leaves Blue as the only server and forbids takeover.
+"${base[@]}" exec -T server \
+  curl --fail --silent --show-error --max-time 10 --request POST \
+  http://127.0.0.1:8080/internal/handoff/quiesce | grep -qx '{"status":"persisted"}'
+ready_status="$("${base[@]}" exec -T server \
+  curl --silent --output /dev/null --write-out '%{http_code}' \
+  http://127.0.0.1:8080/readyz)"
+if [[ "$ready_status" != 503 ]]; then
+  echo "FAIL: Blue accepted game traffic after quiesce" >&2
+  exit 1
+fi
 # The active owner must be completely stopped before Green can load its rooms.
 curl --fail --silent --show-error http://127.0.0.1:8080/healthz >/dev/null
 "${base[@]}" stop -t 30 server

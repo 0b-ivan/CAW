@@ -92,6 +92,7 @@ bool Server::admitted(RateLimiter& limiter, uWS::HttpResponse<false>* response,
 }
 
 void Server::registerRoutes(uWS::App& app) {
+  registerHandoffRoute(app);
   registerSessionRoutes(app);
   // Register the exact probe route before the session-code wildcard.
   registerProbeSocket(app);
@@ -100,6 +101,29 @@ void Server::registerRoutes(uWS::App& app) {
 }
 
 void Server::registerStandbyRoutes(uWS::App& app) { registerProbeSocket(app); }
+
+void Server::registerHandoffRoute(uWS::App& app) {
+  app.post("/internal/handoff/quiesce", [this](auto* response, auto*) {
+    const std::string_view peer = response->getRemoteAddressAsText();
+    if (peer != "127.0.0.1" && peer != "::1" && peer != "::ffff:127.0.0.1") {
+      jsonReply(response, "403 Forbidden", Messages::errorResponse("forbidden"));
+      return;
+    }
+    if (!quiesced_) {
+      // This runs on the one game thread, before any further socket callbacks.
+      quiesced_ = true;
+      persistDirty(true);
+      for (const auto& room : sessions_.all()) persist(room.first);
+    }
+    if (!persist_.flush(std::chrono::seconds(5))) {
+      log::error("Cannot confirm all room snapshots before handoff");
+      jsonReply(response, "503 Service Unavailable",
+                Messages::errorResponse("snapshot_unavailable"));
+      return;
+    }
+    jsonReply(response, "200 OK", R"({"status":"persisted"})");
+  });
+}
 
 void Server::registerProbeSocket(uWS::App& app) {
   uWS::App::WebSocketBehavior<SocketData> behavior;
@@ -143,6 +167,10 @@ void Server::registerSessionRoutes(uWS::App& app) {
     jsonReply(response, "200 OK", Messages::customCards(sessions_.customCards(code)));
   });
   app.put("/api/sessions/:code/cards", [this](auto* response, auto* request) {
+    if (quiesced_) {
+      jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+      return;
+    }
     if (!admitted(roomLimit_, response, request)) return;
     const std::string code(request->getParameter(0));
     const std::string_view authorization = request->getHeader("authorization");
@@ -166,6 +194,10 @@ void Server::registerSessionRoutes(uWS::App& app) {
         jsonReply(response, "413 Payload Too Large", Messages::errorResponse("body_too_large"));
         return;
       }
+      if (quiesced_) {
+        jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+        return;
+      }
       auto pack = Messages::readCustomCards(body->content);
       if (!pack) {
         jsonReply(response, "400 Bad Request", Messages::errorResponse("invalid_cards"));
@@ -183,6 +215,10 @@ void Server::registerSessionRoutes(uWS::App& app) {
     });
   });
   auto createHandler = [this](auto* response, auto* request) {
+    if (quiesced_) {
+      jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+      return;
+    }
     if (admitted(createLimit_, response, request)) createRoom(response, sessions_, persist_);
   };
   app.post("/api/sessions", createHandler);
@@ -205,6 +241,10 @@ void Server::registerGameSocket(uWS::App& app, bool screen) {
   // Above this, uWebSockets drops frames for that socket; it is resynced on drain.
   behavior.maxBackpressure = 64 * 1024;
   behavior.upgrade = [this, screen](auto* response, auto* request, auto* context) {
+    if (quiesced_) {
+      jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+      return;
+    }
     if (!admitted(roomLimit_, response, request)) return;
     const std::string code(request->getParameter(0));
     if (sessions_.find(code) == nullptr) {
@@ -235,6 +275,10 @@ void Server::registerGameSocket(uWS::App& app, bool screen) {
 }
 
 void Server::onMessage(Socket* socket, std::string_view text) {
+  if (quiesced_) {
+    socket->send(Protocol::error("server_draining"), uWS::OpCode::TEXT);
+    return;
+  }
   SocketData& data = *socket->getUserData();
   Session* session = sessions_.find(data.code);
   if (session == nullptr) {
@@ -258,6 +302,7 @@ void Server::onMessage(Socket* socket, std::string_view text) {
 }
 
 void Server::onDrain(Socket* socket) {
+  if (quiesced_) return;
   SocketData& data = *socket->getUserData();
   if (!data.needsResync || socket->getBufferedAmount() > 0) return;
   Session* session = sessions_.find(data.code);
@@ -271,6 +316,7 @@ void Server::onClose(Socket* socket) {
   const SocketData data = *socket->getUserData();
   sockets_.erase(data.id);
   metrics_.sockets = sockets_.size();
+  if (quiesced_) return;
   Session* session = sessions_.find(data.code);
   if (session == nullptr) return;
   session->connectionClosed(data.id, millisNow());
@@ -308,6 +354,7 @@ void Server::persist(const std::string& code) {
 
 void Server::tickAll() {
   if (stop_) return shutdown();
+  if (quiesced_) return;
   const auto started = std::chrono::steady_clock::now();
   sessions_.expire();
   const std::uint32_t now = millisNow();

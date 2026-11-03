@@ -42,6 +42,10 @@ if [[ ! "$expected_rooms" =~ ^[1-9][0-9]*$ ]]; then
   exit 1
 fi
 
+# The reverse handoff also needs an acknowledged last Redis snapshot.
+"${candidate[@]}" exec -T server-green \
+  curl --fail --silent --show-error --max-time 10 --request POST \
+  http://127.0.0.1:8080/internal/handoff/quiesce | grep -qx '{"status":"persisted"}'
 # Only one process may own rooms: stop Green before starting Blue.
 "${candidate[@]}" stop -t 30 server-green
 green_id="$("${candidate[@]}" ps -aq server-green)"

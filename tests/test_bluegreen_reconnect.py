@@ -33,6 +33,10 @@ class BlueGreenRehearsalTests(unittest.TestCase):
         self.assertIn('stop -t 30 server', content)
         self.assertIn("docker inspect --format", content)
         self.assertIn("http://127.0.0.1:18082/readyz", content)
+        self.assertIn("/internal/handoff/quiesce", content)
+        self.assertIn('ready_status" != 503', content)
+        self.assertLess(content.index("/internal/handoff/quiesce"),
+                        content.index("stop -t 30 server"))
         self.assertIn('awk \'$1 == "caw_sessions" { print $2 }\'', content)
         self.assertIn("Green did not restore every room", content)
         self.assertLess(content.index("restored_rooms="),
@@ -57,6 +61,8 @@ class BlueGreenRehearsalTests(unittest.TestCase):
         self.assertIn('CAW_STANDBY: "1"', stable)
         self.assertNotIn("CAW_UPSTREAM:", stable)
         self.assertIn("reverse_proxy {$CAW_UPSTREAM:server:8080}", caddy)
+        self.assertNotIn("/internal/handoff", caddy)
+        self.assertNotIn("/internal/handoff", hetzner)
         self.assertIn("reverse_proxy server:8080", hetzner)
 
 

@@ -80,7 +80,7 @@ int main() {
     else
       server.registerRoutes(app);
     app.get("/readyz", [&](auto* response, auto*) {
-      const bool ready = !config.standby && caw::healthy(config);
+      const bool ready = !config.standby && server.acceptingGameTraffic() && caw::healthy(config);
       response->writeStatus(ready ? "200 OK" : "503 Service Unavailable")
           ->writeHeader("Content-Type", "text/plain; charset=utf-8")
           ->writeHeader("Cache-Control", "no-store")

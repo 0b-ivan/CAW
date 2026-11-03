@@ -32,6 +32,9 @@ class BlueGreenRollbackTests(unittest.TestCase):
         self.assertLess(text.index("restored_rooms="),
                         text.index("--wait-timeout 90 caddy"))
         self.assertIn("Green-created room on Blue", text)
+        self.assertIn("/internal/handoff/quiesce", text)
+        self.assertLess(text.index("/internal/handoff/quiesce"),
+                        text.index("stop -t 30 server-green"))
         self.assertNotIn("docker compose down", text)
         self.assertNotIn("--volumes", text)
         self.assertNotIn("FLUSHALL", text)
