@@ -649,6 +649,54 @@ zurückgerollt, wenn genau dieser Lauf vorher ein Release installiert hat.
 Diese Status-Unterscheidung verändert weder die Spiel-Leerlaufsperre noch
 Redis, PostgreSQL, laufende Sitzungen oder den Cloudflare-Tunnel.
 
+### Fehlklassifizierte Offline-Partien beim Rollout (03.11.2026)
+
+`caw_active_games` zählt **unfertige Spielphasen** (Playing, Judging,
+Reveal), unabhängig davon, ob noch jemand spielt. Nach dem erfolgreichen
+Erst-Upgrade blockierte deshalb **eine** gespeicherte Offline-Partie bei
+`caw_sockets == 0` den nächsten Release trotz expliziter
+Betreiberbestätigung, dass niemand mehr spielt. Das ist kein Hinweis auf
+eine live genutzte Sitzung. Eine Partie darf dabei aber nicht verloren gehen.
+
+Für den **regulären** Deploy wird daher zwischen verbundenen und nur
+gespeicherten Partien unterschieden:
+
+- **Offene WebSockets:** Rollout immer zurückstellen, unabhängig von der
+  Spielphase und auch bei nur einer Verbindung.
+- **Null WebSockets und null unfertige Partien:** normaler Leerlauf.
+- **Null WebSockets, aber unfertige Partien:** ein Rollout ist möglich,
+  sofern *jede* im aktuellen Server als unfertig gezählte Partie als
+  gültiger, unfertiger Redis-Room-Snapshot vorliegt, keine zusätzlichen
+  persistierten aktiven Partien unbemerkt bleiben, alle geprüften
+  Snapshots gültig sind, der Redis-Backup-Worker gesund ist und die
+  isolierte RDB-Restore-Probe erfolgreich ist. Fehlende/ungültige Daten
+  verhindern den Rollout; es werden weder Rooms gelöscht noch beendet.
+
+Die Checkroutine liest `session:*` ausschließlich lokal mit `SCAN`/`GET`,
+verlangt gültige Roomcodes und die JSON-Spielphase 0–4, zählt die
+persistierten aktiven Phasen und vergleicht sie mit `caw_active_games`.
+Ein kleinerer Redis-Roombestand als `caw_sessions` ist nur tolerierbar,
+weil inaktive Räume durch TTL bereits fehlen können; *alle aktiven*
+Rooms müssen weiterhin gespeichert sein. Private Inhalte oder Codes
+dürfen niemals in Logs oder CI-Ausgaben gelangen.
+
+Bei Offline-Partien sind außerdem `caw_actions_total` und
+`caw_sockets` bei drei Prüfungen stabil: vor dem Image-Pull, danach
+sowie nach 60 Sekunden zusätzlicher Ruhezeit direkt vor dem Wechsel.
+Ein neuer Spielbefehl oder eine Verbindung während einer Prüfung
+bricht ab; der Single-Instance-Betrieb kann das verbleibende kleine
+Race-Fenster nach der letzten Prüfung nicht vollständig eliminieren.
+Beim Neustart leert der Server seine Persistenzwarteschlange und liest
+die erhaltenen Redis-Snapshots wieder ein. Die in CI getesteten
+Reconnect-Tickets bleiben gültig. Ein späterer Reconnect kann den
+Socket neu öffnen und den fortgesetzten Raum wiederfinden.
+
+Diese **datenbewahrende** Regel gilt nicht als Freibrief, eine
+gespeicherte Partie zu löschen. Sie ersetzt keine damals einmalige
+Zwangsmigration und verändert keine Spielregeln. Im Zweifelsfall
+wird zurückgestellt. Das Produktiv-Release wartet damit nicht mehr
+endlos auf das Ende einer ohnehin nicht verbundenen Partie.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
