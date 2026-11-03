@@ -158,9 +158,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Verify existing release via room-free public WSS probe
+        if: steps.rollout.outputs.unchanged == 'true'
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if node bin/hetzner-wss-probe.mjs; then
+              exit 0
+            fi
+            echo "Session-free WSS probe attempt $attempt failed"
+            sleep 5
+          done
+          exit 1
       - name: Verify the public HTTPS and WebSocket handshake
         id: wss
-        if: steps.rollout.outputs.deferred != 'true'
+        if: steps.rollout.outputs.changed == 'true'
         run: |
           set -euo pipefail
           for attempt in 1 2 3; do
