@@ -222,6 +222,10 @@ jobs:
       # fencing are separate acceptance criteria.
       - name: Rehearse stopped-Blue to active-Green room and WebSocket restore
         run: |
+          # The preceding flood test deliberately sets the live limit to 60/min.
+          # Restore the CI limit before opening ten more authenticated sockets.
+          RATE_LIMIT_PER_MINUTE=1000000 docker compose -f deploy/compose.yml \
+            up --detach --wait --wait-timeout 90 server
           CAW_BLUEGREEN_CI=1 node tests/bots/play.mjs http://localhost:8080 \
             "bash bin/test-bluegreen-reconnect" http://localhost:8080
       - name: Compose diagnostics
