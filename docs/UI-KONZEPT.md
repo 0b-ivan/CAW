@@ -385,6 +385,34 @@ keine abgeschnittenen Karten.
   Überspringen, erneuten Aufruf, `prefers-reduced-motion` und
   320/390/1280-px-Ansichten ohne horizontalen Überlauf.
 
+### Mobile Menü-Zugänglichkeit und Fokus bei Live-Updates (2026-11-03)
+
+Die bestehende, bildschirmfüllende Menüebene ist für Touch und
+Tastatur als **modaler Dialog** zu behandeln, ohne das visuelle
+Konzept zu verändern. Beim Öffnen erhalten die übrigen Elemente der
+Spielseite `inert`, sodass Tastatur, Android TalkBack und iOS
+VoiceOver keine unsichtbaren oder verdeckten Spielaktionen erreichen.
+Der Fokus beginnt auf `SCHLIESSEN`, `Tab` und `Shift+Tab`
+bleiben innerhalb des Menüs, `Escape` schließt es und setzt den
+Fokus auf `MENÜ` zurück. Der Dialog besitzt einen aus der
+Übersetzungstabelle gespeisten, zugänglichen Titel.
+
+Spielzustandsänderungen treffen auch ein, während das Menü geöffnet
+ist. Ein solches Rendern darf den aktiven Menüknopf oder das
+Eingabefeld des Karteneditors nicht aus dem Fokus werfen. Bei
+derselben Unterseite werden der Scrollstand des Menüs und, bei
+Texteingaben, Auswahl-/Caret-Position bewahrt. Beim Wechsel auf
+eine andere Menü-Unterseite beginnt die Liste oben und der Fokus
+wechselt zu ihrer Zurück-Aktion. Die vorhandenen Mindest-Tippflächen
+(48 px), zwei Sprachen und die aktuelle visuelle Gestaltung bleiben
+unverändert.
+
+Browser-Regression: die modale Semantik und die Tastaturschleife,
+Live-Update bei fokussierter Menüaktion, editorische Texteingabe
+sowie eine Android-/iPhone-große Touch-Ansicht bei 320–390 px.
+Eine Playwright-Touch-Emulation ersetzt die finale Hardware-Abnahme
+auf einem echten Gerät ausdrücklich nicht.
+
 ## 8. Nicht vorgesehen
 
 Farbthemes, Sounds, Konfetti, Avatare, Emojis in der UI, Chat sowie
