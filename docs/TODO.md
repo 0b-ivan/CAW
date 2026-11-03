@@ -402,7 +402,12 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Eigenständigen Green-Container nach vollständig gestopptem Blue aus Redis starten
 - [x] Im isolierten CI-Lauf nach Green-Readiness Caddy auf Green richten und über denselben öffentlichen Test-Origin reconnecten
 - [x] Acht Spieler mit rotierenden Tickets, gespeicherten Antworten und Big Screen im CI-Probelauf prüfen (Test im PR; CI-Abnahme noch ausstehend)
-- [ ] Fail-closed Ownership, bestätigte Quiesce-Persistenz, produktives Caddy-Routing und Rollback umsetzen
+- [x] Redis-Snapshot-Flush mit bestätigten In-Flight-Writes, Timeout und Redis-Ausfalltests ergänzt
+- [x] Interne, Loopback-beschränkte Quiesce: keine neuen Räume/Spielaktionen/Timer/
+  Kartenänderungen oder WebSocket-Upgrades nach Beginn der Übergabe
+- [x] CI-Rehearsal für Hin- und Rückweg verlangt bestätigte Quiesce vor Serverstopp
+- [ ] Vollständige Quiesce-Integration in CI grün abnehmen
+- [ ] Fail-closed Redis-Ownership/Fencing, produktives Caddy-Routing und Rollback umsetzen
 - [ ] Öffentliche Live-Abnahme mit Reconnect und Last-/Restore-Regressionen durchführen
 
 - [x] Isolierten Rückweg Green → Blue mit einem erst auf Green erstellten Raum automatisiert prüfen (CI-Abnahme ausstehend)
