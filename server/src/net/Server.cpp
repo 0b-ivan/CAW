@@ -32,11 +32,11 @@ void jsonReply(uWS::HttpResponse<false>* response, std::string_view status,
 }
 
 void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions,
-                PersistQueue& persist) {
+                PersistQueue& persist, const bool& quiesced) {
   auto request = std::make_shared<RequestBody>();
   // onAborted keeps the request buffer alive until the client disconnects.
   response->onAborted([request]() { request->content.clear(); });
-  response->onData([response, &sessions, &persist, request](std::string_view chunk, bool final) {
+  response->onData([response, &sessions, &persist, &quiesced, request](std::string_view chunk, bool final) {
     if (!request->tooLarge) {
       if (chunk.size() > 1024 - request->content.size())
         request->tooLarge = true;
@@ -44,6 +44,11 @@ void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions,
         request->content.append(chunk);
     }
     if (!final) return;
+    // A slow request may finish after the handoff barrier started.
+    if (quiesced) {
+      jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
+      return;
+    }
     if (request->tooLarge) {
       jsonReply(response, "413 Payload Too Large", Messages::errorResponse("body_too_large"));
       return;
@@ -219,7 +224,8 @@ void Server::registerSessionRoutes(uWS::App& app) {
       jsonReply(response, "503 Service Unavailable", Messages::errorResponse("server_draining"));
       return;
     }
-    if (admitted(createLimit_, response, request)) createRoom(response, sessions_, persist_);
+    if (admitted(createLimit_, response, request))
+      createRoom(response, sessions_, persist_, quiesced_);
   };
   app.post("/api/sessions", createHandler);
   app.get("/api/sessions/:code", [this](auto* response, auto* request) {

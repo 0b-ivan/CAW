@@ -35,6 +35,11 @@ class BlueGreenRehearsalTests(unittest.TestCase):
         self.assertIn("http://127.0.0.1:18082/readyz", content)
         self.assertIn("/internal/handoff/quiesce", content)
         self.assertIn('ready_status" != 503', content)
+        self.assertIn('create_status" != 503', content)
+        server = (ROOT / "server" / "src" / "net" / "Server.cpp").read_text()
+        self.assertIn("PersistQueue& persist, const bool& quiesced", server)
+        self.assertIn("&quiesced, request", server)
+        self.assertIn("if (quiesced) {", server)
         self.assertLess(content.index("/internal/handoff/quiesce"),
                         content.index("stop -t 30 server"))
         self.assertIn('awk \'$1 == "caw_sessions" { print $2 }\'', content)

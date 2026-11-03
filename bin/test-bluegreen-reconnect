@@ -30,7 +30,15 @@ ready_status="$("${base[@]}" exec -T server \
   curl --silent --output /dev/null --write-out '%{http_code}' \
   http://127.0.0.1:8080/readyz)"
 if [[ "$ready_status" != 503 ]]; then
-  echo "FAIL: Blue accepted game traffic after quiesce" >&2
+  echo "FAIL: Blue reported ready after quiesce" >&2
+  exit 1
+fi
+create_status="$("${base[@]}" exec -T server \
+  curl --silent --output /dev/null --write-out '%{http_code}' \
+  -H 'Content-Type: application/json' -d '{"language":"de"}' \
+  http://127.0.0.1:8080/api/sessions)"
+if [[ "$create_status" != 503 ]]; then
+  echo "FAIL: Blue accepted a new room after quiesce" >&2
   exit 1
 fi
 # The active owner must be completely stopped before Green can load its rooms.
