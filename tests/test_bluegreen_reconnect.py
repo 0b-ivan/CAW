@@ -38,7 +38,7 @@ class BlueGreenRehearsalTests(unittest.TestCase):
         self.assertIn('create_status" != 503', content)
         server = (ROOT / "server" / "src" / "net" / "Server.cpp").read_text()
         self.assertIn("PersistQueue& persist, const bool& quiesced", server)
-        self.assertIn("&quiesced, request", server)
+        self.assertRegex(server, r"&quiesced,\s*request")
         self.assertIn("if (quiesced) {", server)
         self.assertLess(content.index("/internal/handoff/quiesce"),
                         content.index("stop -t 30 server"))
