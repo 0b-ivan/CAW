@@ -49,6 +49,8 @@ class Server final {
 
  private:
   void registerSessionRoutes(uWS::App& app);
+  // Transport-only public probe: never creates or persists a game room.
+  void registerProbeSocket(uWS::App& app);
   // False, after answering 429, if this client has used up its requests on `limiter`.
   bool admitted(RateLimiter& limiter, uWS::HttpResponse<false>* response,
                 uWS::HttpRequest* request);

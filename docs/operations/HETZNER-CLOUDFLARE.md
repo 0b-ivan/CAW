@@ -586,3 +586,38 @@ Die Ausnahme für die alten `cc02372*`-/`fc59685*`-Checkouts bleibt
 entfernt. Das hier ist eine wiederverwendbare, datenbewahrende Regel
 für gespeicherte und momentan nicht verbundene Partien, kein
 betreiberabhängiger Force-Rollout.
+
+## 13. Zustandsfreie öffentliche WSS-Prüfung bei Wiederholungs-Deploys (03.11.2026)
+
+Die automatischen Wiederholungen von Release `05986a4d` waren stabil,
+führten aber alle 30 Minuten die vollständige
+`bin/hetzner-wss-check.mjs` aus. Dieses Skript legt per
+`POST /api/sessions` jeweils eine gültige Test-Lobby an.
+Bei 48 Prüfungen pro Tag entstehen so zahlreiche zusätzliche
+Redis-Keys und bis zum TTL-Ablauf belegte Spielräume, obwohl
+kein Release gewechselt wurde.
+
+Ab jetzt gilt:
+
+- **Neu installiert (`DEPLOYED`):** Weiterhin vollständiger
+  Cloudflare-HTTPS-/WSS-Host- und State-Handshake samt einmaliger
+  Test-Session, um Spielprotokoll, Authentifizierung und möglichen
+  Rollback nach einer echten Installation abzudecken.
+- **Bereits aktuell (`UNCHANGED`):** Neue WebSocket-Probe über
+  `wss://caw.obivan.org/ws/probe` mit fester JSON-Antwort
+  `{"type":"probe","ok":true}`. Die Prüfung enthält außerdem
+  `/healthz`; sie erzeugt **keine** Room-IDs, Host-Tokens,
+  Redis-Snapshots oder Postgres-Einträge.
+- **Aufgeschoben (`NOT DEPLOYED`):** Ausschließlich die bereits
+  etablierte öffentliche HTTPS-Readiness. Diese funktioniert auch,
+  wenn der alte Server `/ws/probe` noch nicht implementiert hat.
+
+Die Probe ist rate-limitiert und verarbeitet keine Spieleingaben.
+Bei Fehlern im unveränderten System wird der Workflow rot, aber ein
+Rollback wird **nicht** ausgelöst. Vor dem Merge prüft die CI einen
+echten WebSocket-Upgrade durch den lokalen Caddy-Reverse-Proxy und
+vergleicht `caw_sessions` vor und nach der Probe.
+
+Alle vor der Umstellung angelegten Test-Lobbys werden über den
+normalen Session-TTL-Ablauf bereinigt. Es sind **keine**
+Löschaktionen gegen produktives Redis notwendig.

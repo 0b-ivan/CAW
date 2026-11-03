@@ -332,3 +332,13 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Regressionen für gültige Offline-Partien, fehlende/defekte Snapshots, veränderte Aktivität und weiterhin offene Sockets ergänzt
 - [ ] Vollständige PR-/Main-CI und produktiven Rollout von aktuellem `main` nachweisen
 - [ ] Nach Deployment öffentliche HTTPS-/WSS- und Wiederholungsprüfung nachweisen
+
+## Betrieb: halbstündliche WSS-Checks ohne neue Spielräume (2026-11-03)
+
+- [x] Produktions-Checks nach `05986a4d` bestätigen: siebenmal kein Restart, Backup gesund, HTTPS/WSS grün
+- [x] Zustandsfreie WSS-Probe konzipiert, registriert und rate-limitiert
+- [x] Separates WSS-Probe-Skript für bereits installierte Releases ohne `POST /api/sessions`
+- [x] Vollständigen Host-/State-Test bei echten Deployments weiterhin vorgeschrieben
+- [x] CI testet WSS-Upgrade über Compose und unveränderten `caw_sessions`-Zähler
+- [x] Regressionstests für Probe-Route, Deploy-Entscheidung und Rollback-Gate ergänzt
+- [ ] PR-/Main-CI grün und ersten produktiven No-op mit neuer WSS-Probe bestätigen

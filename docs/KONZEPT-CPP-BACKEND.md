@@ -697,6 +697,45 @@ Zwangsmigration und verändert keine Spielregeln. Im Zweifelsfall
 wird zurückgestellt. Das Produktiv-Release wartet damit nicht mehr
 endlos auf das Ende einer ohnehin nicht verbundenen Partie.
 
+### Zustandsfreier WebSocket-Betriebscheck (03.11.2026)
+
+Der bisherige öffentliche WSS-Smoke-Test legt eine neue Spiel-Session an
+(`POST /api/sessions`), authentifiziert sich als Host und testet den
+Spielzustand. Bei jedem halbstündlichen **unveränderten** Deploy würde
+das eine zusätzliche, bis zur regulären TTL gespeicherte Test-Lobby erzeugen.
+Der Test darf daher nicht bei jeder Wiederholungsprüfung Daten in Redis
+hinterlassen.
+
+- **Neuer, zustandsfreier WSS-Endpunkt:** `/ws/probe` wird vor
+  `/ws/:code` registriert. Er nimmt einen normalen WebSocket-Upgrade
+  an, sendet die feste Antwort `{"type":"probe","ok":true}` und legt
+  **keine** Session, keinen Host-Token und keinen Redis-Key an.
+  Die Verbindung ist durch die bestehende Rate-Limit-Prüfung und eine
+  kurze WebSocket-Idle-Zeit begrenzt; Nachrichten werden nicht als
+  Spielkommandos verarbeitet.
+- **Regulärer Neu-Deploy:** Weiterhin einmalig die vollständige
+  öffentliche HTTPS-/WSS-Host-/State-Probe mit einem neuen Test-Raum.
+  Sie prüft auch weiterhin die Authentifizierung und das Spielprotokoll.
+  Nur ein neu installiertes Release darf bei einer fehlgeschlagenen
+  vollständigen Probe automatisch zurückgerollt werden.
+- **Bereits installiert, planmäßige Wiederholung:** Die öffentliche
+  HTTPS-Bereitschaft und ein echter WSS-Upgrade zu `/ws/probe` werden
+  geprüft. Dabei entstehen keine neuen Spielräume. Fehler sind im
+  Workflow sichtbar, lösen aber ohne gerade erfolgten Deploy keinen
+  Rollback aus.
+- **Zurückgestellter Deploy:** Wie bisher ausschließlich die
+  öffentliche HTTPS-Bereitschaft, solange der alte Server die Probe
+  womöglich noch nicht unterstützt. Keine Sessions und kein WSS.
+- CI testet `/ws/probe` mit einem echten WebSocket auf dem
+  lokalen Compose-Stack und prüft, dass `caw_sessions` unverändert
+  bleibt. Der vollständige Host-/State-Probe-Code bleibt weiterhin
+  verfügbar und wird nach jeder echten Neuinstallation verwendet.
+
+Die zusätzliche Probe ist eine reine Transport-/Origin-Kontrolle,
+keine eigene Spieloberfläche und kein weiterer Dienst. Sie darf
+nicht als Ersatz für den Authentifizierungs- und Game-State-Test
+eines neuen Releases verwendet werden.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es

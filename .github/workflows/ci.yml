@@ -96,8 +96,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Check live WSS probe syntax (no external connection)
-        run: node --check bin/hetzner-wss-check.mjs
+      - name: Verify both WSS probes and no new rooms from uptime checks
+        run: |
+          node --check bin/hetzner-wss-check.mjs
+          node --check bin/hetzner-wss-probe.mjs
+          sessions() {
+            docker compose -f deploy/compose.yml exec -T server \
+              curl -fsS http://127.0.0.1:8080/metrics |
+              awk '$1 == "caw_sessions" {print $2}'
+          }
+          before="$(sessions)"
+          test -n "$before"
+          node bin/hetzner-wss-probe.mjs http://localhost:8080
+          after="$(sessions)"
+          test "$before" = "$after"
+          echo "PASS: WSS probe did not create a game room"
       - name: QR encoder against the firmware library's codes
         run: node web/tests/qr.mjs
       - name: Eight bots play a match with a reload storm and a server restart
