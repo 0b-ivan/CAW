@@ -36,7 +36,8 @@ void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions,
   auto request = std::make_shared<RequestBody>();
   // onAborted keeps the request buffer alive until the client disconnects.
   response->onAborted([request]() { request->content.clear(); });
-  response->onData([response, &sessions, &persist, &quiesced, request](std::string_view chunk, bool final) {
+  response->onData(
+      [response, &sessions, &persist, &quiesced, request](std::string_view chunk, bool final) {
     if (!request->tooLarge) {
       if (chunk.size() > 1024 - request->content.size())
         request->tooLarge = true;
