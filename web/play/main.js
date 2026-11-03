@@ -36,6 +36,12 @@ const app = {
   editor: null, // room-only custom cards, editable only in the lobby
   editorLoading: false,
   editorSaving: false,
+  proposalDraft: { type: 'prompt', text: '', status: '' },
+  proposalSending: false,
+  proposals: null,
+  proposalLoading: false,
+  proposalReviewing: false,
+  proposalStatus: '',
   fame: null, // the Wall of Fame, loaded when the menu page opens
   famePage: 0,
   flashedRound: 0,
@@ -262,6 +268,76 @@ const actions = {
     }
     update();
   },
+  async submitProposal() {
+    if (app.proposalSending || app.frame?.phase !== 'lobby') return;
+    const text = app.proposalDraft.text.trim();
+    if (!text || new TextEncoder().encode(text).length > 300 || /[\r\n]/.test(text)) {
+      app.proposalDraft.status = t('proposalInvalid');
+      update();
+      return;
+    }
+    app.proposalSending = true;
+    try {
+      const response = await fetch('/api/sessions/' + code + '/proposals', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + secrets.ticket(code),
+          'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: app.proposalDraft.type, text }),
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      app.proposalDraft.text = '';
+      app.proposalDraft.status = t('proposalSent');
+    } catch (error) {
+      app.proposalDraft.status = error.message === '409'
+        ? t('proposalUnavailable') : t('proposalFailed');
+    } finally {
+      app.proposalSending = false;
+      update();
+    }
+  },
+  async loadProposals() {
+    if (!app.isHost || app.proposalLoading) return;
+    app.proposalLoading = true;
+    try {
+      const response = await fetch('/api/sessions/' + code + '/proposals', {
+        headers: { Authorization: 'Bearer ' + secrets.hostToken(code) }, cache: 'no-store',
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      app.proposals = (await response.json()).proposals;
+      app.proposalStatus = '';
+    } catch {
+      app.proposals = [];
+      app.proposalStatus = t('proposalLoadFailed');
+    } finally {
+      app.proposalLoading = false;
+      update();
+    }
+  },
+  async reviewProposal(id, approve) {
+    if (app.proposalReviewing || app.frame?.phase !== 'lobby') return;
+    app.proposalReviewing = true;
+    try {
+      const response = await fetch('/api/sessions/' + code + '/proposals/review', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + secrets.hostToken(code),
+          'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, approve }),
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      app.proposals = (await response.json()).proposals;
+      app.proposalStatus = t(approve ? 'proposalAccepted' : 'proposalRejected');
+      if (approve) {
+        // The edited private pack has a new immutable ID; reload the host editor next time.
+        app.editor = null;
+        app.catalog = null;
+      }
+    } catch {
+      app.proposalStatus = t('proposalReviewFailed');
+    } finally {
+      app.proposalReviewing = false;
+      update();
+    }
+  },
   loadFame() {
     fetch('/api/fame', { cache: 'no-store' })
       .then((response) => response.json())
@@ -308,6 +384,10 @@ const actions = {
     update();
   },
   openMenuPage(page) {
+    if (page === 'proposals') {
+      app.proposals = null;
+      app.proposalStatus = '';
+    }
     if (page === 'fame') {
       app.fame = null;
       app.famePage = 0;

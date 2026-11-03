@@ -5,6 +5,7 @@ import { isRunning, isSeated } from './views.js';
 import { shareableSessionUrl } from './invite.js';
 import { qrSvg } from './qr.js';
 import { editorPage } from './editor.js';
+import { suggestPage, reviewPage } from './proposals.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -53,14 +54,23 @@ export function renderMenu(app, actions) {
   }
   $('menu-button').setAttribute('aria-expanded', String(app.menu.open));
   if (!app.menu.open) return;
-  const hostPage = ['rules', 'players', 'packs', 'cards'].includes(app.menu.page);
-  const page = hostPage && !(app.isHost && app.frame) ? 'main' : app.menu.page;
+  const hostPage = ['rules', 'players', 'packs', 'cards', 'proposals'].includes(app.menu.page);
+  const playerPage = app.menu.page === 'proposal';
+  const allowedHost = app.isHost && app.frame;
+  const allowedPlayer = isSeated(app) && app.frame?.phase === 'lobby';
+  const reviewingOutsideLobby = app.menu.page === 'proposals' && app.frame?.phase !== 'lobby';
+  const page = (hostPage && !allowedHost) || (playerPage && !allowedPlayer) ||
+    reviewingOutsideLobby ? 'main' : app.menu.page;
   const pages = {
-    main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage, packs: packsPage, cards: (app, actions) => editorPage(app, actions, () => backRow(actions)), fame: famePage,
+    main: mainPage, rules: rulesPage, players: playersPage, screen: screenPage, packs: packsPage, cards: (app, actions) => editorPage(app, actions, () => backRow(actions)),
+    proposal: (app, actions) => suggestPage(app, actions, () => backRow(actions)),
+    proposals: (app, actions) => reviewPage(app, actions, () => backRow(actions)),
+    fame: famePage,
   };
   const titles = {
     main: t('sessionCode', app.code), rules: t('rules'), players: t('playersMenu'),
-    screen: t('bigScreen'), packs: t('packsMenu'), cards: t('customCards'), fame: t('fame'),
+    screen: t('bigScreen'), packs: t('packsMenu'), cards: t('customCards'),
+    proposal: t('proposalMenu'), proposals: t('proposalsMenu'), fame: t('fame'),
   };
   $('menu-title').textContent = titles[page];
   const samePage = body.dataset.page === page;
@@ -69,6 +79,7 @@ export function renderMenu(app, actions) {
   body.scrollTop = samePage ? scroll : 0;
   if (samePage) restoreMenuFocus(body, previous);
   else if (previous) body.querySelector('button:not(:disabled), a[href]')?.focus({ preventScroll: true });
+  if (page === 'proposals' && !app.proposals && !app.proposalLoading) actions.loadProposals();
 }
 
 function mainPage(app, actions) {
@@ -82,6 +93,8 @@ function gameGroup(app, actions) {
     if (frame.me.pausedByMe) rows.push(row(t('hostResume'), '', () => actions.player('unpause')));
     else if (!frame.pausedBy) rows.push(row(t('hostPause'), '', () => actions.player('pause')));
   }
+  if (isSeated(app) && frame.phase === 'lobby')
+    rows.push(row(t('proposalMenu'), '›', () => actions.openMenuPage('proposal')));
   const next = currentLanguage() === 'de' ? 'en' : 'de';
   rows.push(row(t('language'), currentLanguage().toUpperCase(), () => actions.setLanguage(next)));
   return rows;
@@ -106,6 +119,7 @@ function hostGroup(app, actions) {
   if (phase === 'lobby') {
     rows.push(row(t('packsMenu'), String(frame.packs.length), () => actions.openMenuPage('packs')));
     rows.push(row(t('customCards'), '›', () => actions.openMenuPage('cards')));
+    rows.push(row(t('proposalsMenu'), '›', () => actions.openMenuPage('proposals')));
   }
   rows.push(row(t('playersMenu'), String(frame.players.length), () => actions.openMenuPage('players')));
   if (isRunning(frame)) rows.push(confirmRow(app, actions, 'end', t('endGame'), () => actions.host('end')));
