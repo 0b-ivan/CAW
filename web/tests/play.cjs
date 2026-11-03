@@ -531,6 +531,22 @@ async function run(browser) {
   await host.locator('#card-prompts-0').fill('Eigene Testfrage ___!');
   await host.getByRole('button', { name: '[ ANTWORT HINZUFÜGEN ]' }).click();
   await host.locator('#card-answers-0').fill('Eigene Testantwort');
+  await host.locator('#card-answers-0').evaluate((input) => {
+    input.focus();
+    input.setSelectionRange(3, 9);
+  });
+  // A guest reconnecting refreshes the host's lobby while the host types.
+  // The editor caret and unsaved text must survive the live menu rerender.
+  await players[0].reload();
+  await waitView(players[0], 'lobby');
+  await host.waitForTimeout(150);
+  const editorFocus = await host.evaluate(() => {
+    const input = document.querySelector('#card-answers-0');
+    return { focused: document.activeElement === input, text: input.value,
+      start: input.selectionStart, end: input.selectionEnd };
+  });
+  assert.deepEqual(editorFocus, { focused: true, text: 'Eigene Testantwort', start: 3, end: 9 },
+    'guest reconnect must not erase the host editor text or caret');
   await host.locator('.editor-save').click();
   await host.locator('#menu-body', { hasText: 'KARTEN GESPEICHERT UND AKTIV.' }).waitFor();
   assert.equal(await players[0].evaluate(async (room) =>
