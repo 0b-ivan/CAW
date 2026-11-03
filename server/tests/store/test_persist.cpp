@@ -1,6 +1,7 @@
 // Snapshots reach the store in the background, newest per room, all of them on stop.
 #include <doctest/doctest.h>
 
+#include <chrono>
 #include <map>
 #include <mutex>
 #include <nlohmann/json.hpp>
@@ -90,6 +91,46 @@ TEST_CASE("a room survives a registry restart through its snapshot") {
   CHECK_FALSE(second.restore(room.code, snapshot));
   CHECK_FALSE(second.restore("CCCCCC", "{}"));
   CHECK_FALSE(second.restore("lower!", snapshot));
+}
+
+TEST_CASE("reading or reconnecting to a room does not outlive its Redis snapshot") {
+  using namespace std::chrono_literals;
+  const auto start = SessionRegistry::Clock::now();
+  SessionRegistry registry(1, testPacks());
+  const auto room = registry.create("de", start);
+
+  // Repeated HTTP and WebSocket lookups are not durable activity.
+  REQUIRE(registry.find(room.code, start + 30min) != nullptr);
+  REQUIRE(registry.find(room.code, start + 59min) != nullptr);
+  CHECK(registry.language(room.code, start + 59min) == "de");
+  CHECK_FALSE(registry.language(room.code, start + 61min));
+  CHECK(registry.find(room.code, start + 61min) == nullptr);
+
+  // An already expired room cannot be revived merely by serializing it.
+  CHECK(registry.snapshot(room.code, start + 61min).empty());
+  registry.expire(start + 61min);
+  CHECK(registry.activeCount(start + 61min) == 0);
+}
+
+TEST_CASE("saving a changed room extends the in-memory lifetime alongside Redis") {
+  using namespace std::chrono_literals;
+  const auto start = SessionRegistry::Clock::now();
+  SessionRegistry registry(1, testPacks());
+  const auto room = registry.create("de", start);
+  const auto changedAt = start + 50min;
+
+  // Only a snapshot that will be queued for persistence extends the TTL.
+  const std::string snapshot = registry.snapshot(room.code, changedAt);
+  REQUIRE_FALSE(snapshot.empty());
+  CHECK(registry.find(room.code, start + 100min) != nullptr);
+  CHECK(registry.language(room.code, start + 109min) == "de");
+  CHECK(registry.find(room.code, start + 111min) == nullptr);
+
+  // A restored room gets the same fresh window as the atomic Redis GETEX.
+  SessionRegistry restored(1, testPacks());
+  REQUIRE(restored.restore(room.code, snapshot, start + 100min));
+  CHECK(restored.find(room.code, start + 159min) != nullptr);
+  CHECK(restored.find(room.code, start + 161min) == nullptr);
 }
 
 TEST_CASE("room records keep language, host token and state together") {
