@@ -23,7 +23,7 @@ fi
 
 # A different container on the same Compose network must never be allowed to
 # freeze Blue. Reject that request before attempting a legitimate local call.
-remote_status="$("${base[@]}" exec -T server-green \
+remote_status="$("${candidate[@]}" exec -T server-green \
   curl --silent --output /dev/null --write-out '%{http_code}' --request POST \
   http://server:8080/internal/handoff/quiesce)"
 if [[ "$remote_status" != 403 ]]; then
