@@ -5,7 +5,7 @@
 **Das Partyspiel für 3–8 Handys im Browser, mit optionalem Big Screen.**
 QR-Code scannen, Karte wählen, lachen. Keine App, kein Konto, kein Build-Schritt.
 
-[![Live](https://img.shields.io/website?url=https%3A%2F%2Fcaw.obivan.org%2Fhealthz&label=caw.obivan.org&up_message=online&down_message=offline&style=flat-square)](https://caw.obivan.org)
+[![Live](https://img.shields.io/website?url=https%3A%2F%2Fcaw.obivan.org%2F&label=caw.obivan.org&up_message=online&down_message=offline&style=flat-square)](https://caw.obivan.org)
 [![Production](https://img.shields.io/github/deployments/0b-ivan/CAW/production?label=production&logo=github&style=flat-square)](https://github.com/0b-ivan/CAW/deployments/production)
 [![CI](https://img.shields.io/github/actions/workflow/status/0b-ivan/CAW/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white&style=flat-square)](https://github.com/0b-ivan/CAW/actions/workflows/ci.yml)
 [![Deploy](https://img.shields.io/github/actions/workflow/status/0b-ivan/CAW/deploy-hetzner.yml?branch=main&label=deploy&logo=hetzner&logoColor=white&style=flat-square)](https://github.com/0b-ivan/CAW/actions/workflows/deploy-hetzner.yml)
@@ -97,7 +97,7 @@ mitgelieferten Packs sind deutlich derber.</sub>
 
 | Umgebung | URL | Status | Auslieferung |
 |---|---|---|---|
-| **Produktion** | [caw.obivan.org](https://caw.obivan.org) | [![Live](https://img.shields.io/website?url=https%3A%2F%2Fcaw.obivan.org%2Fhealthz&label=healthz&up_message=200&down_message=down&style=flat-square)](https://caw.obivan.org/healthz) | Hetzner Cloud via Cloudflare Tunnel |
+| **Produktion** | [caw.obivan.org](https://caw.obivan.org) | [![Live](https://img.shields.io/website?url=https%3A%2F%2Fcaw.obivan.org%2F&label=website&up_message=online&down_message=down&style=flat-square)](https://caw.obivan.org/healthz) | Hetzner Cloud via Cloudflare Tunnel |
 | **Image** | `ghcr.io/0b-ivan/caw-server:sha-<commit>` | [![Deploy](https://img.shields.io/github/actions/workflow/status/0b-ivan/CAW/deploy-hetzner.yml?branch=main&label=rollout&style=flat-square)](https://github.com/0b-ivan/CAW/actions/workflows/deploy-hetzner.yml) | unveränderlich, ein Tag pro Commit |
 | **CI auf `main`** | – | [![CI](https://img.shields.io/github/actions/workflow/status/0b-ivan/CAW/ci.yml?branch=main&label=build%20%2B%20tests&style=flat-square)](https://github.com/0b-ivan/CAW/actions/workflows/ci.yml) | CTest, Format, Compose-Smoke, Playwright, Lasttest, Restore |
 
