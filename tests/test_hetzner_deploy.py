@@ -153,7 +153,9 @@ class DeploymentSafetyTests(unittest.TestCase):
         self.assertIn("*/30 * * * *", workflow)
         self.assertIn("git show '$DEPLOY_SHA:bin/deploy-hetzner'", workflow)
         self.assertIn("deferred=true", workflow)
-        self.assertIn("steps.rollout.outputs.deferred != 'true'", workflow)
+        self.assertIn("steps.rollout.outputs.changed == 'true'", workflow)
+        self.assertIn("steps.rollout.outputs.unchanged == 'true'", workflow)
+        self.assertIn("node bin/hetzner-wss-probe.mjs", workflow)
 
         self.assertIn("github.ref == 'refs/heads/main'", workflow)
         self.assertIn('bash bin/verify-main-ci "$DEPLOY_SHA"', workflow)
