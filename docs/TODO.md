@@ -383,3 +383,16 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] Neue Räume nur auf Green, vorhandene WebSockets bis Spielende auf Blue; Redis/PostgreSQL unverändert
 - [ ] Sicheren Rückschwenk, Wiederaufnahme über Tickets und wiederholte Slot-Switch-Tests nachweisen
 - [ ] Bisheriges halbstündliches Deploy-Schedule nach erfolgreicher Abnahme durch eventgetriebenen Deploy ersetzen
+
+## Blue/Green-Deployment: Stufe A – separater Standby-Server (Issue #43)
+
+- [x] C++-Backend-Konzept: Eigentümerschaft je Raum und gestuftes Blue/Green festlegen
+- [x] `CAW_STANDBY=1` lädt keine Redis-Sitzungen, initialisiert keine Statistik-Schreibpfade
+- [x] Standby bietet nur Health, Metrics und `/ws/probe`, keine Game-REST-/WS-Routen
+- [x] `/readyz` unterscheidet Standby (503) von aktiviertem Spielserver (200)
+- [x] Zweiten Compose-Service `server-green` ohne Host-Port; Caddy bleibt zunächst auf `server`
+- [x] Compose-CI: Standby erstellt keine Sessions, bleibt nicht spielbereit und ist gesund
+- [ ] PR-CI für Stufe A komplett grün und Architektur auf realem Caddy/Compose testen
+- [ ] Stufe B: langlebige Eigentümerschaft, Cutover/Drain, Caddy-Switch und Rollback bauen
+- [ ] Reconnect und laufende Spiele bei Slotwechsel durch Browser-/Lasttest nachweisen
+- [ ] Nach Abnahme halbstündliches Deploy-Schedule abschalten und Einmal-Override entfernen
