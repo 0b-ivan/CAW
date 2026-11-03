@@ -996,3 +996,23 @@ gleichen Origin erreichbar sein. Weder dieses Rehearsal noch die
 Caddy-Neuerstellung dürfen in der Produktion laufen. Der reale
 Rollback bedarf weiterhin eines atomaren, generationsgesicherten
 Ownership-Übergangs und einer ausfallsicheren Caddy-Konfigurationsänderung.
+
+### Blue/Green: bestätigte Persistenzbarriere vor dem Raumbesitzwechsel (03.11.2026)
+
+Vor einer künftigen Übergabe muss der abgebende Slot zuerst neue Räume,
+WebSocket-Spielaktionen und Timer-Fortschritte anhalten und die letzten
+vollständigen Snapshots **aller** in-memory Räume einreihen. Eine synchrone
+`PersistQueue::flush(timeout)`-Barriere darf erst dann Erfolg liefern, wenn
+alle bis dahin eingereihten Redis-Snapshots vom Persistenz-Thread bestätigt
+wurden. Sie prüft sowohl die Warteschlange als auch gerade ausgeführte Writes;
+ein vorübergehender oder dauerhafter Redis-Ausfall führt bis zur vollständigen
+Bestätigung zu Timeout / fehlgeschlagener Übergabe, niemals zu Erfolg.
+
+Die Barriere wird **nicht** im normalen Spielpfad pro Aktion aufgerufen;
+vor der späteren Ownership-Übergabe ist die Event-Loop-Zulassung zu sperren,
+damit nach dem Flush kein neuer Spielzustand entsteht. Die Barriere allein
+verhindert weder konkurrierende Prozesse noch einen verspäteten Redis-Write:
+dafür sind atomarer Redis-Raumbesitz mit Generation/Fencing, ein geprüfter
+Green-Restore und ein getrennt abgesicherter Caddy-Umschaltvorgang Pflicht.
+Das bisherige reine CI-Restore-Rehearsal und die Produktionskonfiguration
+bleiben dadurch unverändert. Ein Flush-Timeout darf keinen Slotwechsel auslösen.
