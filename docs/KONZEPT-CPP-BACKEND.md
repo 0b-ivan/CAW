@@ -960,3 +960,21 @@ Damit können Backups starten, obwohl ein regulärer Release aus Rücksicht
 auf gespeicherte laufende Spiele zurückgestellt wird. Diese gezielte
 Backup-Aktivierung ist **keine** Erlaubnis, die bestehende
 Spiel-Leerlaufsperre für Server- oder Caddy-Releases zu umgehen.
+
+### Blue/Green: isolierte Restore-Probe vor der Live-Umschaltung (03.11.2026)
+
+Als zusätzliche CI-Vorstufe testet ein zweiter, zunächst isolierter Container
+die Wiederaufnahme derselben Partie **nach** dem vollständigen Stopp von Blue.
+Ein ausschließlich für CI vorgesehenes Compose-Overlay schaltet Green dazu
+aus dem Standby-Modus und veröffentlicht dessen Port nur auf 127.0.0.1.
+Der Acht-Spieler-Bottest prüft beim Übergang in der laufenden Runde die
+Fortsetzung von drei bereits gespeicherten Antworten, die unveränderten Sitze,
+Ticket-Rotation, Host-Reauthentifizierung und den wiederverbundenen Big Screen
+ohne private Hände. Andere Container und Volumes werden nicht neu erstellt.
+
+**Dies ist kein produktiver Cutover und beweist keine atomare Übergabe.**
+Insbesondere ersetzt ein erfolgreicher Restore-Test weder den bestätigten
+Flush der Persistenzwarteschlange noch die Redis-Eigentümerschaft, das
+Caddy-Routing, Fehler-Rollback oder eine reale HTTPS-/WSS-Abnahme. Bis diese
+Anforderungen separat implementiert und getestet sind, bleibt der Green-Slot
+in Produktions-Compose ausschließlich Standby; es findet kein Slotwechsel statt.

@@ -216,6 +216,13 @@ jobs:
         run: |
           docker run --rm -v "$PWD/deploy/monitoring:/etc/prometheus:ro" --entrypoint promtool \
             prom/prometheus:v3.5.0 check config /etc/prometheus/prometheus.yml
+      # This proves ticket/state continuity across two distinct server containers.
+      # It is NOT a production cutover: the actual Caddy switch and ownership
+      # fencing are separate acceptance criteria.
+      - name: Rehearse stopped-Blue to active-Green room and WebSocket restore
+        run: |
+          CAW_BLUEGREEN_CI=1 node tests/bots/play.mjs http://localhost:8080 \
+            "bash bin/test-bluegreen-reconnect" http://127.0.0.1:18082
       - name: Compose diagnostics
         if: failure()
         run: docker compose -f deploy/compose.yml logs --no-color

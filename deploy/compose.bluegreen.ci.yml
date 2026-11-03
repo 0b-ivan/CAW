@@ -1,0 +1,8 @@
+# CI ONLY: expose the candidate on loopback and make it active after Blue has stopped.
+# Never include this overlay in the Hetzner production Compose invocation.
+services:
+  server-green:
+    environment:
+      CAW_STANDBY: "0"
+    ports:
+      - "127.0.0.1:18082:8080"

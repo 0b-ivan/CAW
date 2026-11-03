@@ -396,3 +396,10 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [ ] Stufe B: langlebige Eigentümerschaft, Cutover/Drain, Caddy-Switch und Rollback bauen
 - [ ] Reconnect und laufende Spiele bei Slotwechsel durch Browser-/Lasttest nachweisen
 - [ ] Nach Abnahme halbstündliches Deploy-Schedule abschalten und Einmal-Override entfernen
+
+### Blue/Green: isolierter Restore-Probelauf (Issue #43)
+
+- [x] Eigenständigen Green-Container nach vollständig gestopptem Blue aus Redis starten
+- [x] Acht Spieler mit rotierenden Tickets, gespeicherten Antworten und Big Screen im CI-Probelauf prüfen (Test im PR; CI-Abnahme noch ausstehend)
+- [ ] Fail-closed Ownership, bestätigte Quiesce-Persistenz, produktives Caddy-Routing und Rollback umsetzen
+- [ ] Öffentliche Live-Abnahme mit Reconnect und Last-/Restore-Regressionen durchführen
