@@ -35,8 +35,8 @@ void jsonReply(uWS::HttpResponse<false>* response, std::string_view status,
 // actual binary peer address, never its formatted text or spoofable HTTP headers.
 bool isLoopbackAddress(std::string_view address) {
   if (address.size() == 4)
-    return static_cast<unsigned char>(address[0]) == 127 && address[1] == 0 &&
-           address[2] == 0 && static_cast<unsigned char>(address[3]) == 1;
+    return static_cast<unsigned char>(address[0]) == 127 && address[1] == 0 && address[2] == 0 &&
+           static_cast<unsigned char>(address[3]) == 1;
   if (address.size() != 16) return false;
   bool ipv6Loopback = address[15] == 1;
   for (std::size_t index = 0; index < 15; ++index)
@@ -47,8 +47,8 @@ bool isLoopbackAddress(std::string_view address) {
     if (address[index] != 0) return false;
   return static_cast<unsigned char>(address[10]) == 255 &&
          static_cast<unsigned char>(address[11]) == 255 &&
-         static_cast<unsigned char>(address[12]) == 127 && address[13] == 0 &&
-         address[14] == 0 && address[15] == 1;
+         static_cast<unsigned char>(address[12]) == 127 && address[13] == 0 && address[14] == 0 &&
+         address[15] == 1;
 }
 
 void createRoom(uWS::HttpResponse<false>* response, SessionRegistry& sessions,
