@@ -736,6 +736,50 @@ keine eigene Spieloberfläche und kein weiterer Dienst. Sie darf
 nicht als Ersatz für den Authentifizierungs- und Game-State-Test
 eines neuen Releases verwendet werden.
 
+### Redis- und Speicher-TTL müssen zusammenpassen (03.11.2026)
+
+Nach dem mobilen UI-Merge meldete die reguläre Deploy-Prüfung eine
+**unfertige In-Memory-Partie ohne aktiven Redis-Snapshot**. Der sichere
+Rollout wurde daraufhin zurückgestellt (Run `41601420535`).
+Zwei Lebensdauer-Unterschiede im Server erklären, wie dieser Zustand
+auch ohne Datenbankausfall entstehen kann:
+
+- `SessionRegistry::find` verlängert bislang bei **jedem** Zugriff
+  die Speicher-TTL, selbst wenn keine Spielaktion ausgeführt oder
+  gespeichert wurde; Redis verlängert sein `EX` nur beim Snapshot.
+- Beim Neustart beginnt die Speicher-TTL wieder bei 24 Stunden,
+  während der bereits geladene Redis-Key seine *alte Rest-TTL*
+  behält. Ohne weitere Änderung kann er daher früher ablaufen.
+
+Abhilfe ohne zusätzliche Datenbankzugriffe im Echtzeitpfad:
+`find` ist nur noch ein gültigkeitsprüfender Lookup und verlängert
+keine TTL. Wenn die Session tatsächlich einen neuen Snapshot zur
+asynchronen Speicherung liefert, verlängert `snapshot` die
+Speicher-TTL ebenfalls auf `now + SESSION_TTL_HOURS`; für bereits
+abgelaufene Sessions kann ein Snapshot die TTL nicht wiederbeleben.
+Der Redis-Persistenz-Thread setzt mit seinem vorhandenen `SET EX`
+dieselbe TTL. Für wiederhergestellte Sessions verwendet
+`RedisStore::loadAll` **atomar `GETEX ... EX ttl`** (Redis >= 6.2,
+im Compose Redis 7); damit lesen *und* erneuern wir den gültigen
+Snapshot in einem Befehl, bevor die Registry die frische Speicher-TTL
+setzt. Kein periodisches Schreiben, kein zusätzlicher Roundtrip je
+Spielaktion, keine Änderung des C++-Spiellogik-Cores.
+
+CI umfasst einen Uhrzeit-kontrollierten Unit-Test (Lesezugriff
+verlängert nicht, Snapshot verlängert, abgelaufene Partie bleibt
+abgelaufen) und einen Compose-/Redis-Test: einem frisch angelegten
+synthetischen Spielraum wird künstlich eine kurze Redis-Rest-TTL
+gegeben; nach dem Serverneustart müssen Spielraum und Snapshot wieder
+die volle TTL haben. Die übrigen Restore-, Browser- und Lasttests
+bleiben aktiv.
+
+**Alte verwaiste In-Memory-Partien werden nicht gelöscht.** Ein
+fehlender aktiver Redis-Snapshot blockiert den Deploy weiterhin.
+Für solche bereits vor dem Fix entstandenen Daten ist eine
+operatorautorisierte, separat dokumentierte Recovery notwendig,
+falls sie nicht regulär ablaufen; ein Force-Restart ist nicht Teil
+dieses Fixes.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
