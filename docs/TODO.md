@@ -406,7 +406,8 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Interne, Loopback-beschränkte Quiesce: keine neuen Räume/Spielaktionen/Timer/
   Kartenänderungen oder WebSocket-Upgrades nach Beginn der Übergabe
 - [x] CI-Rehearsal für Hin- und Rückweg verlangt bestätigte Quiesce vor Serverstopp
-- [ ] Vollständige Quiesce-Integration in CI grün abnehmen
+- [x] Interne Quiesce akzeptiert nur binären Loopback-Peer; anderer Compose-Container erhält HTTP 403
+- [x] Vollständige Quiesce-Integration, 20/20 CTest, Lint, Browser, Lasttest, Restore und Hin-/Rückweg in PR-CI grün (Run 41651396779)
 - [ ] Fail-closed Redis-Ownership/Fencing, produktives Caddy-Routing und Rollback umsetzen
 - [ ] Öffentliche Live-Abnahme mit Reconnect und Last-/Restore-Regressionen durchführen
 
