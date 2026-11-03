@@ -622,6 +622,33 @@ Altregel ist damit ausgeschlossen; bei fehlenden Snapshots wird abgebrochen
 statt ungesicherter Spielstände verworfen. Der vorhandene normale
 Deploy-Leerlaufschutz und die Wiederholungsprüfung bleiben erhalten.
 
+### Deployment-Status und Rollback-Begrenzung (03.11.2026)
+
+Ein zurückgestellter Rollout ist **kein** installiertes Release. Der
+Deploy-Workflow unterscheidet deshalb ausdrücklich drei erfolgreiche
+Betriebsergebnisse: **installiert** (neues Image tatsächlich aktiviert),
+**unverändert** (exakt dieser oder ein neuerer Release läuft bereits) und
+**zurückgestellt** (mindestens eine aktive Partie oder offene WebSockets).
+Nur ein tatsächlich installiertes Release darf bei einem nachfolgenden
+fehlgeschlagenen öffentlichen WSS-Test den automatischen Rollback auslösen.
+
+Der Deploy-Host meldet die beiden Sonderfälle als klar definierte
+Rückgabecodes (75: zurückgestellt, 79: bereits installiert/neuer).
+Der GitHub-Workflow übersetzt diese erwarteten Betriebszustände in
+Job-Ausgaben und eine eindeutige Job-Zusammenfassung mit Commit-ID.
+Ein zurückgestellter Rollout bleibt ein erfolgreicher **Prüflauf**, aber die
+Zusammenfassung benennt unmissverständlich, dass das Release **nicht
+installiert** wurde. Geplante Wiederholungen bleiben aktiv, ohne
+GitHub-Fehlermeldungen für normale laufende Partien zu erzeugen.
+
+Bei Zurückstellung wird ausschließlich die öffentliche HTTPS-Readiness
+geprüft, **ohne** einen zusätzlichen Spielraum oder WebSocket anzulegen.
+Bei Installation und unverändertem Release bleibt die vollständige
+HTTPS-/WSS-Host-Probe bestehen; ein fehlschlagender Test wird nur dann
+zurückgerollt, wenn genau dieser Lauf vorher ein Release installiert hat.
+Diese Status-Unterscheidung verändert weder die Spiel-Leerlaufsperre noch
+Redis, PostgreSQL, laufende Sitzungen oder den Cloudflare-Tunnel.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
