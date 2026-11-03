@@ -765,7 +765,24 @@ Snapshot in einem Befehl, bevor die Registry die frische Speicher-TTL
 setzt. Kein periodisches Schreiben, kein zusätzlicher Roundtrip je
 Spielaktion, keine Änderung des C++-Spiellogik-Cores.
 
-CI umfasst einen Uhrzeit-kontrollierten Unit-Test (Lesezugriff
+Auch die asynchrone Persistenz darf fehlgeschlagene Schreibversuche
+nicht einfach verwerfen. Der bisherige `PersistQueue`-Thread verwirft
+die bereits aus der Queue entnommene Kopie selbst dann, wenn
+`SnapshotStore::save` `false` zurückgibt; nach einer vorübergehenden
+Redis-Unterbrechung kann dadurch ein **neuer Raum ohne Snapshot**
+entstehen. Solche Kopien werden ab sofort wieder in die Queue gestellt,
+sofern dort noch **kein neuerer Snapshot desselben Raums** wartet.
+Der Persistenz-Thread wartet bei Fehlern eine Sekunde (kein
+Busy-Loop); weitere Aktionen bleiben auf dem Session-Thread
+unverändert schnell. Während eines Shutdowns werden wenige
+schnelle Wiederholungen versucht und bei anhaltendem Fehler eine
+feste Warnung **ohne Codes/Spielinhalte** geloggt. Der Prozess darf
+bei dauerhaft ausgefallenem Redis nicht endlos im Shutdown hängen;
+eine solche Störung ist durch den vorhandenen `/healthz`-Check
+und die weiterhin strikte Deploy-Sperre erkennbar.
+
+CI umfasst Uhrzeit-kontrollierte Unit-Tests, einen fehlerschluckfreien
+PersistQueue-Retry-Test (Lesezugriff
 verlängert nicht, Snapshot verlängert, abgelaufene Partie bleibt
 abgelaufen) und einen Compose-/Redis-Test: einem frisch angelegten
 synthetischen Spielraum wird künstlich eine kurze Redis-Rest-TTL
