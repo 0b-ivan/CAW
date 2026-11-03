@@ -27,7 +27,7 @@ def main() -> int:
         print("FAIL: invalid offline-room check arguments", file=sys.stderr)
         return 1
 
-    container, room_count, active_count = sys.argv[1:]
+    container, room_count, active_count = sys.argv[1:4]
     if not re.fullmatch(r"[0-9a-f]{12,64}", container):
         print("FAIL: invalid Redis container ID", file=sys.stderr)
         return 1
