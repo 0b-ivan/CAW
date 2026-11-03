@@ -44,6 +44,8 @@ class Server final {
   Server& operator=(const Server&) = delete;
 
   void registerRoutes(uWS::App& app);
+  // Green prewarm exposes transport probing, never game routes or sessions.
+  void registerStandbyRoutes(uWS::App& app);
   // Listens on the port and starts the clock. False if the port cannot be bound.
   bool start(uWS::App& app, int port);
 

@@ -1,0 +1,29 @@
+# Prewarmed candidate server. Not routed by Caddy until a tested ownership handoff exists.
+# Invoke with: docker compose -f deploy/compose.yml -f deploy/compose.bluegreen.yml up -d server-green
+services:
+  server-green:
+    image: ghcr.io/0b-ivan/caw-server:${CAW_GREEN_VERSION:-latest}
+    build:
+      context: ..
+      dockerfile: deploy/server.Dockerfile
+    restart: unless-stopped
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+      DATABASE_URL: postgresql://caw:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/caw
+      REDIS_URL: tcp://redis:6379
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-24}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
+      CAW_STANDBY: "1"
+      PORT: "8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, --max-time, "4", http://127.0.0.1:8080/healthz]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5

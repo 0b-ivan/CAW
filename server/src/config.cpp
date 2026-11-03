@@ -36,6 +36,9 @@ Config readConfig() {
   config.logLevel = environment("LOG_LEVEL", "info");
   config.packsDir = environment("PACKS_DIR", "/app/packs");
   config.rateLimitPerMinute = number("RATE_LIMIT_PER_MINUTE", "60", 10000000);
+  const std::string standby = environment("CAW_STANDBY", "0");
+  if (standby != "0" && standby != "1") throw std::runtime_error("Invalid CAW_STANDBY");
+  config.standby = standby == "1";
   if (!config.publicUrl.starts_with("http://") && !config.publicUrl.starts_with("https://"))
     throw std::runtime_error("Invalid PUBLIC_URL");
   requireUrl(config.databaseUrl, "postgresql://", "DATABASE_URL");

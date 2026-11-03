@@ -54,10 +54,10 @@ int main() {
     loadPacks(config.packsDir, packs);
     caw::SessionRegistry sessions(config.sessionTtlHours, packs);
     caw::RedisStore redis(config.redisUrl, std::chrono::hours(config.sessionTtlHours));
-    restoreRooms(redis, sessions);
+    if (!config.standby) restoreRooms(redis, sessions);
     caw::FameCache fame;
     caw::PostgresStore postgres(config.databaseUrl, fame);
-    if (!postgres.prepare())
+    if (!config.standby && !postgres.prepare())
       caw::log::warn("Starting without statistics; they are kept once Postgres is back");
     caw::PersistQueue persist(redis, postgres);
     std::signal(SIGTERM, onStopSignal);
@@ -75,7 +75,17 @@ int main() {
     });
     caw::Server server(sessions, packs, fame, persist, metrics, config.rateLimitPerMinute,
                        stopRequested);
-    server.registerRoutes(app);
+    if (config.standby)
+      server.registerStandbyRoutes(app);
+    else
+      server.registerRoutes(app);
+    app.get("/readyz", [&](auto* response, auto*) {
+      const bool ready = !config.standby && caw::healthy(config);
+      response->writeStatus(ready ? "200 OK" : "503 Service Unavailable")
+          ->writeHeader("Content-Type", "text/plain; charset=utf-8")
+          ->writeHeader("Cache-Control", "no-store")
+          ->end(ready ? "ready\n" : "standby\n");
+    });
     app.get("/metrics", [&](auto* response, auto*) {
       metrics.sessions = sessions.activeCount();
       metrics.activeGames = sessions.inProgressCount();
