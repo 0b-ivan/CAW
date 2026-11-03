@@ -99,9 +99,7 @@ void Server::registerRoutes(uWS::App& app) {
   registerGameSocket(app, true);
 }
 
-void Server::registerStandbyRoutes(uWS::App& app) {
-  registerProbeSocket(app);
-}
+void Server::registerStandbyRoutes(uWS::App& app) { registerProbeSocket(app); }
 
 void Server::registerProbeSocket(uWS::App& app) {
   uWS::App::WebSocketBehavior<SocketData> behavior;
