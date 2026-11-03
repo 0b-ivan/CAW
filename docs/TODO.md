@@ -321,3 +321,14 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Regressionschecks für alle Ausgänge und den Rollback-Gate ergänzt
 - [ ] PR-/Main-CI und den produktiven Defer/No-op-Pfad bestätigen
 - [ ] Release `f01d90c7` bzw. den dann aktuellen `main`-SHA bei echtem Spiel-Leerlauf ausliefern (kein erzwungener Spielabbruch)
+
+## Betrieb: Offline-Partien nicht mehr als laufende Spiele blockieren (2026-11-03)
+
+- [x] Fehlklassifikation nachgewiesen: `caw_active_games=1` bei null Sockets meint unfertige Phase, nicht aktive Spieler
+- [x] Backend-Konzept vor Implementierung um datenbewahrende Offline-Room-Regel ergänzt
+- [x] Prüfen, dass alle unfertigen In-Memory-Partien mit gültiger Phase in Redis gespeichert sind
+- [x] Redis-Backup-Health und isolierten RDB-Restore vor einem Offline-Game-Deployment verpflichtend machen
+- [x] Drei Leerlaufkontrollen, stabiler Aktionszähler und 60 Sekunden zusätzliche Ruhezeit
+- [x] Regressionen für gültige Offline-Partien, fehlende/defekte Snapshots, veränderte Aktivität und weiterhin offene Sockets ergänzt
+- [ ] Vollständige PR-/Main-CI und produktiven Rollout von aktuellem `main` nachweisen
+- [ ] Nach Deployment öffentliche HTTPS-/WSS- und Wiederholungsprüfung nachweisen
