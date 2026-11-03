@@ -64,7 +64,12 @@ class DeploymentSafetyTests(unittest.TestCase):
 
     def test_old_operator_exception_cannot_bypass_game_idle_gate(self):
         script = SCRIPT.read_text()
-        self.assertIn("if (( in_progress != 0 || sockets != 0 )); then", script)
+        self.assertIn("if (( sockets != 0 )); then", script)
+        self.assertIn("if (( in_progress == 0 )); then", script)
+        self.assertIn("verify-offline-games.py", script)
+        self.assertIn("verify-local-redis-restore", script)
+        self.assertIn("caw_actions_total", script)
+        self.assertIn("sleep 60", script)
         self.assertIn("return 75", script)
         self.assertIn('python3 - "$redis_container" "$sessions"', script)
         self.assertNotIn("fc59685e124a00c4666c53947fd2e0f174848b30", script)

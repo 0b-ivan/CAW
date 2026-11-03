@@ -30,6 +30,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_hetzner_preflight.py'
           python3 -m unittest discover -s tests -p 'test_hetzner_deploy.py'
           python3 -m unittest discover -s tests -p 'test_legacy_room_idle.py'
+          python3 -m unittest discover -s tests -p 'test_offline_games.py'
           python3 -m unittest discover -s tests -p 'test_local_restore.py'
           python3 -m unittest discover -s tests -p 'test_redis_backup.py'
           python3 -m unittest discover -s tests -p 'test_release_candidate.py'
