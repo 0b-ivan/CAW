@@ -342,3 +342,14 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] CI testet WSS-Upgrade über Compose und unveränderten `caw_sessions`-Zähler
 - [x] Regressionstests für Probe-Route, Deploy-Entscheidung und Rollback-Gate ergänzt
 - [ ] PR-/Main-CI grün und ersten produktiven No-op mit neuer WSS-Probe bestätigen
+
+## Mobile UI: Dialogfokus und Touch-Bedienung (2026-11-03)
+
+- [x] UI-Konzept um modales Spielmenü, Fokusfalle und Fokus-Rückgabe erweitert
+- [x] Spieloberfläche bei geöffnetem Menü für Tastatur und Screenreader inert gesetzt
+- [x] Menü mit `role=dialog`, `aria-modal` und übersetztem Titel ausgezeichnet
+- [x] Fokus und Scrollposition beim Server-Live-Update erhalten; Editor-Caret bleibt erhalten
+- [x] Browser-Regression für Tab/Shift+Tab, Escape, Live-Join und Editor-Reconnect ergänzt
+- [x] Spieltest verwendet Touch-Emulation bei Android- und iPhone-großen Viewports
+- [ ] PR-/Main-CI, CTest, Playwright und produktiven Deploy verifizieren
+- [ ] Echte Android-Chrome- und iPhone-Safari-Abnahme auf Hardware durchführen

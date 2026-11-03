@@ -448,10 +448,30 @@ function bindButtons() {
     $('menu-button').focus();
   });
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || !app.menu.open) return;
-    closeMenu();
-    update();
-    $('menu-button').focus();
+    if (!app.menu.open) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeMenu();
+      update();
+      $('menu-button').focus();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    // The visual overlay also needs a real keyboard focus boundary.
+    const menu = $('menu');
+    const items = [...menu.querySelectorAll('button, a[href], input, textarea')]
+      .filter((element) => !element.disabled && element.getClientRects().length > 0);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || !menu.contains(active))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (active === last || !menu.contains(active))) {
+      event.preventDefault();
+      first.focus();
+    }
   });
 }
 
