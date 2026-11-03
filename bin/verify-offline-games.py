@@ -21,18 +21,20 @@ def redis_cli(container: str, *args: str) -> str:
 
 
 def main() -> int:
-    if (len(sys.argv) != 4 or
+    one_legacy_orphan = len(sys.argv) == 5 and sys.argv[4] == "--one-legacy-orphan"
+    if (len(sys.argv) != 4 and not one_legacy_orphan or
             not sys.argv[2].isdigit() or not sys.argv[3].isdigit()):
         print("FAIL: invalid offline-room check arguments", file=sys.stderr)
         return 1
 
-    container, room_count, active_count = sys.argv[1:]
+    container, room_count, active_count = sys.argv[1:4]
     if not re.fullmatch(r"[0-9a-f]{12,64}", container):
         print("FAIL: invalid Redis container ID", file=sys.stderr)
         return 1
     expected_rooms = int(room_count)
     expected_active = int(active_count)
-    if not 0 < expected_active <= expected_rooms:
+    if (not 0 < expected_active <= expected_rooms or
+            one_legacy_orphan and expected_active != 1):
         print("FAIL: invalid offline-room counts", file=sys.stderr)
         return 1
 
@@ -57,6 +59,15 @@ def main() -> int:
         # Do not expose private hands, card text or authorization tokens.
         print("FAIL: could not verify Redis room snapshots", file=sys.stderr)
         return 1
+
+    if one_legacy_orphan:
+        if active != 0:
+            print("DEFER: legacy orphan exception requires zero persisted active games",
+                  file=sys.stderr)
+            return 75
+        print("WARN: operator-authorized loss of one abandoned in-memory game; "
+              f"{len(keys)} persisted inactive rooms preserved")
+        return 0
 
     if active != expected_active:
         print(

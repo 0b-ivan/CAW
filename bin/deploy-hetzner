@@ -135,8 +135,17 @@ requireIdle() {
   # an isolated container before we consider restarting any saved game.
   git show "$sha:bin/verify-local-redis-restore" |
     CAW_REPO_ROOT="$PWD" bash
-  git show "$sha:bin/verify-offline-games.py" |
-    python3 - "$redis_container" "$sessions" "$in_progress"
+  # A single operator-approved exception is allowed only when the exact
+  # pre-fix production checkout is still running. One abandoned RAM-only
+  # match is unrecoverable; all Redis keys and Postgres data stay untouched.
+  if [[ "$previous_sha" == "e0990b10c7138e087ec52b30901249a5a6a98d49" ]] &&
+     (( in_progress == 1 )); then
+    git show "$sha:bin/verify-offline-games.py" |
+      python3 - "$redis_container" "$sessions" "$in_progress" --one-legacy-orphan
+  else
+    git show "$sha:bin/verify-offline-games.py" |
+      python3 - "$redis_container" "$sessions" "$in_progress"
+  fi
 }
 
 # A repeat schedule must not recreate an already deployed release.

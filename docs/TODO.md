@@ -365,3 +365,21 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 - [x] Compose-CI: künstlich kurzlebiger Redis-Raum erhält beim Serverneustart volle TTL zurück
 - [ ] Vollständige PR-/main-CI und Produktiv-Deploy nach den Sicherheitssperren prüfen
 - [ ] Bereits vor dem Fix ungesicherte aktive Räume nur nach separater Betreiberfreigabe rekonstruieren oder auslaufen lassen
+
+## Betrieb: einmaliger Betreiber-Rollout trotz einer RAM-Altsession (03.11.2026)
+
+- [x] Betreiberfreigabe: exakt eine bekannte verwaiste, nicht persistierte Altpartie darf verloren gehen
+- [x] Nur beim alten Produktions-SHA `e0990b10c7138e087ec52b30901249a5a6a98d49` und genau einer unfertigen Partie zulassen
+- [x] Null WebSockets, unveränderte Aktionen, drei Checks und isolierten Redis-Restore weiterhin verlangen
+- [x] Redis-Sitzungen und PostgreSQL unverändert lassen; vor Serverwechsel PostgreSQL-Dump
+- [x] Prüfmodus für ausschließlich inaktive gültige Redis-Snapshots mit Negativtests ergänzen
+- [ ] Vollständige PR- und exakte main-CI grün; automatischen echten Hetzner-Rollout und WSS nachweisen
+- [ ] Nach dem Rollout die Sonderfreigabe entfernen und geplante No-op-Probe abnehmen
+
+## Betrieb: Blue/Green statt wiederholter No-op-Deploys
+
+- [ ] Konzept für zwei C++-Server-Slots, Caddy-Traffic-Switch, Session-Besitz und WebSocket-Drain vervollständigen
+- [ ] Gesundheitsprüfung des grünen Slots mit vollständigem Auth-/WSS-Test vor Umschaltung
+- [ ] Neue Räume nur auf Green, vorhandene WebSockets bis Spielende auf Blue; Redis/PostgreSQL unverändert
+- [ ] Sicheren Rückschwenk, Wiederaufnahme über Tickets und wiederholte Slot-Switch-Tests nachweisen
+- [ ] Bisheriges halbstündliches Deploy-Schedule nach erfolgreicher Abnahme durch eventgetriebenen Deploy ersetzen

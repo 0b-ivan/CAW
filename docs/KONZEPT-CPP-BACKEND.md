@@ -797,6 +797,41 @@ operatorautorisierte, separat dokumentierte Recovery notwendig,
 falls sie nicht regulär ablaufen; ein Force-Restart ist nicht Teil
 dieses Fixes.
 
+### Einmaliger Betreiber-Rollout nach verwaister In-Memory-Partie (03.11.2026)
+
+Der Betreiber hat am 03.11.2026 ausdrücklich beauftragt, das produktive
+Deployment jetzt durchzuführen, obwohl eine bekannte, verlassene Partie
+ausschließlich im Speicher liegt. Der mehrfach wiederholte Deploy-Befund
+ist `caw_active_games=1`, `caw_sockets=0`, null persistierte aktive
+Redis-Partien. Die eine nicht gespeicherte Partie kann beim Wechsel verloren
+gehen; der Betreiber akzeptiert **nur diesen konkreten Verlust**. Andere
+Redis- und PostgreSQL-Daten müssen unverändert bleiben.
+
+Die Ausnahme ist nur für den unmittelbar vorher installierten alten
+Server-Commit `e0990b10c7138e087ec52b30901249a5a6a98d49` zulässig.
+Sie verlangt zu allen drei Leerlaufprüfungen genau eine unfertige Partie,
+null WebSockets und unveränderte `caw_actions_total` über die
+zusätzlichen 60 Sekunden. Backup-Worker-Health und erfolgreicher
+netzwerkisolierter Redis-RDB-Restore bleiben obligatorisch; direkt vor der
+Umschaltung läuft außerdem der bestehende PostgreSQL-Dump.
+
+Der Redis-Prüfer akzeptiert nur null persistierte aktive Partien und
+höchstens so viele Redis-Räume wie der Server meldet; alle vorhandenen
+`session:*`-Schlüssel und JSON-Spielphasen müssen gültig sein.
+Bestehende gespeicherte Lobbys oder beendete Spiele werden nicht
+gelöscht. Sobald der alte Checkout erfolgreich ersetzt ist, ist der
+Ausnahmepfad automatisch nicht mehr erreichbar; ein generelles
+`--force` wird nicht eingeführt. Keine Änderung am Spielprotokoll.
+
+Nach dem Wechsel gelten wieder alle regulären Schutzprüfungen.
+Der neue Release benötigt vollständigen öffentlichen HTTPS- und
+authentifizierten WSS-Spieltest; ein weiterer automatischer Lauf prüft
+`/ws/probe` ohne einen neuen Raum anzulegen. Vor dem nächsten
+Deployment wird Blue/Green mit einem stabilen Socket-Drain-Konzept
+separat entworfen und getestet. Zwei Container allein reichen
+**nicht** für unterbrechungsfreie WebSockets, solange Session-Besitz,
+Admission-Stop und gezielte Verbindungsweiterleitung ungeklärt sind.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
