@@ -29,4 +29,11 @@ fi
   --detach --wait --wait-timeout 90 server-green
 curl --fail --silent --show-error http://127.0.0.1:18082/readyz |
   grep -qx ready
-echo "PASS: stopped Blue before Green loaded the persisted rooms"
+
+# This container restart is deliberate in CI; production requires tested
+# in-place Caddy reload with stream_close_delay and a fenced ownership handoff.
+"${candidate[@]}" up --no-deps --no-build --force-recreate \
+  --detach --wait --wait-timeout 90 caddy
+curl --fail --silent --show-error http://127.0.0.1:8080/healthz |
+  grep -qx ok
+echo "PASS: stopped Blue, restored Green, routed CI Caddy to Green"

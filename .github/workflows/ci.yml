@@ -29,6 +29,7 @@ jobs:
         run: |
           python3 -m unittest discover -s tests -p 'test_hetzner_preflight.py'
           python3 -m unittest discover -s tests -p 'test_hetzner_deploy.py'
+          python3 -m unittest discover -s tests -p 'test_bluegreen_reconnect.py'
           python3 -m unittest discover -s tests -p 'test_legacy_room_idle.py'
           python3 -m unittest discover -s tests -p 'test_offline_games.py'
           python3 -m unittest discover -s tests -p 'test_local_restore.py'
@@ -222,7 +223,7 @@ jobs:
       - name: Rehearse stopped-Blue to active-Green room and WebSocket restore
         run: |
           CAW_BLUEGREEN_CI=1 node tests/bots/play.mjs http://localhost:8080 \
-            "bash bin/test-bluegreen-reconnect" http://127.0.0.1:18082
+            "bash bin/test-bluegreen-reconnect" http://localhost:8080
       - name: Compose diagnostics
         if: failure()
         run: docker compose -f deploy/compose.yml logs --no-color

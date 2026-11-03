@@ -400,6 +400,7 @@ Prüfbelege für M0/M1: [validation/M0-M1.md](validation/M0-M1.md).
 ### Blue/Green: isolierter Restore-Probelauf (Issue #43)
 
 - [x] Eigenständigen Green-Container nach vollständig gestopptem Blue aus Redis starten
+- [x] Im isolierten CI-Lauf nach Green-Readiness Caddy auf Green richten und über denselben öffentlichen Test-Origin reconnecten
 - [x] Acht Spieler mit rotierenden Tickets, gespeicherten Antworten und Big Screen im CI-Probelauf prüfen (Test im PR; CI-Abnahme noch ausstehend)
 - [ ] Fail-closed Ownership, bestätigte Quiesce-Persistenz, produktives Caddy-Routing und Rollback umsetzen
 - [ ] Öffentliche Live-Abnahme mit Reconnect und Last-/Restore-Regressionen durchführen

@@ -978,3 +978,11 @@ Flush der Persistenzwarteschlange noch die Redis-Eigentümerschaft, das
 Caddy-Routing, Fehler-Rollback oder eine reale HTTPS-/WSS-Abnahme. Bis diese
 Anforderungen separat implementiert und getestet sind, bleibt der Green-Slot
 in Produktions-Compose ausschließlich Standby; es findet kein Slotwechsel statt.
+
+Die Test-Compose-Konfiguration setzt das Caddy-Upstream-Ziel erst **nach**
+dem erfolgreichen Green-Restore auf Green. Für diesen isolierten Test wird
+Caddy kontrolliert neu erstellt; die Spieler verbinden sich danach erneut
+über denselben HTTP-/WebSocket-Einstieg, nicht direkt mit dem Container.
+Der produktive Tunnel und die Hetzner-Caddy-Konfiguration bleiben dabei
+unverändert. Das Testverfahren belegt ausdrücklich **keinen**
+unterbrechungsfreien Caddy-Reload.

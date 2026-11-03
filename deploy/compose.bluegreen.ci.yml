@@ -1,6 +1,10 @@
 # CI ONLY: expose the candidate on loopback and make it active after Blue has stopped.
 # Never include this overlay in the Hetzner production Compose invocation.
 services:
+  caddy:
+    # Routing override is strictly part of the local/CI takeover rehearsal.
+    environment:
+      CAW_UPSTREAM: server-green:8080
   server-green:
     environment:
       CAW_STANDBY: "0"
