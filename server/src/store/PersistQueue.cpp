@@ -35,9 +35,8 @@ void PersistQueue::pushHistory(std::vector<HistoryEvent> events) {
 
 bool PersistQueue::flush(std::chrono::milliseconds timeout) {
   std::unique_lock<std::mutex> lock(mutex_);
-  const bool complete = drained_.wait_for(lock, timeout, [this] {
-    return discarded_ || (waiting_.empty() && !saving_);
-  });
+  const bool complete = drained_.wait_for(
+      lock, timeout, [this] { return discarded_ || (waiting_.empty() && !saving_); });
   return complete && !discarded_;
 }
 
