@@ -10,8 +10,16 @@ const SIZES = [[320, 568], [390, 844], [1280, 800]];
 const SCREEN_SIZES = [[1920, 1080], [1024, 768]];
 const pages = [];
 
-async function openPhone(browser, locale = 'de-DE') {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, locale });
+async function openPhone(browser, locale = 'de-DE', mobile = null) {
+  const viewport = mobile === 'android' ? { width: 360, height: 800 } : { width: 390, height: 844 };
+  const options = { viewport, locale };
+  if (mobile) {
+    // Chromium touch profiles exercise real tap/scroll handling and mobile viewport math.
+    // These are not substitutes for an on-device Safari/Android release check.
+    Object.assign(options, { isMobile: true, hasTouch: true,
+      deviceScaleFactor: mobile === 'ios' ? 3 : 2.75 });
+  }
+  const context = await browser.newContext(options);
   await context.addInitScript(() => sessionStorage.setItem('caw.intro.seen', '1'));
   const page = await context.newPage();
   page.errors = [];
@@ -182,11 +190,13 @@ async function waitView(page, view) {
   }
 }
 
-async function joinAs(browser, code, name) {
-  const page = await openPhone(browser);
+async function joinAs(browser, code, name, mobile = null) {
+  const page = await openPhone(browser, 'de-DE', mobile);
   await page.goto(`${target}/s/${code}`);
   await page.getByLabel('DEIN NAME').fill(name);
-  await page.getByRole('button', { name: '[ BEITRETEN ]' }).click();
+  const join = page.getByRole('button', { name: '[ BEITRETEN ]' });
+  if (mobile) await join.tap();
+  else await join.click();
   await waitView(page, 'lobby');
   return page;
 }
@@ -404,6 +414,32 @@ async function run(browser) {
   assert.equal(await host.locator('#start-button').isDisabled(), true, 'START needs three players');
   await checkFit(host, 'lobby-host', '#start-button');
 
+  // A modal menu must not leave the game controls reachable behind it.
+  await host.locator('#menu-button').click();
+  assert.equal(await host.locator('#menu').getAttribute('role'), 'dialog');
+  assert.equal(await host.locator('#menu').getAttribute('aria-modal'), 'true');
+  assert.equal(await host.locator('.views').evaluate((view) => view.inert), true);
+  assert.equal(await host.evaluate(() => document.activeElement.id), 'menu-close');
+  await host.keyboard.press('Shift+Tab');
+  assert.ok(await host.evaluate(() => document.activeElement.closest('#menu') !== null),
+    'Shift+Tab wraps inside the modal menu');
+  await host.keyboard.press('Tab');
+  assert.equal(await host.evaluate(() => document.activeElement.id), 'menu-close',
+    'Tab wraps from the last menu link to Close');
+  await host.locator('#menu-body .menu-row').first().focus();
+  const menuFocusText = await host.locator('#menu-body .menu-row').first().textContent();
+
+  // While a menu row has focus, remote players joining still trigger renders.
+  // Those renders must not throw the keyboard or VoiceOver focus to <body>.
+  const firstMobilePlayer = await joinAs(browser, code, 'BrowserAda', 'android');
+  await host.locator('#lobby-players li', { hasText: 'BrowserAda' }).waitFor();
+  assert.equal(await host.evaluate(() => document.activeElement?.textContent), menuFocusText,
+    'live state updates preserve the focused menu row');
+  await host.keyboard.press('Escape');
+  assert.equal(await host.locator('#menu').isVisible(), false);
+  assert.equal(await host.locator('.views').evaluate((view) => view.inert), false);
+  assert.equal(await host.evaluate(() => document.activeElement.id), 'menu-button');
+
   // The big screen listens on its own socket; every frame it gets is recorded.
   const screen = await openPhone(browser);
   const screenFrames = [];
@@ -412,8 +448,10 @@ async function run(browser) {
   await screen.locator('#screen-code', { hasText: code }).waitFor();
   await screen.locator('#screen-qr svg').waitFor();
 
-  const players = [];
-  for (const name of ['BrowserAda', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
+  const players = [firstMobilePlayer];
+  for (const [name, mobile] of [['Bert', 'ios'], ['Cyra', 'android']]) {
+    players.push(await joinAs(browser, code, name, mobile));
+  }
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
   await checkFit(host, 'lobby-host-full', '#start-button');
   await host.setViewportSize({ width: 320, height: 568 });
