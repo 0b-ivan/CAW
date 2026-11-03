@@ -550,3 +550,39 @@ Deploy-Code entfernt. Die damaligen Beschreibungen in Abschnitt 9 sind
 ausschließlich als Verlauf zu verstehen, nicht als aktuelle
 Handlungsanweisung. Nachweis:
 [docs/validation/PRODUCTION-2026-11-02.md](../validation/PRODUCTION-2026-11-02.md).
+
+## 12. Kein False Positive mehr bei gespeicherten Offline-Partien (03.11.2026)
+
+Die ältere Metrik `caw_active_games` zählt unfertige Spielphasen auch
+dann, wenn **niemand mehr verbunden ist**. Das führte in den Runs
+[41560312537](https://github.com/0b-ivan/CAW/actions/runs/41560312537)
+und [41563947097](https://github.com/0b-ivan/CAW/actions/runs/41563947097)
+zurückgestellten Releases bei genau einer unfertigen Partie und
+`caw_sockets=0`. Der Betreiber bestätigte ausdrücklich, dass kein
+Spiel mehr stattfindet. Die Metrik war korrekt für den gespeicherten
+Spielstatus, aber kein hinreichender Indikator für aktive Spieler.
+
+**Neue Deploy-Regel:** Offene WebSockets blockieren ausnahmslos. Bei
+null Sockets darf ein unfertiges Spiel einen sicheren Neustart
+überstehen, **wenn alle unfertigen Spielräume nachweislich in Redis
+gespeichert sind**. Der Deploy prüft hierzu nur anonyme Room-Anzahlen
+und Phasen aller `session:*`-Snapshots, den gesunden Backup-Worker,
+einen erfolgreichen netzwerkisolierten RDB-Restore und einen stabilen
+`caw_actions_total` über drei Kontrollen mit mindestens 60 Sekunden
+Ruhezeit. Ungültige, fehlende oder zusätzliche aktive Redis-Räume,
+offene WebSockets oder neue Spieleraktionen führen weiterhin zur
+Zurückstellung bzw. zu einem sicheren Abbruch.
+
+Die laufenden Container und Redis-Schlüssel werden **nicht** vor
+diesen Prüfungen verändert. Danach beendet nur Compose den einzelnen
+C++-Spielserver; dessen normaler Shutdown leert die Snapshot-Queue.
+Die Daten bleiben in Redis und können über vorhandene Tickets wieder
+aufgenommen werden. Neue Zimmer müssen nicht angelegt und alte Spiele
+nicht gelöscht werden. Vollständig unterbrechungsfreies Deployment
+während aktiver Verbindungen benötigt weiterhin Admission-Drain oder
+mehrere Instanzen.
+
+Die Ausnahme für die alten `cc02372*`-/`fc59685*`-Checkouts bleibt
+entfernt. Das hier ist eine wiederverwendbare, datenbewahrende Regel
+für gespeicherte und momentan nicht verbundene Partien, kein
+betreiberabhängiger Force-Rollout.
