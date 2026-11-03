@@ -2,6 +2,7 @@
 #include <doctest/doctest.h>
 
 #include <chrono>
+#include <condition_variable>
 #include <map>
 #include <mutex>
 #include <nlohmann/json.hpp>
@@ -30,6 +31,40 @@ struct FakeStore final : caw::SnapshotStore {
   std::vector<std::pair<std::string, std::string>> loadAll() override {
     return {latest.begin(), latest.end()};
   }
+};
+
+// Simulates a single lost Redis connection after the queue has taken its batch.
+struct FlakyStore final : caw::SnapshotStore {
+  std::mutex mutex;
+  std::condition_variable failedWake;
+  bool failedOnce = false;
+  int attempts = 0;
+  std::map<std::string, std::string> latest;
+
+  bool save(const std::string& code, const std::string& snapshot) override {
+    std::lock_guard<std::mutex> lock(mutex);
+    ++attempts;
+    if (!failedOnce) {
+      failedOnce = true;
+      failedWake.notify_one();
+      return false;
+    }
+    latest[code] = snapshot;
+    return true;
+  }
+  std::vector<std::pair<std::string, std::string>> loadAll() override {
+    std::lock_guard<std::mutex> lock(mutex);
+    return {latest.begin(), latest.end()};
+  }
+};
+
+struct BrokenStore final : caw::SnapshotStore {
+  int attempts = 0;
+  bool save(const std::string&, const std::string&) override {
+    ++attempts;
+    return false;
+  }
+  std::vector<std::pair<std::string, std::string>> loadAll() override { return {}; }
 };
 
 struct FakeHistory final : caw::HistoryStore {
@@ -73,6 +108,37 @@ TEST_CASE("stop saves the newest snapshot of every room") {
   CHECK(store.latest["BBBBBB"] == "only");
   // Waiting snapshots of one room are replaced, not all written.
   CHECK(store.saves["AAAAAA"] <= 1000);
+}
+
+TEST_CASE("failed snapshots retry without replacing newer room state") {
+  FlakyStore store;
+  FakeHistory history;
+  {
+    PersistQueue queue(store, history);
+    queue.push("AAAAAA", "stale");
+    // Make the first failure deterministic before sending the next state.
+    {
+      std::unique_lock<std::mutex> lock(store.mutex);
+      REQUIRE(store.failedWake.wait_for(lock, std::chrono::seconds(3),
+                                        [&store] { return store.failedOnce; }));
+    }
+    queue.push("AAAAAA", "latest");
+    queue.stop();
+  }
+  CHECK(store.attempts >= 2);
+  REQUIRE(store.latest.count("AAAAAA") == 1);
+  CHECK(store.latest["AAAAAA"] == "latest");
+}
+
+TEST_CASE("a permanent Redis error does not hang shutdown indefinitely") {
+  BrokenStore store;
+  FakeHistory history;
+  {
+    PersistQueue queue(store, history);
+    queue.push("AAAAAA", "synthetic data only");
+    queue.stop();
+  }
+  CHECK(store.attempts == 5);
 }
 
 TEST_CASE("a room survives a registry restart through its snapshot") {
