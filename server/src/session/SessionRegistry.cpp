@@ -206,10 +206,10 @@ std::string SessionRegistry::snapshot(const std::string& code, Time now) {
   if (found == rooms_.end() || now >= found->second.expiresAt) return {};
   Room& room = found->second;
   const Session& session = *room.session;
-  std::string saved = Messages::saveRoom({room.language, room.hostToken, session.packs(),
-                                          session.saveState(millisNow()), session.identities(),
-                                          session.matchLines(), session.locked(), room.customPack,
-                                          room.proposals});
+  std::string saved =
+      Messages::saveRoom({room.language, room.hostToken, session.packs(),
+                          session.saveState(millisNow()), session.identities(),
+                          session.matchLines(), session.locked(), room.customPack, room.proposals});
   // Renew only alongside a snapshot written through the persistence queue.
   // A mere WebSocket lookup must never outlive the last Redis save.
   room.expiresAt = now + ttl_;
