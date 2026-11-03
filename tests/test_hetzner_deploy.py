@@ -112,10 +112,33 @@ class DeploymentSafetyTests(unittest.TestCase):
         self.assertIn("https://caw.obivan.org/metrics", workflow)
         self.assertIn('test "$metrics_status" = 404', workflow)
         self.assertIn(
-            "if: steps.rollout.outputs.deferred != 'true'", workflow
+            "if: steps.rollout.outputs.changed == 'true'", workflow
         )
-        # Existing release probes still exercise WSS; deferred ones only read health.
+        self.assertIn(
+            "if: steps.rollout.outputs.unchanged == 'true'", workflow
+        )
+        # Newly installed releases test host/state; unchanged ones never create rooms.
         self.assertIn("node bin/hetzner-wss-check.mjs", workflow)
+        self.assertIn("node bin/hetzner-wss-probe.mjs", workflow)
+        self.assertIn("Verify existing release via room-free public WSS probe", workflow)
+
+    def test_session_free_probe_creates_no_redis_rooms(self):
+        probe = (ROOT / "bin" / "hetzner-wss-probe.mjs").read_text()
+        server = (ROOT / "server" / "src" / "net" / "Server.cpp").read_text()
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
+
+        self.assertIn("new URL('/ws/probe', origin)", probe)
+        self.assertIn("'WSS probe timed out'", probe)
+        self.assertIn("session-free WSS probe", probe)
+        self.assertNotIn("POST", probe)
+        self.assertNotIn("/api/sessions", probe)
+        self.assertNotIn("hostToken", probe)
+        self.assertIn('app.ws<SocketData>("/ws/probe"', server)
+        self.assertLess(server.index("registerProbeSocket(app)"),
+                        server.index("registerGameSocket(app, false)"))
+        self.assertIn('if (!admitted(roomLimit_, response, request)) return;', server)
+        self.assertIn("node bin/hetzner-wss-probe.mjs http://localhost:8080", ci)
+        self.assertIn('test "$before" = "$after"', ci)
 
     def test_pipeline_gates_real_production_access(self):
         workflow = WORKFLOW.read_text()
