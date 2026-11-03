@@ -194,6 +194,7 @@ function cardButton(app, actions, card, slot) {
     button.append(mark, ' ');
     button.setAttribute('aria-label', t('slotLabel', position + 1, app.frame.pick, card));
   }
+  // Keep the hand card plain; embossing is reserved for answers shown in sentences.
   button.append(card);
   button.addEventListener('click', () => actions.toggleCard(slot));
   return button;
@@ -246,10 +247,9 @@ function playItem(app, actions, play, index, canJudge) {
   const sentence = document.createElement('span');
   sentence.className = 'choice-content';
   sentence.append(number);
+  // Options remain plain text; only the sentence preview above uses embossed tape.
   play.cards.forEach((card, i) => {
-    const mark = document.createElement('mark');
-    mark.textContent = card;
-    sentence.append(i === 0 ? ' ' : ' / ', mark);
+    sentence.append(i === 0 ? ' ' : ' / ', card);
   });
   body.append(sentence);
   if (canJudge) {

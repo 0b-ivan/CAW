@@ -38,6 +38,8 @@ class SessionRegistry final {
   bool authenticatedHost(std::string_view code, std::string_view hostToken,
                          Time now = Clock::now()) const;
   std::size_t activeCount(Time now = Clock::now()) const;
+  // Matches not yet finished, including disconnected clients.
+  std::size_t inProgressCount(Time now = Clock::now()) const;
   void expire(Time now = Clock::now());
   // The room-only pack is private and may be replaced only in the lobby.
   const CardPack* customCards(std::string_view code) const;
@@ -46,13 +48,13 @@ class SessionRegistry final {
   bool submitProposal(std::string_view code, std::string_view ticket, CardProposal proposal);
   bool reviewProposal(std::string_view code, std::string_view id, bool approve);
 
-  // The running match of a room, or nullptr. Every lookup counts as activity.
+  // Read-only lookup: it must not outlive the persisted Redis snapshot.
   Session* find(std::string_view code, Time now = Clock::now());
   // All running matches with their codes, for the clock tick.
   std::vector<std::pair<std::string, Session*>> all();
 
-  // The room as Messages::saveRoom text, for Redis. Empty for an unknown code.
-  std::string snapshot(const std::string& code);
+  // A snapshot being queued for Redis renews the room's TTL. Read-only lookups do not.
+  std::string snapshot(const std::string& code, Time now = Clock::now());
   // Brings a saved room back after a restart. False for a malformed or outdated snapshot.
   bool restore(const std::string& code, std::string_view snapshot, Time now = Clock::now());
 

@@ -1,0 +1,58 @@
+name: Audit Hetzner Redis backups
+
+# GitHub Actions failure is the operator alert; no snapshot content is logged.
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore-audit:
+    if: github.repository == '0b-ivan/CAW' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    environment: production
+    env:
+      CAW_SSH_HOST: ${{ secrets.CAW_SSH_HOST }}
+      CAW_SSH_USER: ${{ secrets.CAW_SSH_USER }}
+      CAW_SSH_KEY: ${{ secrets.CAW_SSH_PRIVATE_KEY }}
+      CAW_SSH_KNOWN_HOSTS: ${{ secrets.CAW_SSH_KNOWN_HOSTS }}
+      CAW_SSH_PORT: ${{ vars.CAW_SSH_PORT || '22' }}
+    steps:
+      - name: Validate dedicated SSH access
+        run: |
+          set -euo pipefail
+          test "$CAW_SSH_USER" = caw-deploy
+          test -n "$CAW_SSH_HOST" && test -n "$CAW_SSH_KEY"
+          test -n "$CAW_SSH_KNOWN_HOSTS"
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$CAW_SSH_KEY" > "$HOME/.ssh/caw_deploy"
+          printf '%s\n' "$CAW_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/caw_deploy" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/caw_deploy" >/dev/null
+      - name: Check latest snapshot and restore without production writes
+        run: |
+          set -euo pipefail
+          ssh -T -i "$HOME/.ssh/caw_deploy" \
+            -p "$CAW_SSH_PORT" -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes -o ConnectTimeout=15 \
+            "$CAW_SSH_USER@$CAW_SSH_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          cd /opt/caw
+          test "$(id -un)" = caw-deploy
+          container="$(docker ps --filter label=com.docker.compose.project=caw \
+            --filter label=com.docker.compose.service=redis-backup \
+            --format '{{.ID}}' | head -n 1)"
+          test -n "$container"
+          test "$(docker inspect --format '{{.State.Health.Status}}' "$container")" = healthy
+          docker exec "$container" sh -ec \
+            'find /backups/redis -maxdepth 1 -type f -name "caw-*.rdb" -mmin -1560 | grep -q .'
+          git fetch --quiet origin main
+          git show origin/main:bin/verify-local-redis-restore |
+            CAW_REPO_ROOT=/opt/caw bash
+          echo 'PASS: fresh Redis backup restored without production data access'
+          REMOTE

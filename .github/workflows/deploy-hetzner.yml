@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Retry deferred releases while existing games are in progress.
+  schedule:
+    - cron: '*/30 * * * *'
 
 permissions:
   contents: read
@@ -16,11 +19,14 @@ concurrency:
 
 jobs:
   publish:
+    # Operator explicitly enabled automatic deployments from tested main pushes.
+    # The production environment, exact-SHA CI gate and rollback stay mandatory.
     if: >-
-      vars.CAW_PRODUCTION_APPROVED == 'true' &&
+      github.repository == '0b-ivan/CAW' &&
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'push' && vars.CAW_AUTO_DEPLOY == 'true'))
+       github.event_name == 'push' ||
+       github.event_name == 'schedule')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -54,8 +60,12 @@ jobs:
           set -euo pipefail
           image="ghcr.io/0b-ivan/caw-server:sha-$DEPLOY_SHA"
           echo "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-          docker build --target runtime -t "$image" -f deploy/server.Dockerfile .
-          docker push "$image"
+          if docker manifest inspect "$image" >/dev/null 2>&1; then
+            echo "PASS: immutable GHCR image already exists"
+          else
+            docker build --target runtime -t "$image" -f deploy/server.Dockerfile .
+            docker push "$image"
+          fi
 
   deploy:
     needs: publish
@@ -90,21 +100,79 @@ jobs:
           printf '%s\n' "$CAW_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/caw_deploy" "$HOME/.ssh/known_hosts"
           ssh-keygen -y -f "$HOME/.ssh/caw_deploy" >/dev/null
-      - name: Back up and update only the CAW Compose services
+      - name: Start Redis backups independently of game deployment
         run: |
           set -euo pipefail
-          # The short-lived GHCR token is sent only as SSH stdin; no persistent
-          # server-side Docker login, credentials file, or command-line secret.
+          # Only the new worker may be created here. Do not touch running games.
+          # The script is read from the exact commit accepted by the CI gate.
+          ssh -T -i "$HOME/.ssh/caw_deploy" \
+            -p "$CAW_SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$CAW_SSH_USER@$CAW_SSH_HOST" \
+            "set -euo pipefail; cd /opt/caw; git fetch --quiet origin main; git show '$DEPLOY_SHA:bin/bootstrap-redis-backup' | bash -s -- '$DEPLOY_SHA'"
+      - name: Deploy only when no CAW games or sockets are active
+        id: rollout
+        run: |
+          set -euo pipefail
+          # The old production checkout does not yet have bin/deploy-hetzner.
+          # Read the tested script from Git without changing tracked files.
+          # GHCR_TOKEN remains on stdin, never in the host filesystem.
+          set +e
           printf '%s\n' "$GHCR_TOKEN" |
             ssh -T -i "$HOME/.ssh/caw_deploy" \
               -p "$CAW_SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
               "$CAW_SSH_USER@$CAW_SSH_HOST" \
-              "cd /opt/caw && bash bin/deploy-hetzner '$DEPLOY_TAG' '$GITHUB_ACTOR'"
+              "set -e; cd /opt/caw; git fetch --quiet origin main; bootstrap=\$(mktemp .git/caw-deploy-bootstrap.XXXXXX); trap 'rm -f \"\$bootstrap\"' EXIT; git show '$DEPLOY_SHA:bin/deploy-hetzner' > \"\$bootstrap\"; bash \"\$bootstrap\" '$DEPLOY_TAG' '$GITHUB_ACTOR'"
+          result=$?
+          set -e
+          case "$result" in
+            0)
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+              printf '### CAW: DEPLOYED\n\nInstalled commit `%s`. Public WSS verification follows.\n' \
+                "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            75)
+              echo "deferred=true" >> "$GITHUB_OUTPUT"
+              printf '### CAW: NOT DEPLOYED (deferred)\n\nCommit `%s` is pending because a game or socket is active. Existing containers were not restarted. The scheduled retry remains enabled.\n' \
+                "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+              echo "::notice::CAW rollout deferred; this workflow did not install the release"
+              ;;
+            79)
+              echo "unchanged=true" >> "$GITHUB_OUTPUT"
+              printf '### CAW: UNCHANGED\n\nCommit `%s` is already installed or superseded. No containers were restarted.\n' \
+                "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              exit "$result"
+              ;;
+          esac
+      - name: Verify public HTTPS without creating a room when deferred
+        if: steps.rollout.outputs.deferred == 'true'
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 --retry-delay 2 \
+            https://caw.obivan.org/healthz | grep -qx ok
+          metrics_status="$(curl --silent --show-error --output /dev/null \
+            --write-out '%{http_code}' https://caw.obivan.org/metrics)"
+          test "$metrics_status" = 404
+          echo "PASS: deferred rollout leaves public HTTPS healthy"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Verify existing release via room-free public WSS probe
+        if: steps.rollout.outputs.unchanged == 'true'
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if node bin/hetzner-wss-probe.mjs; then
+              exit 0
+            fi
+            echo "Session-free WSS probe attempt $attempt failed"
+            sleep 5
+          done
+          exit 1
       - name: Verify the public HTTPS and WebSocket handshake
         id: wss
+        if: steps.rollout.outputs.changed == 'true'
         run: |
           set -euo pipefail
           for attempt in 1 2 3; do
@@ -116,7 +184,7 @@ jobs:
           done
           exit 1
       - name: Roll back CAW if the public WebSocket handshake fails
-        if: failure() && steps.wss.outcome == 'failure'
+        if: failure() && steps.rollout.outputs.changed == 'true' && steps.wss.outcome == 'failure'
         run: |
           set -euo pipefail
           ssh -T -i "$HOME/.ssh/caw_deploy" \

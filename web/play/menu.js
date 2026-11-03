@@ -19,9 +19,39 @@ const RULES = [
   { key: 'autoSecs', label: 'autoNext', options: [0, 5, 8, 12] },
 ];
 
+// The live game can rerender this menu while a keyboard or screenreader user
+// is interacting with it. Remember their place before replacing dynamic rows.
+function menuFocus(body) {
+  const active = document.activeElement;
+  if (!body.contains(active)) return null;
+  const items = [...body.querySelectorAll('button, a[href], input, textarea')];
+  const cursor = active instanceof HTMLTextAreaElement
+    ? [active.selectionStart, active.selectionEnd] : null;
+  return { id: active.id, index: items.indexOf(active), cursor };
+}
+
+function restoreMenuFocus(body, previous) {
+  if (!previous) return;
+  const items = [...body.querySelectorAll('button, a[href], input, textarea')];
+  const target = (previous.id && document.getElementById(previous.id)) || items[previous.index];
+  if (!target || target.disabled) return;
+  target.focus({ preventScroll: true });
+  if (previous.cursor && target instanceof HTMLTextAreaElement) {
+    target.setSelectionRange(...previous.cursor);
+  }
+}
+
 export function renderMenu(app, actions) {
   const menu = $('menu');
+  const body = $('menu-body');
+  const previous = menuFocus(body);
+  const scroll = body.scrollTop;
   menu.hidden = !app.menu.open;
+  // A full-screen overlay must not expose controls underneath to VoiceOver
+  // or TalkBack. Never inert the menu itself.
+  for (const child of $('shell').children) {
+    if (child !== menu) child.inert = app.menu.open;
+  }
   $('menu-button').setAttribute('aria-expanded', String(app.menu.open));
   if (!app.menu.open) return;
   const hostPage = ['rules', 'players', 'packs', 'cards', 'proposals'].includes(app.menu.page);
@@ -43,7 +73,12 @@ export function renderMenu(app, actions) {
     proposal: t('proposalMenu'), proposals: t('proposalsMenu'), fame: t('fame'),
   };
   $('menu-title').textContent = titles[page];
-  $('menu-body').replaceChildren(...pages[page](app, actions));
+  const samePage = body.dataset.page === page;
+  body.replaceChildren(...pages[page](app, actions));
+  body.dataset.page = page;
+  body.scrollTop = samePage ? scroll : 0;
+  if (samePage) restoreMenuFocus(body, previous);
+  else if (previous) body.querySelector('button:not(:disabled), a[href]')?.focus({ preventScroll: true });
   if (page === 'proposals' && !app.proposals && !app.proposalLoading) actions.loadProposals();
 }
 

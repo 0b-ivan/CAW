@@ -46,6 +46,7 @@ void Metrics::observeTick(double seconds) {
 std::string Metrics::render() const {
   std::string out;
   line(out, "caw_sessions", "gauge", "Current sessions.", sessions);
+  line(out, "caw_active_games", "gauge", "Unfinished matches.", activeGames);
   line(out, "caw_sockets", "gauge", "Open game and big screen sockets.", sockets);
   line(out, "caw_actions_total", "counter", "Game messages handled.", actions_);
   out += "# HELP caw_action_seconds From a game message to all its frames sent.\n";

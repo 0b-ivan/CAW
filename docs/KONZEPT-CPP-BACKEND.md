@@ -444,11 +444,486 @@ oder `bin/smoke` auf Produktion ausführen. Das lokale Postgres-Backup
 ersetzt **nicht** die noch fehlende verschlüsselte externe Sicherung von
 Postgres und Redis.
 
-Die Pipeline wird aus Sicherheitsgründen erst nach **expliziter**
-Produktionsfreigabe (`CAW_PRODUCTION_APPROVED=true`) scharfgeschaltet.
-Automatische Deployments nach Merge auf `main` brauchen zusätzlich
-`CAW_AUTO_DEPLOY=true`. Bis die Betreiberangaben, Kartenrechte,
-Offsite-Backups und TLS/WSS-Abnahme erledigt sind, bleiben beide
-Variablen aus. SSH-Zugangsdaten gehören ausschließlich in die geschützte
-GitHub-Environment `production`; eine manuelle Deployment-Freigabe kann
-dort durch Required Reviewers ergänzt werden.
+**Betriebsentscheidung vom 2026-11-01:** Der Betreiber verlangt die
+sofortige Inbetriebnahme der automatischen technischen Deployments auf dem
+bereits erreichbaren Hetzner-Host, auch wenn die externe Backup-Einrichtung
+vorläufig ausgesetzt wurde. Deshalb startet der Produktions-Workflow nach
+jedem `main`-Push oder bewusstem manuellem Auslösen **ohne zusätzliche
+Repository-Freigabevariablen**. Der vollständige erfolgreiche CI-Lauf für
+exakt den aktuellen `main`-Commit bleibt zwingend, ebenso die geschützte
+GitHub-Environment `production`, der dedizierte SSH-Zugang, das frische
+lokale PostgreSQL-Backup vor der Änderung, Healthchecks und Rollback.
+
+Diese Aktivierung ist ausdrücklich **nur die technische Betriebsentscheidung**,
+**keine** Feststellung rechtlicher Freigabe oder vollständiger Ausfallsicherheit.
+Die Rechteklärung der Prior99-/Drittanbieter-Karten, die Prüfung realer
+Betreiberangaben und die verschlüsselte externe Sicherung von PostgreSQL und
+Redis-AOF sind weiterhin offen und müssen abgeschlossen werden. Der Betreiber
+trägt bis dahin das bekannte Risiko, dass bei vollständigem Host- oder
+Volume-Verlust sowohl Primärdaten als auch lokale Backups verloren gehen
+können. Ein offizieller `v1.0.0`-Release-Tag bleibt weiterhin gesperrt.
+GitHub-Environment-Required-Reviewers dürfen Deployments zusätzlich
+absichtlich anhalten; wir umgehen sie nicht.
+
+## 16. GHCR Release-Kandidat vor Freigabe des Hetzner-Deployments
+
+Die Produktionsfreigabe und das Erstellen eines geprüften Container-Images
+sind getrennte Vorgänge. Um GHCR-Zugang und SHA-Image-Publishing tatsächlich
+zu prüfen, darf ein eigener Release-Kandidaten-Workflow ein Server-Image nach
+GHCR übertragen, **ohne** den Hetzner-Checkout, den laufenden Compose-Stack,
+die Datenbanken oder den Cloudflare-Tunnel zu verändern.
+
+Diese begrenzte Probe läuft einmalig beim Merge der Workflow-Datei nach
+\`main\` und kann anschließend manuell auf \`main\` wiederholt werden.
+Vor jedem Build wird dieselbe erfolgreiche komplette \`main\`-Push-CI für
+exakt den aktuellen Commit nachgewiesen wie beim echten Deployment.
+Ein fehlgeschlagener, abgelaufener oder veralteter CI-Lauf blockiert den
+Publish. Das Bild erhält ausschließlich \`sha-<40-stelliger Commit>\`.
+Ein bestehender SHA-Tag wird nicht erneut überschrieben.
+
+Der Probelauf benutzt das kurzlebige GitHub-Token mit \`packages: write\`
+nur innerhalb des GitHub-Runners; er erhält keine Produktions-SSH-Secrets,
+ändert keine GitHub-Freigabevariablen und rollt keinen Container aus.
+Die Produktion bleibt bis zur ausdrücklich bestätigten rechtlichen und
+betrieblichen Freigabe gesperrt, einschließlich der noch fehlenden
+Offsite-Backups von PostgreSQL und Redis. Ein erfolgreicher Image-Publish
+allein ist **keine** Produktionsabnahme.
+
+## 17. Spielraum-schonende automatische Aktualisierung
+
+Ein einzelner C++-Server mit bestehenden WebSocket-Verbindungen kann nicht
+ohne Unterbrechung seiner TCP-Verbindungen ersetzt werden. Die Wiederherstellung
+von Redis-Snapshots und das clientseitige Resume sind **kein** garantiert
+unterbrechungsfreies Deployment. Daher wechselt der automatische Rollout
+nur während nachgewiesenen Spiel-Leerlaufs die Version.
+
+Vor jeder Änderung an Git-Checkout, \`deploy/.env\` oder laufenden
+Containern muss der Deploy-Prozess über den **internen** \`/metrics\`-Endpunkt
+\`caw_sockets == 0\` und \`caw_active_games == 0\` nachweisen. Als aktives
+Spiel gelten Playing, Judging und Reveal, auch ohne verbundene Spieler.
+Eine leere Lobby oder ein beendetes Spiel ohne Verbindung blockiert nicht.
+Auf dem alten Server ohne \`caw_active_games\` wird vor dem ersten
+Update die Phase **sämtlicher** noch gültiger Redis-Room-Snapshots gelesen.
+Nur Phase Lobby (0) oder Finished (4) sowie \`caw_sockets == 0\` erlauben
+den Wechsel. Playing (1), Judging (2) oder Reveal (3) blockieren den Rollout
+selbst ohne verbundene Clients. Anzahl der Redis-Keys und \`caw_sessions\`
+müssen übereinstimmen; bei Fehlern oder fehlenden Snapshots wird aus
+Sicherheitsgründen nicht deployt. Die JSON-Snapshots enthalten private
+Host-Tokens und Hände, die daher ausschließlich lokal gelesen und niemals
+in Actions-Logs geschrieben werden. Ein fehlender, unlesbarer oder
+mehrdeutiger Messwert blockiert die Auslieferung. Nach Image-Pull und
+unmittelbar vor der Umschaltung wird erneut geprüft. Eine belegte Instanz
+quittiert den Versuch als **zurückgestellt** und bleibt unverändert.
+
+Ein planmäßiger GitHub-Actions-Lauf prüft ungefähr alle 30 Minuten, ob für
+das aktuelle, vollständig CI-geprüfte \`main\`-Commit noch ein Release
+aussteht. Ein bereits veröffentlichter SHA-Tag wird dabei nicht erneut
+überschrieben oder gebaut. Ein Host, dessen Checkout und \`CAW_VERSION\`
+schon den gewünschten SHA-Tag verwenden, wird nicht erneut neugestartet.
+Damit benötigt der Betreiber bei laufenden Spielen keinen manuellen Eingriff.
+
+Die Leerlaufprüfung und Docker-Compose-Aktion erfolgen unter derselben
+\`flock\`-Deploy-Sperre. Zwischen dem letzten Messwert und der tatsächlichen
+Server-Umschaltung besteht beim Single-Instance-Betrieb allerdings ein
+kleines Race-Fenster für neue Session-Anlagen. Eine **harte Garantie**
+erfordert künftig Admission-Drain oder zwei parallele Instanzen mit
+Session-Routing. Bis dahin ist dies ein konservativer, pragmatischer
+Schutz gegen das Unterbrechen bereits laufender Spiele.
+
+Für das erste Upgrade des älteren Hetzner-Checkouts, das noch kein
+\`bin/deploy-hetzner\` besitzt, holt die SSH-Action das Skript aus dem
+CI-geprüften Git-Commit und startet es als temporäre Datei unter
+\`.git/\`. Git-Sicherheitschecks und Leerlaufprüfung erfolgen weiterhin
+vor dem Aktualisieren getrackter Dateien. Passwörter bleiben ausschließlich
+auf dem kurzlebigen Standard-Eingabekanal und in der bestehenden
+geschützten GitHub-Environment.
+
+### Einmalige Migration einer verlassenen Altsession (01.11.2026)
+
+Der erste reale Rollout hat über die lokale Redis-Phasenprüfung **genau eine**
+als Playing/Judging/Reveal markierte Session bei **null** WebSocket-
+Verbindungen nachgewiesen; alle weiteren gespeicherten Räume sind Lobby
+oder Finished. Der Betreiber hat ausdrücklich bestätigt, dass keine
+Partie mehr läuft. Für den bestehenden, bekannten Hetzner-Checkout
+`cc02372*` ist deshalb **einmalig** die Migration mit genau **einer**
+verlassenen Altsession und null Sockets gestattet. Die Session bleibt
+in Redis vollständig erhalten, damit sie nach dem Update noch immer
+wiederhergestellt werden kann.
+
+Die Ausnahme ist auf diesen bisherigen Checkout, den expliziten
+Betreiberentscheid, höchstens eine nicht beendete Session und zwei
+erneute socketfreie Messungen beschränkt. Weitere laufende Matches,
+offene Verbindungen, fehlerhafte oder fehlende Daten blockieren weiterhin.
+Nach dem ersten erfolgreichen Checkout-Wechsel kann die Ausnahme bei
+späteren Releases nicht erneut greifen. Das ist ausdrücklich keine
+Änderung der allgemeinen Schutzregel für neue Spiele.
+
+### Nachtrag: zwei verlassene, gespeicherte Partien (02.11.2026)
+
+Die aktuelle Produktionsprüfung zeigt zwei als aktiv gespeicherte Partien
+und null WebSocket-Verbindungen. Der Betreiber bestätigt ausdrücklich, dass
+niemand spielt. Der laufende Server stellt bereits `caw_active_games`
+bereit; deshalb greift die alte Legacy-Raumprüfung allein hier nicht.
+
+Nur für den über den produktiven SSH-Preflight verifizierten Checkout
+`fc59685e124a00c4666c53947fd2e0f174848b30` darf der Server bei
+**genau zwei** noch unfertigen, aber vom Betreiber als verlassen bestätigten
+Partien und **null** WebSockets einmalig aktualisiert werden. Diese Ausnahme
+ist unabhängig von der älteren, unveränderten Ein-Partie-Ausnahme für
+`cc02372*` und gilt niemals auf neueren Checkouts.
+
+Vor **jeder** der drei Leerlaufkontrollen muss der eigenständige
+Redis-Backup-Worker gesund sein; sein jüngster RDB-Snapshot wird in einem
+netzwerkisolierten Redis erfolgreich geladen. Eine zusätzliche Redis-Prüfung
+stellt sicher, dass alle `session:*`-Schlüssel valide Spielphasen haben,
+`caw_sessions` zur Schlüsselanzahl passt und höchstens zwei Partien
+unfertig sind. Alle Redis-Snapshots und das AOF bleiben unverändert.
+Bei offenen Sockets, anderer Spielzahl, defekter Sicherung oder unbekanntem
+Checkout wird nicht deployt. Nach dem ersten Fast-Forward ist diese
+Ausnahme automatisch wirkungslos.
+
+### Redis-Raumzählung bei der einmaligen Migration (02.11.2026)
+
+Der erste Backup-verifizierte Deployversuch wurde sicher abgebrochen:
+`caw_sessions` und die Zahl der noch in Redis enthaltenen `session:*`-Keys
+weichen voneinander ab. Der laufende Server kann abgelaufene inaktive Räume
+weiter im Arbeitsspeicher zählen. Ein bloßer Socket- oder Redis-Gesamtzähler
+reicht nicht aus, um diese Abweichung als ungefährlich zu beurteilen.
+
+**Nur für die oben genannte Zwei-Partien-Ausnahme** darf die Anzahl der
+persistierten Räume kleiner als der Live-Zähler sein, **wenn genau beide**
+aktiven Partien anhand gültiger Phasen 1–3 in Redis gefunden werden. Die
+geprüften Redis-Schlüssel müssen gültig und eindeutig sein; jeder gelesene
+Snapshot muss ein gültiges JSON mit zulässiger Phase enthalten. Mehr Redis-
+Räume als im Live-Zähler, weniger als zwei persistierte aktive Partien, ein
+ungültiger Snapshot oder ein anderer Server-Checkout stoppen den Rollout.
+Die Prüfung gibt ausschließlich anonyme Zahlen aus, keine Raumcodes,
+Kartentexte, Tickets oder Tokens. Die Ein-Partie-Ausnahme des alten
+Checkouts und alle regulären Deploys verlangen weiterhin exakte Zählgleichheit.
+
+### Einmaliger betreiberautorisierter Rollout bei flüchtigen Altpartien (02.11.2026)
+
+Der nächste, ebenfalls sicher abgebrochene Produktionsversuch hat bestätigt,
+dass der alte Prozess zwei aktive Partien zählt, **aber weniger als zwei**
+davon in Redis persistiert sind. Nicht persistierte Partien lassen sich
+durch eine Redis-Sicherung nicht wiederherstellen. Der Betreiber hat erneut
+ausdrücklich bestätigt, dass niemand spielt, und den Rollout angeordnet.
+Der Verlust ausschließlich dieser verlassenen, nur im Arbeitsspeicher
+existierenden Alt-Spielstände ist daher für diesen **einen** Wechsel akzeptiert.
+
+Diese Freigabe gilt ausschließlich für den bereits verifizierten Checkout
+`fc59685e124a00c4666c53947fd2e0f174848b30`, exakt zwei aktive
+In-Memory-Partien und null WebSocket-Verbindungen. Drei getrennte Messungen
+müssen dieselben Bedingungen erfüllen. Vor jeder Messung muss der
+eigenständige Redis-Backup-Worker gesund sein und sein RDB-Snapshot
+netzwerkisoliert erfolgreich wiederhergestellt werden.
+
+Der neue Prüfmodus `--two-volatile` verlangt weiterhin: nicht mehr
+Redis-Räume als der Prozess meldet, ausschließlich gültige `session:*`-
+Schlüssel mit validen JSON-Snapshots und Phasen, und **höchstens zwei**
+persistierte aktive Partien. Auch wenn null oder eine dieser Partien
+persistiert sind, ist der einmalige Wechsel erlaubt. **Alle** vorhandenen
+Redis-Keys, AOF-Daten, PostgreSQL-Daten und Backup-Dateien bleiben erhalten.
+Die Logausgabe nennt nur anonyme Zähler; fehlende In-Memory-Snapshots
+werden als nicht wiederherstellbar gekennzeichnet. Der normale Spielschutz,
+die vorhandene Zwei-Partien-Prüfung `--two-abandoned` und andere
+Checkouts bleiben unverändert und scheitern bei fehlenden Snapshots.
+Nach erfolgreichem Fast-Forward kann die Sonderfreigabe nicht erneut greifen.
+
+### Abnahme und Rücknahme der Altserver-Ausnahmen (02.11.2026)
+
+Der automatische Release `dcb97c4c9fea70a4ebf4d8bad6e633228dbf894e`
+wurde am 02.11.2026 auf Hetzner bestätigt (Actions-Run `41524954463`).
+Drei Prüfungen vor dem Neustart meldeten null WebSockets und exakt zwei
+verwaiste Partien, davon eine in Redis persistiert und eine ausschließlich
+im Arbeitsspeicher. Die Redis-RDB wurde vor dem Wechsel isoliert
+wiederhergestellt; vorhandene Redis-Snapshots, AOF und Datenbank-Volumes
+blieben erhalten. Der öffentliche HTTPS- und WSS-Handshake war erfolgreich.
+Zwei spätere planmäßige Runs (`41529164100`, `41533685057`) bestätigten
+denselben Release ohne erneuten Server-Neustart.
+
+**Ab jetzt gelten die damaligen Sonderfreigaben nur noch als historische
+Migrationsdokumentation.** Die produktive Codebasis entfernt die
+`cc02372*`- und `fc59685*`-Ausnahmen sowie die Modi
+`--one-abandoned`, `--two-abandoned` und `--two-volatile`.
+Eine Migration von einem älteren oder zurückgesetzten Checkout ist nur bei
+tatsächlichem Spiel-Leerlauf erlaubt: `caw_active_games == 0`
+und `caw_sockets == 0`. Fehlt der Aktivitätszähler, müssen alle
+Redis-Sitzungen vollständig vorliegen und in Lobby- oder Finished-Phase
+sein. Ein erneutes Erzwingen über eine im Repository verbliebene
+Altregel ist damit ausgeschlossen; bei fehlenden Snapshots wird abgebrochen
+statt ungesicherter Spielstände verworfen. Der vorhandene normale
+Deploy-Leerlaufschutz und die Wiederholungsprüfung bleiben erhalten.
+
+### Deployment-Status und Rollback-Begrenzung (03.11.2026)
+
+Ein zurückgestellter Rollout ist **kein** installiertes Release. Der
+Deploy-Workflow unterscheidet deshalb ausdrücklich drei erfolgreiche
+Betriebsergebnisse: **installiert** (neues Image tatsächlich aktiviert),
+**unverändert** (exakt dieser oder ein neuerer Release läuft bereits) und
+**zurückgestellt** (mindestens eine aktive Partie oder offene WebSockets).
+Nur ein tatsächlich installiertes Release darf bei einem nachfolgenden
+fehlgeschlagenen öffentlichen WSS-Test den automatischen Rollback auslösen.
+
+Der Deploy-Host meldet die beiden Sonderfälle als klar definierte
+Rückgabecodes (75: zurückgestellt, 79: bereits installiert/neuer).
+Der GitHub-Workflow übersetzt diese erwarteten Betriebszustände in
+Job-Ausgaben und eine eindeutige Job-Zusammenfassung mit Commit-ID.
+Ein zurückgestellter Rollout bleibt ein erfolgreicher **Prüflauf**, aber die
+Zusammenfassung benennt unmissverständlich, dass das Release **nicht
+installiert** wurde. Geplante Wiederholungen bleiben aktiv, ohne
+GitHub-Fehlermeldungen für normale laufende Partien zu erzeugen.
+
+Bei Zurückstellung wird ausschließlich die öffentliche HTTPS-Readiness
+geprüft, **ohne** einen zusätzlichen Spielraum oder WebSocket anzulegen.
+Bei Installation und unverändertem Release bleibt die vollständige
+HTTPS-/WSS-Host-Probe bestehen; ein fehlschlagender Test wird nur dann
+zurückgerollt, wenn genau dieser Lauf vorher ein Release installiert hat.
+Diese Status-Unterscheidung verändert weder die Spiel-Leerlaufsperre noch
+Redis, PostgreSQL, laufende Sitzungen oder den Cloudflare-Tunnel.
+
+### Fehlklassifizierte Offline-Partien beim Rollout (03.11.2026)
+
+`caw_active_games` zählt **unfertige Spielphasen** (Playing, Judging,
+Reveal), unabhängig davon, ob noch jemand spielt. Nach dem erfolgreichen
+Erst-Upgrade blockierte deshalb **eine** gespeicherte Offline-Partie bei
+`caw_sockets == 0` den nächsten Release trotz expliziter
+Betreiberbestätigung, dass niemand mehr spielt. Das ist kein Hinweis auf
+eine live genutzte Sitzung. Eine Partie darf dabei aber nicht verloren gehen.
+
+Für den **regulären** Deploy wird daher zwischen verbundenen und nur
+gespeicherten Partien unterschieden:
+
+- **Offene WebSockets:** Rollout immer zurückstellen, unabhängig von der
+  Spielphase und auch bei nur einer Verbindung.
+- **Null WebSockets und null unfertige Partien:** normaler Leerlauf.
+- **Null WebSockets, aber unfertige Partien:** ein Rollout ist möglich,
+  sofern *jede* im aktuellen Server als unfertig gezählte Partie als
+  gültiger, unfertiger Redis-Room-Snapshot vorliegt, keine zusätzlichen
+  persistierten aktiven Partien unbemerkt bleiben, alle geprüften
+  Snapshots gültig sind, der Redis-Backup-Worker gesund ist und die
+  isolierte RDB-Restore-Probe erfolgreich ist. Fehlende/ungültige Daten
+  verhindern den Rollout; es werden weder Rooms gelöscht noch beendet.
+
+Die Checkroutine liest `session:*` ausschließlich lokal mit `SCAN`/`GET`,
+verlangt gültige Roomcodes und die JSON-Spielphase 0–4, zählt die
+persistierten aktiven Phasen und vergleicht sie mit `caw_active_games`.
+Ein kleinerer Redis-Roombestand als `caw_sessions` ist nur tolerierbar,
+weil inaktive Räume durch TTL bereits fehlen können; *alle aktiven*
+Rooms müssen weiterhin gespeichert sein. Private Inhalte oder Codes
+dürfen niemals in Logs oder CI-Ausgaben gelangen.
+
+Bei Offline-Partien sind außerdem `caw_actions_total` und
+`caw_sockets` bei drei Prüfungen stabil: vor dem Image-Pull, danach
+sowie nach 60 Sekunden zusätzlicher Ruhezeit direkt vor dem Wechsel.
+Ein neuer Spielbefehl oder eine Verbindung während einer Prüfung
+bricht ab; der Single-Instance-Betrieb kann das verbleibende kleine
+Race-Fenster nach der letzten Prüfung nicht vollständig eliminieren.
+Beim Neustart leert der Server seine Persistenzwarteschlange und liest
+die erhaltenen Redis-Snapshots wieder ein. Die in CI getesteten
+Reconnect-Tickets bleiben gültig. Ein späterer Reconnect kann den
+Socket neu öffnen und den fortgesetzten Raum wiederfinden.
+
+Diese **datenbewahrende** Regel gilt nicht als Freibrief, eine
+gespeicherte Partie zu löschen. Sie ersetzt keine damals einmalige
+Zwangsmigration und verändert keine Spielregeln. Im Zweifelsfall
+wird zurückgestellt. Das Produktiv-Release wartet damit nicht mehr
+endlos auf das Ende einer ohnehin nicht verbundenen Partie.
+
+### Zustandsfreier WebSocket-Betriebscheck (03.11.2026)
+
+Der bisherige öffentliche WSS-Smoke-Test legt eine neue Spiel-Session an
+(`POST /api/sessions`), authentifiziert sich als Host und testet den
+Spielzustand. Bei jedem halbstündlichen **unveränderten** Deploy würde
+das eine zusätzliche, bis zur regulären TTL gespeicherte Test-Lobby erzeugen.
+Der Test darf daher nicht bei jeder Wiederholungsprüfung Daten in Redis
+hinterlassen.
+
+- **Neuer, zustandsfreier WSS-Endpunkt:** `/ws/probe` wird vor
+  `/ws/:code` registriert. Er nimmt einen normalen WebSocket-Upgrade
+  an, sendet die feste Antwort `{"type":"probe","ok":true}` und legt
+  **keine** Session, keinen Host-Token und keinen Redis-Key an.
+  Die Verbindung ist durch die bestehende Rate-Limit-Prüfung und eine
+  kurze WebSocket-Idle-Zeit begrenzt; Nachrichten werden nicht als
+  Spielkommandos verarbeitet.
+- **Regulärer Neu-Deploy:** Weiterhin einmalig die vollständige
+  öffentliche HTTPS-/WSS-Host-/State-Probe mit einem neuen Test-Raum.
+  Sie prüft auch weiterhin die Authentifizierung und das Spielprotokoll.
+  Nur ein neu installiertes Release darf bei einer fehlgeschlagenen
+  vollständigen Probe automatisch zurückgerollt werden.
+- **Bereits installiert, planmäßige Wiederholung:** Die öffentliche
+  HTTPS-Bereitschaft und ein echter WSS-Upgrade zu `/ws/probe` werden
+  geprüft. Dabei entstehen keine neuen Spielräume. Fehler sind im
+  Workflow sichtbar, lösen aber ohne gerade erfolgten Deploy keinen
+  Rollback aus.
+- **Zurückgestellter Deploy:** Wie bisher ausschließlich die
+  öffentliche HTTPS-Bereitschaft, solange der alte Server die Probe
+  womöglich noch nicht unterstützt. Keine Sessions und kein WSS.
+- CI testet `/ws/probe` mit einem echten WebSocket auf dem
+  lokalen Compose-Stack und prüft, dass `caw_sessions` unverändert
+  bleibt. Der vollständige Host-/State-Probe-Code bleibt weiterhin
+  verfügbar und wird nach jeder echten Neuinstallation verwendet.
+
+Die zusätzliche Probe ist eine reine Transport-/Origin-Kontrolle,
+keine eigene Spieloberfläche und kein weiterer Dienst. Sie darf
+nicht als Ersatz für den Authentifizierungs- und Game-State-Test
+eines neuen Releases verwendet werden.
+
+### Redis- und Speicher-TTL müssen zusammenpassen (03.11.2026)
+
+Nach dem mobilen UI-Merge meldete die reguläre Deploy-Prüfung eine
+**unfertige In-Memory-Partie ohne aktiven Redis-Snapshot**. Der sichere
+Rollout wurde daraufhin zurückgestellt (Run `41601420535`).
+Zwei Lebensdauer-Unterschiede im Server erklären, wie dieser Zustand
+auch ohne Datenbankausfall entstehen kann:
+
+- `SessionRegistry::find` verlängert bislang bei **jedem** Zugriff
+  die Speicher-TTL, selbst wenn keine Spielaktion ausgeführt oder
+  gespeichert wurde; Redis verlängert sein `EX` nur beim Snapshot.
+- Beim Neustart beginnt die Speicher-TTL wieder bei 24 Stunden,
+  während der bereits geladene Redis-Key seine *alte Rest-TTL*
+  behält. Ohne weitere Änderung kann er daher früher ablaufen.
+
+Abhilfe ohne zusätzliche Datenbankzugriffe im Echtzeitpfad:
+`find` ist nur noch ein gültigkeitsprüfender Lookup und verlängert
+keine TTL. Wenn die Session tatsächlich einen neuen Snapshot zur
+asynchronen Speicherung liefert, verlängert `snapshot` die
+Speicher-TTL ebenfalls auf `now + SESSION_TTL_HOURS`; für bereits
+abgelaufene Sessions kann ein Snapshot die TTL nicht wiederbeleben.
+Der Redis-Persistenz-Thread setzt mit seinem vorhandenen `SET EX`
+dieselbe TTL. Für wiederhergestellte Sessions verwendet
+`RedisStore::loadAll` **atomar `GETEX ... EX ttl`** (Redis >= 6.2,
+im Compose Redis 7); damit lesen *und* erneuern wir den gültigen
+Snapshot in einem Befehl, bevor die Registry die frische Speicher-TTL
+setzt. Kein periodisches Schreiben, kein zusätzlicher Roundtrip je
+Spielaktion, keine Änderung des C++-Spiellogik-Cores.
+
+Auch die asynchrone Persistenz darf fehlgeschlagene Schreibversuche
+nicht einfach verwerfen. Der bisherige `PersistQueue`-Thread verwirft
+die bereits aus der Queue entnommene Kopie selbst dann, wenn
+`SnapshotStore::save` `false` zurückgibt; nach einer vorübergehenden
+Redis-Unterbrechung kann dadurch ein **neuer Raum ohne Snapshot**
+entstehen. Solche Kopien werden ab sofort wieder in die Queue gestellt,
+sofern dort noch **kein neuerer Snapshot desselben Raums** wartet.
+Der Persistenz-Thread wartet bei Fehlern eine Sekunde (kein
+Busy-Loop); weitere Aktionen bleiben auf dem Session-Thread
+unverändert schnell. Während eines Shutdowns werden wenige
+schnelle Wiederholungen versucht und bei anhaltendem Fehler eine
+feste Warnung **ohne Codes/Spielinhalte** geloggt. Der Prozess darf
+bei dauerhaft ausgefallenem Redis nicht endlos im Shutdown hängen;
+eine solche Störung ist durch den vorhandenen `/healthz`-Check
+und die weiterhin strikte Deploy-Sperre erkennbar.
+
+CI umfasst Uhrzeit-kontrollierte Unit-Tests, einen fehlerschluckfreien
+PersistQueue-Retry-Test (Lesezugriff
+verlängert nicht, Snapshot verlängert, abgelaufene Partie bleibt
+abgelaufen) und einen Compose-/Redis-Test: einem frisch angelegten
+synthetischen Spielraum wird künstlich eine kurze Redis-Rest-TTL
+gegeben; nach dem Serverneustart müssen Spielraum und Snapshot wieder
+die volle TTL haben. Die übrigen Restore-, Browser- und Lasttests
+bleiben aktiv.
+
+**Alte verwaiste In-Memory-Partien werden nicht gelöscht.** Ein
+fehlender aktiver Redis-Snapshot blockiert den Deploy weiterhin.
+Für solche bereits vor dem Fix entstandenen Daten ist eine
+operatorautorisierte, separat dokumentierte Recovery notwendig,
+falls sie nicht regulär ablaufen; ein Force-Restart ist nicht Teil
+dieses Fixes.
+
+### Einmaliger Betreiber-Rollout nach verwaister In-Memory-Partie (03.11.2026)
+
+Der Betreiber hat am 03.11.2026 ausdrücklich beauftragt, das produktive
+Deployment jetzt durchzuführen, obwohl eine bekannte, verlassene Partie
+ausschließlich im Speicher liegt. Der mehrfach wiederholte Deploy-Befund
+ist `caw_active_games=1`, `caw_sockets=0`, null persistierte aktive
+Redis-Partien. Die eine nicht gespeicherte Partie kann beim Wechsel verloren
+gehen; der Betreiber akzeptiert **nur diesen konkreten Verlust**. Andere
+Redis- und PostgreSQL-Daten müssen unverändert bleiben.
+
+Die Ausnahme ist nur für den unmittelbar vorher installierten alten
+Server-Commit `e0990b10c7138e087ec52b30901249a5a6a98d49` zulässig.
+Sie verlangt zu allen drei Leerlaufprüfungen genau eine unfertige Partie,
+null WebSockets und unveränderte `caw_actions_total` über die
+zusätzlichen 60 Sekunden. Backup-Worker-Health und erfolgreicher
+netzwerkisolierter Redis-RDB-Restore bleiben obligatorisch; direkt vor der
+Umschaltung läuft außerdem der bestehende PostgreSQL-Dump.
+
+Der Redis-Prüfer akzeptiert nur null persistierte aktive Partien und
+höchstens so viele Redis-Räume wie der Server meldet; alle vorhandenen
+`session:*`-Schlüssel und JSON-Spielphasen müssen gültig sein.
+Bestehende gespeicherte Lobbys oder beendete Spiele werden nicht
+gelöscht. Sobald der alte Checkout erfolgreich ersetzt ist, ist der
+Ausnahmepfad automatisch nicht mehr erreichbar; ein generelles
+`--force` wird nicht eingeführt. Keine Änderung am Spielprotokoll.
+
+Nach dem Wechsel gelten wieder alle regulären Schutzprüfungen.
+Der neue Release benötigt vollständigen öffentlichen HTTPS- und
+authentifizierten WSS-Spieltest; ein weiterer automatischer Lauf prüft
+`/ws/probe` ohne einen neuen Raum anzulegen. Vor dem nächsten
+Deployment wird Blue/Green mit einem stabilen Socket-Drain-Konzept
+separat entworfen und getestet. Zwei Container allein reichen
+**nicht** für unterbrechungsfreie WebSockets, solange Session-Besitz,
+Admission-Stop und gezielte Verbindungsweiterleitung ungeklärt sind.
+
+## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
+
+Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
+tägliche lokale RDB-Kopien, damit versehentliche Datenverluste innerhalb des
+bestehenden Hetzner-Hosts wiederherstellbar sind. Ein eigener kleiner
+\`redis-backup\`-Compose-Dienst nutzt das **bereits vorhandene Redis-Image**
+und das **bestehende \`backups\`-Volume**, ohne Zugriff auf Docker-Socket,
+Postgres-Passwort oder Produktions-Volumes von Redis. Er liest über die
+interne Redis-Verbindung mit \`redis-cli --rdb\` einen konsistenten
+Snapshot, schreibt zuerst \`.part\`, veröffentlicht nur vollständig
+übertragene Dateien atomar und löscht vollständige RDBs nach 14 Tagen.
+Dateien enthalten private Spielzustände und sind mit \`umask 077\`
+nur für den Backup-Eigentümer lesbar. Bei Fehlschlag wird nach einer
+Stunde erneut versucht; ein erfolgreicher Versuch setzt den 24-h-Takt fort.
+
+Für den Restore-Test wird eine Kopie des neuesten RDBs in einem separaten
+\`redis:7-alpine\`-Container geladen, der \`--network none\`, keinen
+Produktions-Volume-Mount, keinen TCP-Port und ausschließlich eine lokale
+Unix-Socket-Verbindung hat. Der Test muss \`PING\` und \`DBSIZE\` bestehen;
+die CI prüft zusätzlich einen synthetischen Testschlüssel. Produktive
+Keys oder deren private Werte werden dabei nicht geloggt. Ein täglicher
+GitHub-Actions-Check meldet veraltete oder fehlende Backups über einen
+fehlgeschlagenen Workflow; Monitoring ist kein Ersatz für den Restore-Test.
+
+Beim ersten Update wird **nur** der unabhängige Redis-Backup-Sidecar
+zusätzlich gestartet, ohne Redis, PostgreSQL oder laufende Spiele
+neu zu erstellen. Bei späteren Releases bleibt er erhalten. Die
+bereits erfolgreichen manuellen lokalen PostgreSQL- und Redis-Restores
+werden durch die CI-Sicherung ergänzt.
+
+Diese lokalen RDBs schützen weiterhin **nicht** vor vollständigem Verlust
+des Hetzner-Hosts oder gemeinsamen Volumes. Eine verschlüsselte
+externe Sicherung für PostgreSQL und Redis samt externer Restore-Probe
+bleibt ausdrücklich offen; die Storage Box wurde vorerst zurückgestellt.
+
+### Backup-Worker starten, während Partien gespeichert bleiben
+
+Die Backup-Sicherung benötigt keinen Containerwechsel des Spielservers.
+Der CI-geprüfte Auto-Deploy startet deshalb den `redis-backup`-Worker
+**vor** der Spiel-Leerlaufprüfung über einen eigenen, per `flock`
+serialisierten Bootstrap-Schritt. Die aktive CAW-Session-Registry,
+WebSockets, PostgreSQL, der Redis-Server und der Cloudflare-Tunnel bleiben
+unverändert. Die allgemeine Spiel-Leerlaufprüfung für das eigentliche
+Deployment bleibt vollständig verpflichtend.
+
+Ist der Hetzner-Checkout wegen gespeicherter, nicht abgeschlossener Partien
+noch älter als die neue Compose-Datei, legt der Bootstrap nur zwei
+private Hilfsdateien unter `.git/` ab: das Backup-Skript aus dem
+**exakt CI-geprüften Git-Commit** und eine ergänzende Compose-Datei
+für **nur** `redis-backup`. Die bestehende Compose-Konfiguration und
+deren `backups`-Volume werden weiterverwendet; mit `--no-deps` wird
+kein bestehender Dienst neu erstellt. Die Hilfsdateien bleiben so lange
+erhalten, wie der Backup-Container sie bind-mountet. Beim nächsten
+normalen, leerlaufgesicherten App-Deployment übernimmt die reguläre
+versionierte Compose-Datei den Worker. Ein bereits gesunder Worker
+wird nicht neu gestartet. Jeder Erststart ist durch einen frischen
+RDB-Snapshot und dessen netzwerkisolierten Restore nachzuweisen.
+
+Damit können Backups starten, obwohl ein regulärer Release aus Rücksicht
+auf gespeicherte laufende Spiele zurückgestellt wird. Diese gezielte
+Backup-Aktivierung ist **keine** Erlaubnis, die bestehende
+Spiel-Leerlaufsperre für Server- oder Caddy-Releases zu umgehen.

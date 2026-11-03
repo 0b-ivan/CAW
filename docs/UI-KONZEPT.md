@@ -15,6 +15,42 @@ Host-Bereich im Browser (statt X4-Tasten) und der Big Screen.
   Versatzschatten bekommen. Keine Akzentfarben, Glows oder Verläufe.
   Animationen nur für die bereits vorgesehenen CAW-Intros, Gewinner- und
   Timer-Signale.
+  **Weitere gezielte Material-Ausnahme:** Eingesetzte Antworttexte dürfen als
+  schwarze Kunststoff-Prägebänder (klassisches DYMO-Reliefband) erscheinen:
+  helle, sichtbar erhabene Reliefbuchstaben mit hellen und dunklen
+  Lichtkanten, leicht glänzender schwarzer Kunststoff und sanfte
+  Band-Schlagschatten. Ausschließlich für die Kunststoffbänder sind
+  dezente monochrome CSS-Verläufe und mehrlagige Schatten erlaubt; sie
+  simulieren Material und Prägung, nicht eine farbige oder animierte UI.
+  Wenn die CSS-Simulation nicht genügt, darf ausschließlich die Bandoberfläche
+  eine kleine lokal eingebundene, aus dem vom Nutzer gelieferten Referenzbild
+  abgeleitete, textfreie Fototextur verwenden. Die Schrift bleibt dynamischer,
+  barrierefrei lesbarer Text im DOM; keine Kartentexte, Webfonts, externen
+  Ressourcen oder fremden Assets werden in die Oberfläche eingebettet.
+  Die Schrift auf dem Band ist eine gezielte Ausnahme vom Monospace-Prinzip:
+  **gut lesbare, hell gefüllte Versalien** in der vorherigen schmalen
+  mechanischen Schrift (DIN Condensed / Roboto Condensed mit
+  Sans-Serif-Fallback, ohne externen Font). Die spätere Courier-Schrift
+  wurde wegen ihrer breiten, schweren Buchstaben verworfen. Das Schriftgewicht
+  ist bewusst mittel statt fett; eine sehr feine Hell-/Dunkelkante deutet die
+  Prägung an, ohne die Zeichen optisch aufzudicken. Kein zusätzlicher heller
+  Textschatten auf den Buchstabenkörper. Zeichenabstand und Spiegelungen
+  bleiben zurückhaltend, vor allem auf Handy und Big Screen.
+  Die Großschreibung ist ausschließlich visuell;
+  der originale Kartentext bleibt im DOM und im Spielzustand unverändert.
+  Die Bänder wirken wie echtes, leicht zerknittertes schwarzes Kunststoffband:
+  wechselnde harte Glanzreflexe, diagonale Knicklinien, unruhige Oberflächen
+  und ein deutlich sichtbarer Schlagschatten auf der Papierkarte.
+  Die Oberfläche variiert pro Antwortstreifen reproduzierbar: lokale
+  Bildausschnitte der Bandtextur, Glanz- und Knickposition, Stanzdruck,
+  Bandwinkel und Kantenform folgen einem kleinen stabilen Text-Seed. So
+  wiederholt sich nicht derselbe Reflex auf jeder Karte und trotzdem
+  flackert beim Neuzeichnen nichts. Kein Bild und keine Animation. Die normalen Handkarten und
+  Juror-Antwortoptionen bleiben frei von Prägebändern; beim Einsetzen in
+  den Fragesatz entsteht das Band. Lange Antworten werden anhand der
+  tatsächlichen Textzeilen in eigenständige, geringfügig unterschiedliche
+  Bandstücke aufgeteilt. Auch bei Viewport-Änderungen und auf dem Big Screen
+  bleiben Text und Zeilenumbrüche vollständig lesbar, ohne Overflow.
 - **Monospace für alles.** `ui-monospace, Menlo, SFMono-Regular, Consolas,
   Liberation Mono` – keine Webfont-Pflicht (Performance-Budget).
 - **Typografie trägt die Hierarchie:** kurze Labels in GROSSBUCHSTABEN mit
@@ -172,6 +208,13 @@ GESPERRT · FRAG DEN HOST“.
 
 ### 4.5 Antworten
 
+Die weißen Handkarten zeigen ihre Antworttexte ohne Prägeband oder
+Reliefeffekt als normalen dunklen Text auf hellem Papier, damit auch längere
+Antworten sofort lesbar bleiben. Die invertierte Darstellung ausgewählter
+Handkarten bleibt bestehen. Erst wenn Antworten in die Frage eingesetzt oder
+in der Juror- und Auflösungsansicht gezeigt werden, erscheint das schwarze
+Prägeband.
+
 Die Hand enthält standardmäßig **7 Karten** (Host-Einstellung **3–10** im Menü SPIELREGELN, ausschließlich in der Lobby). Spieler sehen immer alle gerade zugeteilten Karten; bei Draw 2 kann die Hand kurzfristig um bis zu zwei Karten wachsen. Geändert wird nur vor dem Start einer neuen Partie; bereits gespeicherte und laufende Partien behalten ihren Wert.
 
 Frage oben in eigenem Scroll-Bereich (max. 30 % Höhe), darunter die Hand
@@ -181,8 +224,8 @@ und ohne Seitenwechsel erreichbar. Nur die Kartenhand scrollt vertikal;
 Frage, Kopfzeile und `[ ABGEBEN ]` bleiben stehen. Lange Kartentexte dürfen
 nicht abgeschnitten oder durch Verkleinern unlesbar werden. Antippen wählt
 in Reihenfolge; die Position steht vor der Karte (`<1/3>`). Die Frage ist
-zugleich die Vorschau: gewählte Karten stehen invertiert in ihren Lücken,
-keine eigene Vorschauzeile. Fußleiste: `[ ABWERFEN ]` (1× pro Runde, genau
+zugleich die Vorschau: gewählte Karten stehen als geprägte Antwortbänder
+in ihren Lücken, keine eigene Vorschauzeile. Fußleiste: `[ ABWERFEN ]` (1× pro Runde, genau
 eine Karte gewählt), `2/3 GEWÄHLT`, `[ ABGEBEN ]`.
 Nach Abgabe: „ABGEGEBEN · 4/6“ mit Fortschritt aus Zeichen (`████░░`).
 
@@ -191,14 +234,18 @@ Nach Abgabe: „ABGEGEBEN · 4/6“ mit Fortschritt aus Zeichen (`████�
 Die Frage steht **einmal oben**, darunter nur die Antworten, nummeriert und
 anonym (`[2] ANTWORT A / ANTWORT B`). Lange Fragen würden sonst in jedem
 Eintrag wiederholt und die Liste etwa verdoppeln. Juror: antippen = auswählen;
-die gewählte Antwort erscheint invertiert in den Lücken der Frage oben, so
-liest er den ganzen Satz vor dem `[ BESTÄTIGEN ]`. Alle anderen:
+die gewählte Antwort erscheint als geprägtes Band in den Lücken der Frage oben,
+so liest er den ganzen Satz vor dem `[ BESTÄTIGEN ]`. Die anonymen
+Antwortoptionen darunter bleiben als normaler, gut lesbarer Text auf weißen
+Karten (ausgewählt: invertiert). Ausschließlich die in die obere Frage
+eingesetzten Antworten erhalten das Prägeband. Alle anderen:
 „JUROR ENTSCHEIDET“ und dieselbe Liste zum Mitlesen (ohne Auswahl). Der Big
 Screen zeigt weiterhin ganze eingesetzte Sätze (Abschnitt 5).
 
 ### 4.7 Auflösung
 
-Siegersatz groß, eingesetzte Antworten **invertiert hervorgehoben**, darunter
+Siegersatz groß, eingesetzte Antworten als **geprägte schwarze Prägebänder**,
+darunter
 `GEWINNER: ADA·TOAST`, Punktestand. Das Gewinner-Handy zeigt kurz eine
 textliche `DU HAST DIE RUNDE GEWONNEN`-Meldung mit zweimaliger Invertierung;
 bei reduzierter Bewegung nur statisch. Host: `[ NÄCHSTE RUNDE ]`.
@@ -279,12 +326,13 @@ nur bei „WARTET AUF …“ der Name, wie am Handy.
 
 Der Countdown bleibt oben rechts sichtbar, auch wenn der Juror wählt.
 Die Frage mit **jeder Antwort eingesetzt**, als nummerierte ganze Sätze
-untereinander; bei mehr Sätzen zweispaltig. Eingesetzte Teile invertiert.
+untereinander; bei mehr Sätzen zweispaltig. Eingesetzte Teile als geprägte
+schwarze Prägebänder.
 Kopfzeile: „JUROR ADA ENTSCHEIDET“.
 
 ### Auflösung
 
-Nur der Siegersatz, sehr groß, Antworten invertiert, darunter der Gewinner
+Nur der Siegersatz, sehr groß, Antworten als geprägte Prägebänder, darunter der Gewinner
 und eine schmale Punktetabelle.
 
 ### Ende
@@ -351,6 +399,34 @@ keine abgeschnittenen Karten.
 - Playwright prüft scharfkantige Kartenecken, einmalige Intro-Wiedergabe,
   Überspringen, erneuten Aufruf, `prefers-reduced-motion` und
   320/390/1280-px-Ansichten ohne horizontalen Überlauf.
+
+### Mobile Menü-Zugänglichkeit und Fokus bei Live-Updates (2026-11-03)
+
+Die bestehende, bildschirmfüllende Menüebene ist für Touch und
+Tastatur als **modaler Dialog** zu behandeln, ohne das visuelle
+Konzept zu verändern. Beim Öffnen erhalten die übrigen Elemente der
+Spielseite `inert`, sodass Tastatur, Android TalkBack und iOS
+VoiceOver keine unsichtbaren oder verdeckten Spielaktionen erreichen.
+Der Fokus beginnt auf `SCHLIESSEN`, `Tab` und `Shift+Tab`
+bleiben innerhalb des Menüs, `Escape` schließt es und setzt den
+Fokus auf `MENÜ` zurück. Der Dialog besitzt einen aus der
+Übersetzungstabelle gespeisten, zugänglichen Titel.
+
+Spielzustandsänderungen treffen auch ein, während das Menü geöffnet
+ist. Ein solches Rendern darf den aktiven Menüknopf oder das
+Eingabefeld des Karteneditors nicht aus dem Fokus werfen. Bei
+derselben Unterseite werden der Scrollstand des Menüs und, bei
+Texteingaben, Auswahl-/Caret-Position bewahrt. Beim Wechsel auf
+eine andere Menü-Unterseite beginnt die Liste oben und der Fokus
+wechselt zu ihrer Zurück-Aktion. Die vorhandenen Mindest-Tippflächen
+(48 px), zwei Sprachen und die aktuelle visuelle Gestaltung bleiben
+unverändert.
+
+Browser-Regression: die modale Semantik und die Tastaturschleife,
+Live-Update bei fokussierter Menüaktion, editorische Texteingabe
+sowie eine Android-/iPhone-große Touch-Ansicht bei 320–390 px.
+Eine Playwright-Touch-Emulation ersetzt die finale Hardware-Abnahme
+auf einem echten Gerät ausdrücklich nicht.
 
 ## 8. Nicht vorgesehen
 

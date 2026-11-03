@@ -93,8 +93,31 @@ bool Server::admitted(RateLimiter& limiter, uWS::HttpResponse<false>* response,
 
 void Server::registerRoutes(uWS::App& app) {
   registerSessionRoutes(app);
+  // Register the exact probe route before the session-code wildcard.
+  registerProbeSocket(app);
   registerGameSocket(app, false);
   registerGameSocket(app, true);
+}
+
+void Server::registerProbeSocket(uWS::App& app) {
+  uWS::App::WebSocketBehavior<SocketData> behavior;
+  behavior.idleTimeout = 10;
+  behavior.maxPayloadLength = 256;
+  behavior.upgrade = [this](auto* response, auto* request, auto* context) {
+    if (!admitted(roomLimit_, response, request)) return;
+    const auto key = request->getHeader("sec-websocket-key");
+    const auto protocol = request->getHeader("sec-websocket-protocol");
+    const auto extensions = request->getHeader("sec-websocket-extensions");
+    response->template upgrade<SocketData>(SocketData{}, key, protocol, extensions, context);
+  };
+  behavior.open = [](Socket* socket) {
+    socket->send(R"({"type":"probe","ok":true})", uWS::OpCode::TEXT);
+  };
+  behavior.message = [](Socket* socket, std::string_view, uWS::OpCode) {
+    socket->end(1000, "probe_read_only");
+  };
+  behavior.close = [](Socket*, int, std::string_view) {};
+  app.ws<SocketData>("/ws/probe", std::move(behavior));
 }
 
 void Server::registerSessionRoutes(uWS::App& app) {

@@ -40,7 +40,10 @@ std::vector<std::pair<std::string, std::string>> RedisStore::loadAll() {
           redis_.scan(cursor, std::string(kPrefix) + "*", 100, std::inserter(keys, keys.end()));
     } while (cursor != 0);
     for (const std::string& key : keys) {
-      const auto value = redis_.get(key);
+      // A restored room gets a fresh in-memory TTL. Renew the persisted TTL
+      // atomically with the read so a quiet restored match cannot lose its key.
+      const auto value =
+          redis_.command<sw::redis::OptionalString>("GETEX", key, "EX", ttl_.count());
       if (value) rooms.emplace_back(key.substr(std::string(kPrefix).size()), *value);
     }
   } catch (const sw::redis::Error&) {

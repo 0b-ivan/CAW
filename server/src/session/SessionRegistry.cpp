@@ -167,6 +167,15 @@ std::size_t SessionRegistry::activeCount(Time now) const {
   return count;
 }
 
+std::size_t SessionRegistry::inProgressCount(Time now) const {
+  std::size_t count = 0;
+  for (const auto& [code, room] : rooms_) {
+    (void)code;
+    if (now < room.expiresAt && room.session->inProgress()) ++count;
+  }
+  return count;
+}
+
 void SessionRegistry::expire(Time now) {
   for (auto room = rooms_.begin(); room != rooms_.end();) {
     if (now >= room->second.expiresAt) {
@@ -182,7 +191,6 @@ Session* SessionRegistry::find(std::string_view code, Time now) {
   if (!Codes::validSessionCode(code)) return nullptr;
   const auto found = rooms_.find(std::string(code));
   if (found == rooms_.end() || now >= found->second.expiresAt) return nullptr;
-  found->second.expiresAt = now + ttl_;
   return found->second.session.get();
 }
 
@@ -193,15 +201,19 @@ std::vector<std::pair<std::string, Session*>> SessionRegistry::all() {
   return sessions;
 }
 
-std::string SessionRegistry::snapshot(const std::string& code) {
+std::string SessionRegistry::snapshot(const std::string& code, Time now) {
   const auto found = rooms_.find(code);
-  if (found == rooms_.end()) return {};
-  const Room& room = found->second;
+  if (found == rooms_.end() || now >= found->second.expiresAt) return {};
+  Room& room = found->second;
   const Session& session = *room.session;
-  return Messages::saveRoom({room.language, room.hostToken, session.packs(),
-                             session.saveState(millisNow()), session.identities(),
-                             session.matchLines(), session.locked(), room.customPack,
-                             room.proposals});
+  std::string saved = Messages::saveRoom({room.language, room.hostToken, session.packs(),
+                                          session.saveState(millisNow()), session.identities(),
+                                          session.matchLines(), session.locked(), room.customPack,
+                                          room.proposals});
+  // Renew only alongside a snapshot written through the persistence queue.
+  // A mere WebSocket lookup must never outlive the last Redis save.
+  room.expiresAt = now + ttl_;
+  return saved;
 }
 
 bool SessionRegistry::restore(const std::string& code, std::string_view snapshot, Time now) {

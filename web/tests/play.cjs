@@ -10,8 +10,16 @@ const SIZES = [[320, 568], [390, 844], [1280, 800]];
 const SCREEN_SIZES = [[1920, 1080], [1024, 768]];
 const pages = [];
 
-async function openPhone(browser, locale = 'de-DE') {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, locale });
+async function openPhone(browser, locale = 'de-DE', mobile = null) {
+  const viewport = mobile === 'android' ? { width: 360, height: 800 } : { width: 390, height: 844 };
+  const options = { viewport, locale };
+  if (mobile) {
+    // Chromium touch profiles exercise real tap/scroll handling and mobile viewport math.
+    // These are not substitutes for an on-device Safari/Android release check.
+    Object.assign(options, { isMobile: true, hasTouch: true,
+      deviceScaleFactor: mobile === 'ios' ? 3 : 2.75 });
+  }
+  const context = await browser.newContext(options);
   await context.addInitScript(() => sessionStorage.setItem('caw.intro.seen', '1'));
   const page = await context.newPage();
   page.errors = [];
@@ -94,6 +102,81 @@ async function checkScreen(page, view, label) {
   }
 }
 
+// The raised tape is a real text element: readable, high-contrast and asset-free.
+async function checkTape(page, selector) {
+  const tape = page.locator(selector).first();
+  await tape.waitFor({ state: 'visible' });
+  const material = await tape.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const letters = element.querySelector('.answer-tape__letters');
+    const raised = letters && getComputedStyle(letters);
+    return {
+      background: style.backgroundColor,
+      sheen: style.backgroundImage,
+      font: style.fontFamily,
+      edge: style.boxShadow,
+      band: style.getPropertyValue('-webkit-box-decoration-break') ||
+        style.getPropertyValue('box-decoration-break'),
+      reflection: getComputedStyle(element, '::before').backgroundImage,
+      crease: getComputedStyle(element, '::after').backgroundImage,
+      letterColor: raised?.color,
+      relief: raised?.textShadow,
+      raisedEdge: raised?.getPropertyValue('-webkit-text-stroke-width'),
+      letterCase: raised?.textTransform,
+      tracking: raised?.letterSpacing,
+      letterSize: raised?.fontSize,
+      letterWeight: raised?.fontWeight,
+      foilOffset: element.style.getPropertyValue('--foil-x'),
+      foilSize: element.style.getPropertyValue('--foil-size'),
+      creaseOffset: element.style.getPropertyValue('--crease-x'),
+      glintOffset: element.style.getPropertyValue('--glint-x'),
+    };
+  });
+  assert.equal(material.background, 'rgb(5, 5, 5)', `${selector}: deep black plastic band`);
+  assert.match(material.sheen, /dymo-foil[.]svg/, `${selector}: reference-derived plastic surface`);
+  assert.match(material.reflection, /radial-gradient/, `${selector}: uneven specular reflections`);
+  const asset = await page.request.get(`${target}/assets/dymo-foil.svg`);
+  assert.equal(asset.status(), 200, 'local foil texture is served by Caddy');
+  assert.match(await asset.text(), /data:image\/webp;base64,/, 'foil contains only an embedded local image');
+  assert.match(material.crease, /linear-gradient/, `${selector}: plastic crease`);
+  assert.match(material.font, /DIN Condensed/, `${selector}: earlier slim mechanical font`);
+  assert.match(material.font, /Roboto Condensed/, `${selector}: condensed fallback`);
+  assert.equal(material.letterColor, 'rgb(245, 245, 241)', `${selector}: readable filled white letters`);
+  assert.equal(Number(material.letterWeight), 500,
+    `${selector}: medium weight avoids bulky embossed letters`);
+  assert.equal(material.letterCase, 'uppercase', `${selector}: printed capitals`);
+  const trackingRatio = parseFloat(material.tracking) / parseFloat(material.letterSize);
+  assert.ok(trackingRatio >= .04 && trackingRatio <= .06,
+    `${selector}: restrained tracking retains the earlier condensed look`);
+  assert.ok(material.relief.split('rgb(').length >= 3,
+    `${selector}: subtle raised edges without heavy extra shadows`);
+  assert.ok(parseFloat(material.raisedEdge) >= .06 &&
+    parseFloat(material.raisedEdge) <= .1,
+    `${selector}: very thin relief must not thicken the letters`);
+  for (const offset of [material.foilOffset, material.foilSize,
+    material.creaseOffset, material.glintOffset]) {
+    assert.match(offset, /^\d+%$/, `${selector}: stable physical variation parameters`);
+  }
+  assert.notEqual(material.edge, 'none', `${selector}: cut tape edges cast shadows`);
+  assert.equal(material.band, 'clone', `${selector}: clean fallback wrapping`);
+}
+
+// Check the letters, not scrollWidth: transformed glare layers deliberately
+// extend a few pixels beyond the band but must never clip the card wording.
+async function checkTapeNotClipped(page, selector) {
+  const overflow = await page.locator(selector).evaluateAll((elements) =>
+    elements.filter((element) => {
+      if (getComputedStyle(element).display === 'inline') return false;
+      const letters = element.querySelector('.answer-tape__letters');
+      const range = document.createRange();
+      range.selectNodeContents(letters);
+      const band = element.getBoundingClientRect();
+      return [...range.getClientRects()].some((rect) =>
+        rect.left < band.left - 4 || rect.right > band.right + 4);
+    }).length);
+  assert.equal(overflow, 0, `${selector}: no letters escape the plastic strip`);
+}
+
 const visible = (page, view) => page.locator(`#view-${view}`).isVisible();
 
 // Waits for a view; on timeout says which view is shown instead and what the notice line says.
@@ -107,11 +190,13 @@ async function waitView(page, view) {
   }
 }
 
-async function joinAs(browser, code, name) {
-  const page = await openPhone(browser);
+async function joinAs(browser, code, name, mobile = null) {
+  const page = await openPhone(browser, 'de-DE', mobile);
   await page.goto(`${target}/s/${code}`);
   await page.getByLabel('DEIN NAME').fill(name);
-  await page.getByRole('button', { name: '[ BEITRETEN ]' }).click();
+  const join = page.getByRole('button', { name: '[ BEITRETEN ]' });
+  if (mobile) await join.tap();
+  else await join.click();
   await waitView(page, 'lobby');
   return page;
 }
@@ -158,15 +243,23 @@ async function playRound(host, players, round, screen) {
     });
     assert.equal(paper.background, 'rgb(244, 244, 240)', 'answers look like paper cards');
     assert.equal(paper.radius, '6px', 'answers have physical card corners');
+    assert.equal(await page.locator('#hand .card mark').count(), 0,
+      'white hand cards must use plain text without embossed strips');
+    const handText = await cards.first().evaluate((card) => getComputedStyle(card).color);
+    assert.equal(handText, 'rgb(8, 8, 8)', 'unselected hand text stays dark on paper');
     await cards.first().click();
+    await checkTape(page, '#answer-prompt mark.answer-tape');
     await page.locator('#hand .card .slot-mark', { hasText: '<1/' }).waitFor();
     const selected = await cards.first().evaluate((card) => ({
       background: getComputedStyle(card).backgroundColor,
+      color: getComputedStyle(card).color,
       pressed: card.getAttribute('aria-pressed'),
     }));
     assert.equal(selected.background, 'rgb(8, 8, 8)', 'selected answer is dark');
+    assert.equal(selected.color, 'rgb(244, 244, 240)', 'selected hand text is light and readable');
     assert.equal(selected.pressed, 'true', 'selection is accessible as text/ARIA');
-    assert.equal(await page.locator('#answer-prompt mark').count(), 1, 'the chosen card fills the blank');
+    assert.ok(await page.locator('#answer-prompt mark.answer-tape').count() >= 1,
+      'the chosen answer fills the blank with one or more physical strips');
     await page.locator('#hand .card').first().click();
     assert.equal(await page.locator('#hand .slot-mark').count(), 0);
 
@@ -233,15 +326,28 @@ async function playRound(host, players, round, screen) {
     const screenPaper = await screen.locator('#screen-plays li').first()
       .evaluate((card) => getComputedStyle(card).backgroundColor);
     assert.equal(screenPaper, 'rgb(244, 244, 240)', 'TV shows legible paper answer cards');
+    await checkTape(screen, '#screen-plays li mark.answer-tape');
   }
   const judgePaper = await juror.locator('#judge-list .choice').first()
     .evaluate((card) => getComputedStyle(card).backgroundColor);
   assert.equal(judgePaper, 'rgb(244, 244, 240)', 'juror options are paper strips');
+  assert.equal(await juror.locator('#judge-list mark').count(), 0,
+    'juror answer options must stay plain without embossed tape');
+  const choiceText = await juror.locator('#judge-list .choice').first()
+    .evaluate((element) => getComputedStyle(element).color);
+  assert.equal(choiceText, 'rgb(8, 8, 8)', 'unselected juror options use readable dark text');
   await juror.locator('#judge-list .choice').first().click();
   assert.equal(await juror.locator('#judge-list .choice').first().getAttribute('aria-pressed'),
     'true', 'the chosen answer is also announced to assistive technology');
+  const selectedChoiceText = await juror.locator('#judge-list .choice').first()
+    .evaluate((element) => getComputedStyle(element).color);
+  assert.equal(selectedChoiceText, 'rgb(244, 244, 240)',
+    'selected juror options use readable inverted plain text');
+  assert.equal(await juror.locator('#judge-list mark').count(), 0,
+    'selecting a juror option does not add an embossed strip below');
   // The pick fills the blanks of the prompt shown once on top.
   assert.ok(await juror.locator('#judge-prompt mark').count() >= 1, 'the pick appears in the prompt');
+  await checkTape(juror, '#judge-prompt mark.answer-tape');
   await juror.getByRole('button', { name: '[ BESTÄTIGEN ]' }).click();
 
   for (const page of [host, ...players]) await waitView(page, 'reveal');
@@ -249,6 +355,13 @@ async function playRound(host, players, round, screen) {
   const revealPaper = await host.locator('#reveal-sentence')
     .evaluate((card) => getComputedStyle(card).backgroundColor);
   assert.equal(revealPaper, 'rgb(244, 244, 240)', 'the reveal is a single large paper card');
+  await checkTape(host, '#reveal-sentence mark.answer-tape');
+  // Only the display is capitalized; the spoken/stored sentence remains intact.
+  assert.ok((await host.locator('#reveal-sentence').textContent()).includes(
+    (await host.locator('#reveal-sentence mark.answer-tape').first().textContent()).trim()),
+    'uppercase embossing must not modify submitted card wording');
+  await checkTapeNotClipped(host, '#reveal-sentence mark.answer-tape');
+  await checkTape(screen, '#screen-sentence mark.answer-tape');
   if (round === 1) {
     await checkScreen(screen, 'reveal', 'reveal');
     await checkFit(host, 'reveal-host', '#next-button');
@@ -301,6 +414,32 @@ async function run(browser) {
   assert.equal(await host.locator('#start-button').isDisabled(), true, 'START needs three players');
   await checkFit(host, 'lobby-host', '#start-button');
 
+  // A modal menu must not leave the game controls reachable behind it.
+  await host.locator('#menu-button').click();
+  assert.equal(await host.locator('#menu').getAttribute('role'), 'dialog');
+  assert.equal(await host.locator('#menu').getAttribute('aria-modal'), 'true');
+  assert.equal(await host.locator('.views').evaluate((view) => view.inert), true);
+  assert.equal(await host.evaluate(() => document.activeElement.id), 'menu-close');
+  await host.keyboard.press('Shift+Tab');
+  assert.ok(await host.evaluate(() => document.activeElement.closest('#menu') !== null),
+    'Shift+Tab wraps inside the modal menu');
+  await host.keyboard.press('Tab');
+  assert.equal(await host.evaluate(() => document.activeElement.id), 'menu-close',
+    'Tab wraps from the last menu link to Close');
+  await host.locator('#menu-body .menu-row').first().focus();
+  const menuFocusText = await host.locator('#menu-body .menu-row').first().textContent();
+
+  // While a menu row has focus, remote players joining still trigger renders.
+  // Those renders must not throw the keyboard or VoiceOver focus to <body>.
+  const firstMobilePlayer = await joinAs(browser, code, 'BrowserAda', 'android');
+  await host.locator('#lobby-players li', { hasText: 'BrowserAda' }).waitFor();
+  assert.equal(await host.evaluate(() => document.activeElement?.textContent), menuFocusText,
+    'live state updates preserve the focused menu row');
+  await host.keyboard.press('Escape');
+  assert.equal(await host.locator('#menu').isVisible(), false);
+  assert.equal(await host.locator('.views').evaluate((view) => view.inert), false);
+  assert.equal(await host.evaluate(() => document.activeElement.id), 'menu-button');
+
   // The big screen listens on its own socket; every frame it gets is recorded.
   const screen = await openPhone(browser);
   const screenFrames = [];
@@ -309,8 +448,10 @@ async function run(browser) {
   await screen.locator('#screen-code', { hasText: code }).waitFor();
   await screen.locator('#screen-qr svg').waitFor();
 
-  const players = [];
-  for (const name of ['BrowserAda', 'Bert', 'Cyra']) players.push(await joinAs(browser, code, name));
+  const players = [firstMobilePlayer];
+  for (const [name, mobile] of [['Bert', 'ios'], ['Cyra', 'android']]) {
+    players.push(await joinAs(browser, code, name, mobile));
+  }
   await host.locator('#lobby-players li', { hasText: 'Cyra' }).waitFor();
   await checkFit(host, 'lobby-host-full', '#start-button');
   await host.setViewportSize({ width: 320, height: 568 });
@@ -390,6 +531,22 @@ async function run(browser) {
   await host.locator('#card-prompts-0').fill('Eigene Testfrage ___!');
   await host.getByRole('button', { name: '[ ANTWORT HINZUFÜGEN ]' }).click();
   await host.locator('#card-answers-0').fill('Eigene Testantwort');
+  await host.locator('#card-answers-0').evaluate((input) => {
+    input.focus();
+    input.setSelectionRange(3, 9);
+  });
+  // A guest reconnecting refreshes the host's lobby while the host types.
+  // The editor caret and unsaved text must survive the live menu rerender.
+  await players[0].reload();
+  await waitView(players[0], 'lobby');
+  await host.waitForTimeout(150);
+  const editorFocus = await host.evaluate(() => {
+    const input = document.querySelector('#card-answers-0');
+    return { focused: document.activeElement === input, text: input.value,
+      start: input.selectionStart, end: input.selectionEnd };
+  });
+  assert.deepEqual(editorFocus, { focused: true, text: 'Eigene Testantwort', start: 3, end: 9 },
+    'guest reconnect must not erase the host editor text or caret');
   await host.locator('.editor-save').click();
   await host.locator('#menu-body', { hasText: 'KARTEN GESPEICHERT UND AKTIV.' }).waitFor();
   assert.equal(await players[0].evaluate(async (room) =>
@@ -578,8 +735,11 @@ async function checkLongCards(browser) {
   await page.evaluate(() => {
     for (const view of document.querySelectorAll('.view')) view.hidden = view.id !== 'view-answer';
     const long = 'Testantwort mit einem sehr langen Kartentext, der auf dem Handy über mehrere Zeilen läuft';
-    document.querySelector('#answer-prompt').textContent =
-      'Testfrage mit einem langen Satz, der so lang ist wie die längsten Fragen der echten Packs: ___ und ___.';
+    import('/play/sentence.js').then(({ fillSentence }) => {
+      fillSentence(document.querySelector('#answer-prompt'),
+        'Testfrage mit einem langen Satz, der so lang ist wie die längsten Fragen der echten Packs: ___ und ___.',
+        [long, long]);
+    });
     const hand = document.querySelector('#hand');
     for (let i = 0; i < 12; i++) {
       const card = document.createElement('button');
@@ -588,13 +748,31 @@ async function checkLongCards(browser) {
       hand.append(card);
     }
   });
+  await checkTape(page, '#answer-prompt mark.answer-tape');
+  assert.equal(await page.locator('#hand .card mark').count(), 0,
+    'long hand cards remain plain and readable');
   for (const [width, height] of SIZES) {
     await page.setViewportSize({ width, height });
+    await page.waitForTimeout(50); // Let the resize reflow the physical tape rows.
+    assert.ok(await page.locator('#answer-prompt mark.answer-tape--strip').count() >= 2,
+      `${width}x${height}: long inserted answers need separate strips per line`);
+    await checkTapeNotClipped(page, '#answer-prompt mark.answer-tape');
+    const variations = await page.locator('#answer-prompt mark.answer-tape')
+      .evaluateAll((tapes) => tapes.map((tape) => tape.style.getPropertyValue('--foil-x')));
+    assert.ok(new Set(variations).size > 1,
+      `${width}x${height}: separate plastic strips need varied texture crops`);
+    const renderedText = await page.locator('#answer-prompt').textContent();
+    assert.match(renderedText, /Testantwort mit einem sehr langen Kartentext/,
+      'splitting labels must preserve the original answer wording');
     const clipped = await page.locator('#hand .card').evaluateAll((cards) =>
       cards.filter((card) => card.scrollHeight > card.clientHeight + 1).length);
     assert.equal(clipped, 0, `${width}x${height}: ${clipped} cards cut their text`);
-    const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
-    assert.ok(pageHeight <= height, `${width}x${height}: long cards make the page scroll`);
+    const dimensionsOfPage = await page.evaluate(() => ({
+      height: document.documentElement.scrollHeight,
+      width: document.documentElement.scrollWidth,
+    }));
+    assert.ok(dimensionsOfPage.height <= height, `${width}x${height}: long cards make the page scroll`);
+    assert.ok(dimensionsOfPage.width <= width, `${width}x${height}: long tape overflows horizontally`);
     const hand = page.locator('#hand');
     const dimensions = await hand.evaluate((el) => ({
       scrollHeight: el.scrollHeight, clientHeight: el.clientHeight,

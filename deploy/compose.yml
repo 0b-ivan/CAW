@@ -60,6 +60,25 @@ services:
       timeout: 3s
       retries: 10
 
+  redis-backup:
+    # A separate, disposable backup worker; never mounts the live AOF volume.
+    image: redis:7-alpine
+    restart: unless-stopped
+    entrypoint: [/bin/sh, /redis-backup.sh]
+    volumes:
+      - ./redis-backup.sh:/redis-backup.sh:ro
+      - backups:/backups
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # A successfully published RDB must exist from the last 26 hours.
+      test: [CMD-SHELL, "find /backups/redis -maxdepth 1 -type f -name 'caw-*.rdb' -mmin -1560 | grep -q ."]
+      interval: 30s
+      timeout: 5s
+      start_period: 2m
+      retries: 2
+
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped

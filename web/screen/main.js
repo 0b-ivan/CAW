@@ -2,7 +2,7 @@
 // It only listens; the server sends it "screen" frames without any hand.
 import { Connection, lookupSession, secrets } from '../play/connection.js';
 import { applyStaticTexts, setTextLanguage, t } from '../play/text.js';
-import { fillSentence } from '../play/sentence.js';
+import { fillSentence, layoutTapeLines } from '../play/sentence.js';
 import { qrSvg } from '../play/qr.js';
 import { markHost } from '../play/crown.js';
 import { creditsText, nameWithWord } from '../play/views.js';
@@ -76,6 +76,8 @@ function render() {
   const draw = { lobby: renderLobby, answers: renderAnswers, judging: renderJudging, reveal: renderReveal,
     hold: renderHold, finished: renderFinished }[view];
   if (draw) draw(screen.frame);
+  // Juror sentences were built detached, so measure their tape after insertion.
+  layoutTapeLines();
   fitAll();
   tickClock();
 }
@@ -246,7 +248,8 @@ async function start() {
   applyStaticTexts();
   $('fullscreen').addEventListener('click', () => document.documentElement.requestFullscreen?.());
   document.addEventListener('mousemove', wake);
-  addEventListener('resize', fitAll);
+  // Refit after sentence.js has rebuilt tape lines for the new viewport.
+  addEventListener('resize', () => requestAnimationFrame(fitAll));
   wake();
   if (!CODE.test(code)) {
     screen.missing = true;
