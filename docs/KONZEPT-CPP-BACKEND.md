@@ -832,6 +832,72 @@ separat entworfen und getestet. Zwei Container allein reichen
 **nicht** für unterbrechungsfreie WebSockets, solange Session-Besitz,
 Admission-Stop und gezielte Verbindungsweiterleitung ungeklärt sind.
 
+## 19. Blue/Green-Deployment ohne periodische No-op-Rollouts (Planung, 03.11.2026)
+
+Nach dem einmalig autorisierten erfolgreichen Hetzner-Rollout von `54dc2b61`
+wird die halbstündlich wiederholte Deployment-Prüfung durch ein
+ereignisgetriebenes Blue/Green-Verfahren ersetzt. Der bestehende Cloudflare
+Tunnel und Caddy bleiben der **einzige öffentliche Einstieg**; Redis und
+PostgreSQL samt Volumes bleiben unverändert. Es gibt zwei Slots desselben
+C++-Servers, aber keinen Node-Dienst und keinen zweiten Spieldatenbestand.
+
+**Harte Invariante:** Pro Raum darf zu jedem Zeitpunkt nur genau ein
+Server-Slot Aktionen verarbeiten und Redis-Snapshots schreiben. Beide
+Server dürfen niemals zugleich sämtliche `session:*`-Keys laden und
+Spielbefehle annehmen. Eine zufällige Load-Balancer-Verteilung oder
+reine Client-Cookie-Affinität reicht nicht, weil mehrere Spieler und
+der Big Screen sich unabhängig über denselben Raumcode verbinden.
+
+### Stufe A: isolierter grüner Standby-Slot
+
+Das erste, gefahrlose Inkrement ergänzt einen zweiten Compose-Slot
+(`server-green`) im **Standby-Modus**. Standby lädt keine Redis-Räume,
+registriert **keine** Spiel-REST-Routen und **keine** Spiel-WebSockets.
+Lediglich `/healthz`, `/metrics` und der zustandsfreie
+`/ws/probe`-Handshake stehen zur Verfügung; `/readyz` bleibt 503.
+So kann das neue unveränderliche Image vor dem Umschalten samt
+Abhängigkeiten und Transport geprüft werden, ohne auch nur einen
+Spielraum zu verändern oder heimlich eine zweite Session-Owner-Instanz
+zu starten. Der bestehende Caddy-Upstream bleibt unverändert `server`.
+Die neuen Compose-Einträge werden erst nach eigenem CI-Test verwendet.
+
+### Stufe B: exklusives Ownership-Handoff und Caddy-Switch
+
+Vor jeder Aktivierung müssen eine dauerhafte Raum-Zuordnung und
+ein überprüfbarer, expliziter Zustandsübergang implementiert werden:
+Blue unterbindet neue Raum-Anlagen, die Verarbeitung von Spielaktionen
+wird für das Handoff eingefroren, sämtliche geänderten Zustände müssen
+erfolgreich in Redis vorliegen, danach verliert Blue das Schreibrecht.
+Erst **danach** darf Green diese Räume laden, `/readyz` freigeben
+und Caddy den HTTP-/WSS-Upstream umschalten. Bei Fehlern wird
+vor einer weiteren Aktion eindeutig auf genau einen Besitzer
+zurückgeschaltet. Vorher ist kein produktives Blue/Green erlaubt.
+
+Für echte ununterbrochene WebSocket-Verbindungen sind zusätzlich
+routenstabile Alträume erforderlich: Bereits verbundene Clients
+dürfen auf Blue bleiben, während neu angelegte Räume zu Green gehen,
+und Reconnects müssen denselben Besitzer anhand des Raumcodes
+finden. Das bedarf eines dedizierten Routing-/Ownership-Konzepts;
+zwei Replica-Container und `lb_policy cookie` alleine bieten diese
+Garantie nicht. Alternativ kann ein bewusst angekündigtes, kurzzeitiges
+Ticket-Reconnect-Handoff implementiert werden, aber niemals als
+unterbrechungsfrei bezeichnet werden.
+
+Caddy schließt bei Konfigurations-Reload ohne zusätzliche Einstellung
+bereits laufende Reverse-Proxy-WebSocket-Streams. Der spätere
+Switch muss `stream_close_delay` und die tatsächlichen Verbindungen
+in der gepinnten Caddy-Version testen; ein Timer alleine löst jedoch
+das Raum-Ownership-Problem nicht. Der neue Slot braucht
+HTTPS-/WSS-Host-/State-Abnahme vor Freigabe, ein geordnetes
+Rollback ohne Redis-Löschung und Last-/Restore-Regressionstests.
+
+Erst nach vollständiger produktiver Abnahme wird der
+`*/30 * * * *`-Deploy-Schedule entfernt und die zustandsfreie
+`/ws/probe`-Prüfung unabhängig von Deployments als Monitoring
+fortgeführt. Bis dahin bleibt das bestehende nachgewiesen funktionierende
+Single-Server-Deployment aktiv. Die einmalige Altpartie-Sonderfreigabe
+wird nach der Migration entfernt und darf kein Dauer-Override werden.
+
 ## 18. Lokale Redis-Snapshot-Sicherung (Betriebsphase)
 
 Die Redis-AOF-Persistenz bleibt maßgeblich für Neustarts; zusätzlich gibt es
