@@ -105,10 +105,10 @@ void Server::registerProbeSocket(uWS::App& app) {
   behavior.maxPayloadLength = 256;
   behavior.upgrade = [this](auto* response, auto* request, auto* context) {
     if (!admitted(roomLimit_, response, request)) return;
-    response->template upgrade<SocketData>(SocketData{},
-                                           request->getHeader("sec-websocket-key"),
-                                           request->getHeader("sec-websocket-protocol"),
-                                           request->getHeader("sec-websocket-extensions"), context);
+    const auto key = request->getHeader("sec-websocket-key");
+    const auto protocol = request->getHeader("sec-websocket-protocol");
+    const auto extensions = request->getHeader("sec-websocket-extensions");
+    response->template upgrade<SocketData>(SocketData{}, key, protocol, extensions, context);
   };
   behavior.open = [](Socket* socket) {
     socket->send(R"({"type":"probe","ok":true})", uWS::OpCode::TEXT);
