@@ -58,6 +58,26 @@ struct FlakyStore final : caw::SnapshotStore {
   }
 };
 
+// An empty pending map is not proof that Redis has acknowledged a write.
+struct GatedStore final : caw::SnapshotStore {
+  std::mutex mutex;
+  std::condition_variable startedWake;
+  std::condition_variable releaseWake;
+  bool started = false;
+  bool released = false;
+  std::string saved;
+
+  bool save(const std::string&, const std::string& snapshot) override {
+    std::unique_lock<std::mutex> lock(mutex);
+    started = true;
+    startedWake.notify_one();
+    releaseWake.wait(lock, [this] { return released; });
+    saved = snapshot;
+    return true;
+  }
+  std::vector<std::pair<std::string, std::string>> loadAll() override { return {}; }
+};
+
 struct BrokenStore final : caw::SnapshotStore {
   int attempts = 0;
   bool save(const std::string&, const std::string&) override {
@@ -139,6 +159,54 @@ TEST_CASE("a permanent Redis error does not hang shutdown indefinitely") {
     queue.stop();
   }
   CHECK(store.attempts == 5);
+}
+
+TEST_CASE("flush waits for the in-flight Redis acknowledgment") {
+  using namespace std::chrono_literals;
+  GatedStore store;
+  FakeHistory history;
+  PersistQueue queue(store, history);
+  queue.push("AAAAAA", "synthetic final state");
+  {
+    std::unique_lock<std::mutex> lock(store.mutex);
+    CHECK(store.startedWake.wait_for(lock, 3s, [&store] { return store.started; }));
+  }
+  CHECK_FALSE(queue.flush(20ms));
+  {
+    std::lock_guard<std::mutex> lock(store.mutex);
+    store.released = true;
+  }
+  store.releaseWake.notify_one();
+  CHECK(queue.flush(3s));
+  queue.stop();
+  CHECK(store.saved == "synthetic final state");
+}
+
+TEST_CASE("flush retries after a Redis error before acknowledging the state") {
+  using namespace std::chrono_literals;
+  FlakyStore store;
+  FakeHistory history;
+  PersistQueue queue(store, history);
+  queue.push("AAAAAA", "synthetic snapshot");
+  {
+    std::unique_lock<std::mutex> lock(store.mutex);
+    CHECK(store.failedWake.wait_for(lock, 3s, [&store] { return store.failedOnce; }));
+  }
+  CHECK_FALSE(queue.flush(20ms));
+  CHECK(queue.flush(3s));
+  queue.stop();
+  CHECK(store.latest.at("AAAAAA") == "synthetic snapshot");
+}
+
+TEST_CASE("flush fails closed while Redis remains unavailable") {
+  using namespace std::chrono_literals;
+  BrokenStore store;
+  FakeHistory history;
+  PersistQueue queue(store, history);
+  queue.push("AAAAAA", "synthetic snapshot");
+  CHECK_FALSE(queue.flush(20ms));
+  queue.stop();
+  CHECK_FALSE(queue.flush(20ms));
 }
 
 TEST_CASE("a room survives a registry restart through its snapshot") {
